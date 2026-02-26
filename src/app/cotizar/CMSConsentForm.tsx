@@ -1,6 +1,15 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 
+interface SelectedPlanInfo {
+  name: string;
+  issuer: string;
+  metal: string;
+  premium: number;
+  afterSubsidy: number;
+  deductible: number;
+}
+
 interface CMSConsentFormProps {
   consumerName: string;
   consumerPhone: string;
@@ -8,6 +17,7 @@ interface CMSConsentFormProps {
   agentName?: string;
   agentNPN?: string;
   agencyName?: string;
+  selectedPlan?: SelectedPlanInfo;
   lang: string;
   t: Record<string, string>;
   onConsent: (consentData: ConsentRecord) => void;
@@ -110,6 +120,7 @@ export default function CMSConsentForm({
   agentName,
   agentNPN,
   agencyName,
+  selectedPlan,
   lang,
   t: parentT,
   onConsent,
@@ -269,6 +280,79 @@ export default function CMSConsentForm({
           {txt.subtitle}
         </div>
       </div>
+
+      {/* Selected Plan Summary */}
+      {selectedPlan && (() => {
+        const isEs = lang === "es";
+        const metalLabels: Record<string, { en: string; es: string }> = {
+          bronze: { en: "Bronze", es: "Bronce" },
+          silver: { en: "Silver", es: "Plata" },
+          gold: { en: "Gold", es: "Oro" },
+          platinum: { en: "Platinum", es: "Platino" },
+          catastrophic: { en: "Catastrophic", es: "Catastrófico" },
+        };
+        const metalColors: Record<string, string> = {
+          catastrophic: "#374151", bronze: "#92400e", silver: "#6b7280", gold: "#b45309", platinum: "#4338ca",
+        };
+        const metalLabel = metalLabels[selectedPlan.metal]?.[isEs ? "es" : "en"] || selectedPlan.metal;
+        return (
+          <div style={{
+            background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)",
+            border: "1.5px solid #6ee7b7",
+            borderRadius: 12, padding: 16, marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+              {isEs ? "Plan seleccionado" : "Selected Plan"}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+              <div>
+                <span style={{
+                  display: "inline-block", padding: "2px 10px", borderRadius: 4,
+                  fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8,
+                  color: "#fff", backgroundColor: metalColors[selectedPlan.metal] || "#6b7280",
+                }}>
+                  {metalLabel}
+                </span>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a", marginTop: 6, lineHeight: 1.3 }}>
+                  {selectedPlan.name}
+                </div>
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+                  {selectedPlan.issuer}
+                </div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                {selectedPlan.afterSubsidy < selectedPlan.premium && (
+                  <div style={{ fontSize: 11, color: "#b0b0b0", textDecoration: "line-through" }}>
+                    ${selectedPlan.premium}{isEs ? "/mes" : "/mo"}
+                  </div>
+                )}
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#059669", letterSpacing: -0.5 }}>
+                  ${selectedPlan.afterSubsidy}
+                </div>
+                <div style={{ fontSize: 10, color: "#6b7280" }}>{isEs ? "/mes" : "/mo"}</div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={{ background: "rgba(255,255,255,.7)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
+                  {isEs ? "Prima mensual" : "Monthly Premium"}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 2 }}>
+                  ${selectedPlan.afterSubsidy}
+                </div>
+              </div>
+              <div style={{ background: "rgba(255,255,255,.7)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
+                  {isEs ? "Deducible" : "Deductible"}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 2 }}>
+                  ${selectedPlan.deductible.toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Part 1: Consumer Consent */}
       <div style={sectionTitle}>

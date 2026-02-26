@@ -442,10 +442,14 @@ export default function QuoterPage() {
             agentName={agentBrand?.name}
             agentNPN={agentBrand?.npn}
             agencyName={agentBrand?.brand_name}
+            selectedPlan={selectedPlanId && results ? (() => {
+              const p = results.plans.find((pl: any) => pl.id === selectedPlanId);
+              return p ? { name: p.name, issuer: p.issuer, metal: p.metal, premium: p.premium, afterSubsidy: p.afterSubsidy, deductible: p.deductible } : undefined;
+            })() : undefined}
             lang={lang}
             t={t}
             onConsent={handleConsent}
-            onBack={() => setStep(4)}
+            onBack={() => setStep(5)}
           />
         )}
 

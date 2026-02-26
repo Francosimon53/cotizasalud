@@ -240,7 +240,7 @@ Please include:
         overflowY: "auto",
         fontSize: 13,
         lineHeight: 1.7,
-        color: "#8b8fa3",
+        color: "#4b5563",
       }}>
         {loading && (
           <div style={{ textAlign: "center", padding: "24px 0" }}>
@@ -251,7 +251,7 @@ Please include:
               margin: "0 auto 12px",
             }} />
             <div style={{ color: "#a78bfa", fontWeight: 700, fontSize: 13 }}>{t.aiLoading}</div>
-            <div style={{ color: "#5a5e72", fontSize: 11, marginTop: 4 }}>{t.aiScenarios}</div>
+            <div style={{ color: "#6b7280", fontSize: 11, marginTop: 4 }}>{t.aiScenarios}</div>
             <style>{`@keyframes aispin { to { transform: rotate(360deg) } }`}</style>
           </div>
         )}
@@ -280,7 +280,7 @@ Please include:
                 let m;
                 while ((m = re.exec(text)) !== null) {
                   if (m.index > last) parts.push(<span key={`t${last}`}>{text.slice(last, m.index)}</span>);
-                  parts.push(<strong key={`b${m.index}`} style={{ color: "#f0f1f5", fontWeight: 700 }}>{m[1]}</strong>);
+                  parts.push(<strong key={`b${m.index}`} style={{ color: "#1f2937", fontWeight: 700 }}>{m[1]}</strong>);
                   last = m.index + m[0].length;
                 }
                 if (last < text.length) parts.push(<span key={`e${last}`}>{text.slice(last)}</span>);
@@ -301,7 +301,7 @@ Please include:
                   <div key={i} style={{
                     fontSize: level === 1 ? 16 : level === 2 ? 15 : 14,
                     fontWeight: 800,
-                    color: isSection ? "#c4b5fd" : "#a78bfa",
+                    color: isSection ? "#5b21b6" : "#6d28d9",
                     marginTop: i > 0 ? (isSection ? 20 : 14) : 0,
                     marginBottom: 6,
                     paddingBottom: isSection ? 6 : 0,
@@ -319,7 +319,7 @@ Please include:
                 const text = line.replace(/\*\*/g, "");
                 return (
                   <div key={i} style={{
-                    fontWeight: 800, color: "#c4b5fd", fontSize: 14,
+                    fontWeight: 800, color: "#5b21b6", fontSize: 14,
                     marginTop: i > 0 ? 16 : 0, marginBottom: 4,
                     lineHeight: 1.4,
                   }}>
@@ -361,7 +361,7 @@ Please include:
                       width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
                       background: "#8b5cf6", marginTop: 7,
                     }} />
-                    <span style={{ fontSize: 13, lineHeight: 1.6, flex: 1, color: "#8b8fa3" }}>
+                    <span style={{ fontSize: 13, lineHeight: 1.6, flex: 1, color: "#4b5563" }}>
                       {renderInline(text)}
                     </span>
                   </div>
@@ -375,11 +375,11 @@ Please include:
               if (/^[✅⚠️🏆💡🎯]/.test(line.trim()) || line.includes("Veredicto") || line.includes("Verdict")) {
                 return (
                   <div key={i} style={{
-                    background: line.includes("✅") || line.includes("Sí,") ? "rgba(16,185,129,0.1)" : line.includes("⚠️") ? "rgba(251,191,36,0.1)" : "rgba(139,92,246,0.05)",
-                    border: `1px solid ${line.includes("✅") || line.includes("Sí,") ? "rgba(16,185,129,0.3)" : line.includes("⚠️") ? "rgba(251,191,36,0.3)" : "rgba(139,92,246,0.2)"}`,
+                    background: line.includes("✅") || line.includes("Sí,") ? "rgba(16,185,129,0.08)" : line.includes("⚠️") ? "rgba(251,191,36,0.08)" : "rgba(139,92,246,0.08)",
+                    border: `1px solid ${line.includes("✅") || line.includes("Sí,") ? "rgba(16,185,129,0.25)" : line.includes("⚠️") ? "rgba(251,191,36,0.25)" : "rgba(139,92,246,0.2)"}`,
                     borderRadius: 8, padding: "10px 14px", marginTop: 8, marginBottom: 4,
                     fontSize: 13, fontWeight: 600, lineHeight: 1.6,
-                    color: line.includes("✅") || line.includes("Sí,") ? "#10b981" : line.includes("⚠️") ? "#fbbf24" : "#a78bfa",
+                    color: line.includes("✅") || line.includes("Sí,") ? "#059669" : line.includes("⚠️") ? "#d97706" : "#6d28d9",
                   }}>
                     {renderInline(line)}
                   </div>
@@ -388,7 +388,7 @@ Please include:
 
               // Regular paragraph text
               return (
-                <div key={i} style={{ fontSize: 13, lineHeight: 1.7, color: "#8b8fa3", marginBottom: 2 }}>
+                <div key={i} style={{ fontSize: 13, lineHeight: 1.7, color: "#4b5563", marginBottom: 2 }}>
                   {renderInline(line)}
                 </div>
               );
@@ -404,7 +404,7 @@ Please include:
           borderTop: "1px solid #e9d5ff",
           background: "rgba(139,92,246,0.05)",
           fontSize: 10,
-          color: "#5a5e72",
+          color: "#6b7280",
           textAlign: "center",
           lineHeight: 1.5,
         }}>

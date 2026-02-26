@@ -34,7 +34,7 @@ function Stars({ n }: { n: number }) {
   return (
     <span style={{ fontSize: 13, letterSpacing: 1 }}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} style={{ color: i <= n ? "#f59e0b" : "#e5e7eb" }}>★</span>
+        <span key={i} style={{ color: i <= n ? "#f59e0b" : "#2a2d3a" }}>★</span>
       ))}
     </span>
   );
@@ -42,7 +42,7 @@ function Stars({ n }: { n: number }) {
 
 function Badge({ metal, t }: { metal: string; t: Record<string, string> }) {
   const c: Record<string, string> = {
-    catastrophic: "#374151", bronze: "#92400e", silver: "#6b7280", gold: "#b45309", platinum: "#4338ca",
+    catastrophic: "#6b7280", bronze: "#92400e", silver: "#9ca3af", gold: "#b45309", platinum: "#4338ca",
   };
   return (
     <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 4, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8, color: "#fff", backgroundColor: c[metal] || "#6b7280" }}>
@@ -55,7 +55,7 @@ function Progress({ step, total }: { step: number; total: number }) {
   return (
     <div style={{ display: "flex", gap: 5, margin: "0 0 24px" }}>
       {Array.from({ length: total }, (_, i) => (
-        <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: i < step ? "#059669" : "#e5e7eb", transition: "all .3s" }} />
+        <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: i < step ? "#10b981" : "#1a1c26", transition: "all .3s" }} />
       ))}
     </div>
   );
@@ -64,49 +64,49 @@ function Progress({ step, total }: { step: number; total: number }) {
 function StepLabel({ num, label }: { num: number; label: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-      <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#059669", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>{num}</div>
-      <span style={{ fontSize: 17, fontWeight: 700, color: "#064e3b" }}>{label}</span>
+      <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#10b981", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>{num}</div>
+      <span style={{ fontSize: 17, fontWeight: 700, color: "#10b981" }}>{label}</span>
     </div>
   );
 }
 
 // ==================== STYLES ====================
 const S = {
-  app: { fontFamily: "'DM Sans', 'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: "#f7faf8", color: "#1a1a1a" } as React.CSSProperties,
-  hdr: { background: "linear-gradient(135deg, #022c22 0%, #064e3b 60%, #065f46 100%)", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" } as React.CSSProperties,
+  app: { fontFamily: "'Satoshi', 'DM Sans', 'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: "#08090d", color: "#f0f1f5" } as React.CSSProperties,
+  hdr: { background: "linear-gradient(135deg, #08090d 0%, #0e1018 60%, #12141c 100%)", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.06)" } as React.CSSProperties,
   logo: { color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: -0.5, display: "flex", alignItems: "center", gap: 8 } as React.CSSProperties,
-  logoIcon: { width: 30, height: 30, borderRadius: 7, background: "rgba(255,255,255,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } as React.CSSProperties,
-  langBtn: { padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,.25)", background: "rgba(255,255,255,.08)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" } as React.CSSProperties,
-  hero: { background: "linear-gradient(135deg, #022c22 0%, #064e3b 60%, #065f46 100%)", padding: "12px 20px 44px", textAlign: "center" as const } as React.CSSProperties,
+  logoIcon: { width: 30, height: 30, borderRadius: 7, background: "rgba(16,185,129,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } as React.CSSProperties,
+  langBtn: { padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.06)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" } as React.CSSProperties,
+  hero: { background: "linear-gradient(135deg, #08090d 0%, #0e1018 60%, #12141c 100%)", padding: "12px 20px 44px", textAlign: "center" as const } as React.CSSProperties,
   wrap: { maxWidth: 640, margin: "-24px auto 0", padding: "0 14px 40px", position: "relative" as const } as React.CSSProperties,
-  card: { background: "#fff", borderRadius: 14, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 8px 20px rgba(0,0,0,.03)", border: "1px solid #e8ecea" } as React.CSSProperties,
-  label: { display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5, color: "#374151", textTransform: "uppercase" as const, letterSpacing: 0.5 } as React.CSSProperties,
-  input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #d1d5db", fontSize: 15, outline: "none", boxSizing: "border-box" as const, fontFamily: "inherit" } as React.CSSProperties,
-  select: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #d1d5db", fontSize: 15, outline: "none", boxSizing: "border-box" as const, background: "#fff", fontFamily: "inherit" } as React.CSSProperties,
+  card: { background: "#12141c", borderRadius: 14, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.2), 0 8px 20px rgba(0,0,0,.15)", border: "1px solid rgba(255,255,255,0.06)" } as React.CSSProperties,
+  label: { display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5, color: "#8b8fa3", textTransform: "uppercase" as const, letterSpacing: 0.5 } as React.CSSProperties,
+  input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15, outline: "none", boxSizing: "border-box" as const, fontFamily: "inherit", background: "#0e1018", color: "#f0f1f5" } as React.CSSProperties,
+  select: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15, outline: "none", boxSizing: "border-box" as const, background: "#0e1018", fontFamily: "inherit", color: "#f0f1f5" } as React.CSSProperties,
   btn: { display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "13px 28px", borderRadius: 9, border: "none", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" } as React.CSSProperties,
-  pri: { background: "#059669", color: "#fff" },
-  sec: { background: "#f3f4f6", color: "#374151" },
-  dis: { background: "#e5e7eb", color: "#9ca3af", cursor: "not-allowed" },
+  pri: { background: "#10b981", color: "#fff" },
+  sec: { background: "#181a24", color: "#8b8fa3" },
+  dis: { background: "#1a1c26", color: "#5a5e72", cursor: "not-allowed" },
   row: { display: "flex", gap: 10 } as React.CSSProperties,
   g2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } as React.CSSProperties,
   g3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } as React.CSSProperties,
   g4: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 } as React.CSSProperties,
-  memberCard: { background: "#f9fafb", borderRadius: 10, padding: 16, marginBottom: 12, border: "1px solid #e5e7eb" } as React.CSSProperties,
-  stat: { background: "#f8faf9", borderRadius: 8, padding: "9px 10px", textAlign: "center" as const } as React.CSSProperties,
-  statL: { fontSize: 9, color: "#6b7280", textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.5 } as React.CSSProperties,
-  statV: { fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 1 } as React.CSSProperties,
-  planCard: { background: "#fff", borderRadius: 11, padding: 18, marginBottom: 12, border: "1.5px solid #e5e7eb", cursor: "pointer" } as React.CSSProperties,
-  planExp: { background: "#fff", borderRadius: 11, padding: 18, marginBottom: 12, border: "2px solid #059669", boxShadow: "0 4px 16px rgba(5,150,105,.1)" } as React.CSSProperties,
-  alert: { background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: 8, padding: 14, marginBottom: 18, fontSize: 13, color: "#92400e", lineHeight: 1.5 } as React.CSSProperties,
-  subBanner: { background: "linear-gradient(135deg, #ecfdf5, #d1fae5)", border: "1px solid #6ee7b7", borderRadius: 10, padding: 18, marginBottom: 18, textAlign: "center" as const } as React.CSSProperties,
-  tyCard: { background: "linear-gradient(135deg, #ecfdf5, #d1fae5)", borderRadius: 14, padding: 32, textAlign: "center" as const, border: "1px solid #6ee7b7" } as React.CSSProperties,
-  footer: { textAlign: "center" as const, padding: "24px 14px", fontSize: 10, color: "#9ca3af", lineHeight: 1.6, maxWidth: 640, margin: "0 auto" } as React.CSSProperties,
+  memberCard: { background: "#0e1018", borderRadius: 10, padding: 16, marginBottom: 12, border: "1px solid rgba(255,255,255,0.06)" } as React.CSSProperties,
+  stat: { background: "#0e1018", borderRadius: 8, padding: "9px 10px", textAlign: "center" as const } as React.CSSProperties,
+  statL: { fontSize: 9, color: "#5a5e72", textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.5 } as React.CSSProperties,
+  statV: { fontSize: 16, fontWeight: 800, color: "#f0f1f5", marginTop: 1 } as React.CSSProperties,
+  planCard: { background: "#12141c", borderRadius: 11, padding: 18, marginBottom: 12, border: "1.5px solid rgba(255,255,255,0.06)", cursor: "pointer" } as React.CSSProperties,
+  planExp: { background: "#12141c", borderRadius: 11, padding: 18, marginBottom: 12, border: "2px solid #10b981", boxShadow: "0 4px 16px rgba(16,185,129,.1)" } as React.CSSProperties,
+  alert: { background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 8, padding: 14, marginBottom: 18, fontSize: 13, color: "#fbbf24", lineHeight: 1.5 } as React.CSSProperties,
+  subBanner: { background: "linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10, padding: 18, marginBottom: 18, textAlign: "center" as const } as React.CSSProperties,
+  tyCard: { background: "linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))", borderRadius: 14, padding: 32, textAlign: "center" as const, border: "1px solid rgba(16,185,129,0.2)" } as React.CSSProperties,
+  footer: { textAlign: "center" as const, padding: "24px 14px", fontSize: 10, color: "#5a5e72", lineHeight: 1.6, maxWidth: 640, margin: "0 auto" } as React.CSSProperties,
 };
 
 const chip = (active: boolean): React.CSSProperties => ({
-  padding: "5px 13px", borderRadius: 20, border: `1.5px solid ${active ? "#059669" : "#d1d5db"}`,
-  fontSize: 11, fontWeight: 700, cursor: "pointer", background: active ? "#ecfdf5" : "#fff",
-  color: active ? "#059669" : "#6b7280",
+  padding: "5px 13px", borderRadius: 20, border: `1.5px solid ${active ? "#10b981" : "rgba(255,255,255,0.1)"}`,
+  fontSize: 11, fontWeight: 700, cursor: "pointer", background: active ? "rgba(16,185,129,0.1)" : "#12141c",
+  color: active ? "#10b981" : "#5a5e72",
 });
 
 // ==================== MAIN COMPONENT ====================
@@ -338,7 +338,7 @@ export default function QuoterPage() {
                 </select>
               </div>
             )}
-            {county && <div style={{ fontSize: 13, color: "#059669", marginBottom: 18, fontWeight: 600 }}>📍 {county.name}, {county.state}</div>}
+            {county && <div style={{ fontSize: 13, color: "#10b981", marginBottom: 18, fontWeight: 600 }}>📍 {county.name}, {county.state}</div>}
             <button style={{ ...S.btn, ...(county ? S.pri : S.dis), width: "100%" }} disabled={!county} onClick={() => setStep(2)}>{t.next}</button>
           </div>
         )}
@@ -351,7 +351,7 @@ export default function QuoterPage() {
             {house.map((m, i) => (
               <div key={i} style={S.memberCard}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#064e3b" }}>{t.person} {i + 1}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#10b981" }}>{t.person} {i + 1}</span>
                   {i > 0 && <button style={{ ...S.btn, padding: "3px 10px", fontSize: 11, color: "#ef4444", background: "transparent" }} onClick={() => removePerson(i)}>{t.removePerson}</button>}
                 </div>
                 <div style={S.g3}>
@@ -377,14 +377,14 @@ export default function QuoterPage() {
             <div style={{ marginBottom: 18 }}>
               <label style={S.label}>{t.income}</label>
               <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontWeight: 700 }}>$</span>
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#5a5e72", fontWeight: 700 }}>$</span>
                 <input style={{ ...S.input, paddingLeft: 26 }} type="text" value={income ? Number(income).toLocaleString() : ""} onChange={(e) => setIncome(e.target.value.replace(/\D/g, ""))} placeholder={t.incomePh} />
               </div>
             </div>
             {income && (
-              <div style={{ background: "#f0fdf4", borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 13, color: "#065f46" }}>
+              <div style={{ background: "rgba(16,185,129,0.08)", borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 13, color: "#10b981" }}>
                 <strong>{t.fplLabel}:</strong> {fpl}% FPL
-                <span style={{ color: "#6b7280", marginLeft: 6 }}>(${getFPL(house.length).toLocaleString()} / {house.length}p)</span>
+                <span style={{ color: "#5a5e72", marginLeft: 6 }}>(${getFPL(house.length).toLocaleString()} / {house.length}p)</span>
               </div>
             )}
             {isMedicaid && <div style={S.alert}>⚠️ {t.medicaidMsg}</div>}
@@ -400,8 +400,8 @@ export default function QuoterPage() {
           <div style={S.card}>
             <StepLabel num={4} label={t.sL} />
             <Progress step={4} total={4} />
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#064e3b", marginBottom: 4 }}>{t.leadTitle}</div>
-            <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 20, lineHeight: 1.5 }}>{t.leadSub}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#10b981", marginBottom: 4 }}>{t.leadTitle}</div>
+            <div style={{ fontSize: 13, color: "#5a5e72", marginBottom: 20, lineHeight: 1.5 }}>{t.leadSub}</div>
             <div style={{ marginBottom: 14 }}>
               <label style={S.label}>{t.fullName}</label>
               <input style={S.input} value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder={t.namePh} autoFocus={!leadName} />
@@ -420,8 +420,8 @@ export default function QuoterPage() {
                 ))}
               </div>
             </div>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, cursor: "pointer", fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
-              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#059669", cursor: "pointer" }} />
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, cursor: "pointer", fontSize: 13, color: "#8b8fa3", lineHeight: 1.5 }}>
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#10b981", cursor: "pointer" }} />
               {t.consent}
             </label>
             <div style={S.row}>
@@ -458,8 +458,8 @@ export default function QuoterPage() {
           <div>
             {results.aptc > 0 && (
               <div style={S.subBanner}>
-                <div style={{ fontSize: 12, color: "#065f46", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{t.subsidyLabel}</div>
-                <div style={{ fontSize: 36, fontWeight: 900, color: "#059669", letterSpacing: -1 }}>${results.aptc}<span style={{ fontSize: 16, fontWeight: 600 }}>{t.mo}</span></div>
+                <div style={{ fontSize: 12, color: "#10b981", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{t.subsidyLabel}</div>
+                <div style={{ fontSize: 36, fontWeight: 900, color: "#10b981", letterSpacing: -1 }}>${results.aptc}<span style={{ fontSize: 16, fontWeight: 600 }}>{t.mo}</span></div>
               </div>
             )}
             <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
@@ -468,14 +468,14 @@ export default function QuoterPage() {
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 700 }}>{t.sort}:</span>
+              <span style={{ fontSize: 11, color: "#5a5e72", fontWeight: 700 }}>{t.sort}:</span>
               <select style={{ ...S.select, width: "auto", padding: "5px 10px", fontSize: 12 }} value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
                 <option value="afterSubsidy">{t.sortPremium}</option>
                 <option value="deductible">{t.sortDeduct}</option>
                 <option value="oopMax">{t.sortOop}</option>
                 <option value="rating">{t.sortRate}</option>
               </select>
-              <span style={{ fontSize: 12, color: "#6b7280", marginLeft: "auto" }}>{filtered?.length} {t.planCount}</span>
+              <span style={{ fontSize: 12, color: "#5a5e72", marginLeft: "auto" }}>{filtered?.length} {t.planCount}</span>
             </div>
             {filtered?.map((plan) => {
               const exp = expandedPlan === plan.id;
@@ -484,35 +484,35 @@ export default function QuoterPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <div>
                       <Badge metal={plan.metal} t={t} />
-                      <div style={{ fontSize: 14, fontWeight: 800, marginTop: 7, color: "#1a1a1a", lineHeight: 1.3 }}>{plan.name}</div>
-                      <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{plan.issuer}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, marginTop: 7, color: "#f0f1f5", lineHeight: 1.3 }}>{plan.name}</div>
+                      <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{plan.issuer}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      {plan.aptc > 0 && <div style={{ fontSize: 11, color: "#b0b0b0", textDecoration: "line-through" }}>${plan.premium}{t.mo}</div>}
-                      <div style={{ fontSize: 26, fontWeight: 900, color: "#059669", letterSpacing: -0.5 }}>${plan.afterSubsidy}</div>
-                      <div style={{ fontSize: 10, color: "#6b7280" }}>{t.mo}</div>
+                      {plan.aptc > 0 && <div style={{ fontSize: 11, color: "#5a5e72", textDecoration: "line-through" }}>${plan.premium}{t.mo}</div>}
+                      <div style={{ fontSize: 26, fontWeight: 900, color: "#10b981", letterSpacing: -0.5 }}>${plan.afterSubsidy}</div>
+                      <div style={{ fontSize: 10, color: "#5a5e72" }}>{t.mo}</div>
                     </div>
                   </div>
                   <div style={S.g4}>
                     <div style={S.stat}><div style={S.statL}>{t.deductible}</div><div style={{ ...S.statV, fontSize: 14 }}>${plan.deductible.toLocaleString()}</div></div>
                     <div style={S.stat}><div style={S.statL}>{t.oopMax}</div><div style={{ ...S.statV, fontSize: 14 }}>${plan.oopMax.toLocaleString()}</div></div>
                     <div style={S.stat}><div style={S.statL}>{t.quality}</div><Stars n={plan.rating} /></div>
-                    <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: plan.hsa ? "#059669" : "#d1d5db" }}>{plan.hsa ? "✓" : "—"}</div></div>
+                    <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: plan.hsa ? "#10b981" : "#2a2d3a" }}>{plan.hsa ? "✓" : "—"}</div></div>
                   </div>
                   {exp && (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #e5e7eb" }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: "#374151", textTransform: "uppercase", letterSpacing: 0.5 }}>Copays</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>Copays</div>
                       <div style={S.g4}>
                         <div style={S.stat}><div style={S.statL}>{t.pcp}</div><div style={{ ...S.statV, fontSize: 13 }}>{plan.pcp ? `$${plan.pcp}` : "—"}</div></div>
                         <div style={S.stat}><div style={S.statL}>{t.specialist}</div><div style={{ ...S.statV, fontSize: 13 }}>{plan.specialist ? `$${plan.specialist}` : "—"}</div></div>
                         <div style={S.stat}><div style={S.statL}>{t.rx}</div><div style={{ ...S.statV, fontSize: 13 }}>{plan.genericRx ? `$${plan.genericRx}` : "—"}</div></div>
                         <div style={S.stat}><div style={S.statL}>{t.er}</div><div style={{ ...S.statV, fontSize: 13 }}>{plan.er ? `$${plan.er}` : "—"}</div></div>
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, marginTop: 14, color: "#374151", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, marginTop: 14, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
                       <div style={S.g3}>
-                        <div style={{ ...S.stat, background: "#f0fdf4" }}><div style={S.statL}>{t.low}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yLow.toLocaleString()}</div></div>
-                        <div style={{ ...S.stat, background: "#fffbeb" }}><div style={S.statL}>{t.med}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yMed.toLocaleString()}</div></div>
-                        <div style={{ ...S.stat, background: "#fef2f2" }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yHigh.toLocaleString()}</div></div>
+                        <div style={{ ...S.stat, background: "rgba(16,185,129,0.08)" }}><div style={S.statL}>{t.low}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yLow.toLocaleString()}</div></div>
+                        <div style={{ ...S.stat, background: "rgba(251,191,36,0.08)" }}><div style={S.statL}>{t.med}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yMed.toLocaleString()}</div></div>
+                        <div style={{ ...S.stat, background: "rgba(239,68,68,0.08)" }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yHigh.toLocaleString()}</div></div>
                       </div>
                       {/* AI Plan Advisor */}
                       <AIPlanAdvisor
@@ -546,33 +546,33 @@ export default function QuoterPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
                 <div>
                   <Badge metal={plan.metal} t={t} />
-                  <div style={{ fontSize: 20, fontWeight: 900, marginTop: 8, color: "#1a1a1a", lineHeight: 1.2 }}>{plan.name}</div>
-                  <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>{plan.issuer}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, marginTop: 8, color: "#f0f1f5", lineHeight: 1.2 }}>{plan.name}</div>
+                  <div style={{ fontSize: 13, color: "#5a5e72", marginTop: 4 }}>{plan.issuer}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  {plan.aptc > 0 && <div style={{ fontSize: 12, color: "#b0b0b0", textDecoration: "line-through" }}>${plan.premium}{t.mo}</div>}
-                  <div style={{ fontSize: 36, fontWeight: 900, color: "#059669", letterSpacing: -1 }}>${plan.afterSubsidy}</div>
-                  <div style={{ fontSize: 11, color: "#6b7280" }}>{t.mo}</div>
+                  {plan.aptc > 0 && <div style={{ fontSize: 12, color: "#5a5e72", textDecoration: "line-through" }}>${plan.premium}{t.mo}</div>}
+                  <div style={{ fontSize: 36, fontWeight: 900, color: "#10b981", letterSpacing: -1 }}>${plan.afterSubsidy}</div>
+                  <div style={{ fontSize: 11, color: "#5a5e72" }}>{t.mo}</div>
                 </div>
               </div>
 
               {/* Subsidy Banner */}
               {plan.aptc > 0 && (
-                <div style={{ background: "linear-gradient(135deg, #ecfdf5, #d1fae5)", borderRadius: 10, padding: 14, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #6ee7b7" }}>
+                <div style={{ background: "linear-gradient(135deg, #ecfdf5, #d1fae5)", borderRadius: 10, padding: 14, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid rgba(16,185,129,0.2)" }}>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.subsidyLabel}</div>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{t.subsidyApplied || "Applied to your premium"}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.subsidyLabel}</div>
+                    <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{t.subsidyApplied || "Applied to your premium"}</div>
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: "#059669" }}>-${plan.aptc}{t.mo}</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: "#10b981" }}>-${plan.aptc}{t.mo}</div>
                 </div>
               )}
 
               {/* Key Numbers */}
-              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, color: "#374151", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.planDetails || "Plan Details"}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.planDetails || "Plan Details"}</div>
               <div style={S.g2}>
                 <div style={{ ...S.stat, padding: 14 }}>
                   <div style={S.statL}>{t.premium}</div>
-                  <div style={{ ...S.statV, fontSize: 20 }}>${plan.afterSubsidy}<span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280" }}>{t.mo}</span></div>
+                  <div style={{ ...S.statV, fontSize: 20 }}>${plan.afterSubsidy}<span style={{ fontSize: 11, fontWeight: 600, color: "#5a5e72" }}>{t.mo}</span></div>
                 </div>
                 <div style={{ ...S.stat, padding: 14 }}>
                   <div style={S.statL}>{t.deductible}</div>
@@ -589,7 +589,7 @@ export default function QuoterPage() {
               </div>
 
               {/* Copays */}
-              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#374151", textTransform: "uppercase", letterSpacing: 0.5 }}>Copays</div>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>Copays</div>
               <div style={S.g4}>
                 <div style={S.stat}><div style={S.statL}>{t.pcp}</div><div style={{ ...S.statV, fontSize: 15 }}>{plan.pcp ? `$${plan.pcp}` : "—"}</div></div>
                 <div style={S.stat}><div style={S.statL}>{t.specialist}</div><div style={{ ...S.statV, fontSize: 15 }}>{plan.specialist ? `$${plan.specialist}` : "—"}</div></div>
@@ -598,24 +598,24 @@ export default function QuoterPage() {
               </div>
 
               {/* Annual Cost Estimates */}
-              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#374151", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
               <div style={S.g3}>
-                <div style={{ ...S.stat, background: "#f0fdf4", padding: 14 }}><div style={S.statL}>{t.low}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yLow.toLocaleString()}</div><div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
-                <div style={{ ...S.stat, background: "#fffbeb", padding: 14 }}><div style={S.statL}>{t.med}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yMed.toLocaleString()}</div><div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
-                <div style={{ ...S.stat, background: "#fef2f2", padding: 14 }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yHigh.toLocaleString()}</div><div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
+                <div style={{ ...S.stat, background: "rgba(16,185,129,0.08)", padding: 14 }}><div style={S.statL}>{t.low}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yLow.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
+                <div style={{ ...S.stat, background: "rgba(251,191,36,0.08)", padding: 14 }}><div style={S.statL}>{t.med}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yMed.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
+                <div style={{ ...S.stat, background: "rgba(239,68,68,0.08)", padding: 14 }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yHigh.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
               </div>
 
               {/* HSA */}
               {plan.hsa && (
-                <div style={{ background: "#eff6ff", borderRadius: 8, padding: 12, marginTop: 16, fontSize: 13, color: "#1e40af", border: "1px solid #bfdbfe" }}>
+                <div style={{ background: "rgba(59,130,246,0.08)", borderRadius: 8, padding: 12, marginTop: 16, fontSize: 13, color: "#60a5fa", border: "1px solid #bfdbfe" }}>
                   ✅ {t.hsaEligible || "This plan is HSA-eligible — you can save pre-tax for medical expenses"}
                 </div>
               )}
 
               {/* Summary for lead */}
-              <div style={{ background: "#f9fafb", borderRadius: 10, padding: 16, marginTop: 20, border: "1px solid #e5e7eb" }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{t.yourInfo || "Your Information"}</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13, color: "#374151" }}>
+              <div style={{ background: "#0e1018", borderRadius: 10, padding: 16, marginTop: 20, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#5a5e72", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{t.yourInfo || "Your Information"}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13, color: "#8b8fa3" }}>
                   <div>👤 {leadName}</div>
                   <div>📞 {leadPhone}</div>
                   <div>📍 {county?.name}, {county?.state} {zip}</div>
@@ -644,22 +644,22 @@ export default function QuoterPage() {
         {step === 7 && (
           <div style={S.tyCard}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#064e3b", marginBottom: 8 }}>{t.tyTitle}</div>
-            <div style={{ fontSize: 14, color: "#065f46", marginBottom: 16, lineHeight: 1.6 }}>{t.tySub}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#10b981", marginBottom: 8 }}>{t.tyTitle}</div>
+            <div style={{ fontSize: 14, color: "#10b981", marginBottom: 16, lineHeight: 1.6 }}>{t.tySub}</div>
             {selectedPlanId && results && (() => {
               const plan = results.plans.find((p: any) => p.id === selectedPlanId);
               if (!plan) return null;
               return (
-                <div style={{ background: "#fff", borderRadius: 10, padding: 16, marginBottom: 16, textAlign: "left", border: "1px solid #d1fae5" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{t.tySelected}</div>
+                <div style={{ background: "#0e1018", borderRadius: 10, padding: 16, marginBottom: 16, textAlign: "left", border: "1px solid #d1fae5" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a5e72", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{t.tySelected}</div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div><Badge metal={plan.metal} t={t} /><div style={{ fontSize: 14, fontWeight: 800, marginTop: 6 }}>{plan.name}</div></div>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: "#059669" }}>${plan.afterSubsidy}<span style={{ fontSize: 12, fontWeight: 600 }}>{t.mo}</span></div>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: "#10b981" }}>${plan.afterSubsidy}<span style={{ fontSize: 12, fontWeight: 600 }}>{t.mo}</span></div>
                   </div>
                 </div>
               );
             })()}
-            <div style={{ fontSize: 13, color: "#065f46", lineHeight: 1.6 }}>{t.tyDetail}</div>
+            <div style={{ fontSize: 13, color: "#10b981", lineHeight: 1.6 }}>{t.tyDetail}</div>
             <button style={{ ...S.btn, ...S.sec, marginTop: 20 }} onClick={resetAll}>{t.newQuote}</button>
           </div>
         )}

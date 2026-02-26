@@ -152,7 +152,7 @@ export default function CMSConsentForm({
     canvas.width = rect.width * 2;
     canvas.height = rect.height * 2;
     ctx.scale(2, 2);
-    ctx.strokeStyle = "#1a1a1a";
+    ctx.strokeStyle = "#f0f1f5";
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -226,39 +226,39 @@ export default function CMSConsentForm({
 
   // Styles
   const card: React.CSSProperties = {
-    background: "#fff", borderRadius: 16, padding: "24px 20px",
-    boxShadow: "0 2px 12px rgba(0,0,0,.06)", maxWidth: 640, margin: "0 auto",
+    background: "#12141c", borderRadius: 16, padding: "24px 20px",
+    boxShadow: "0 2px 12px rgba(0,0,0,.3)", maxWidth: 640, margin: "0 auto",
   };
   const sectionTitle: React.CSSProperties = {
-    fontSize: 14, fontWeight: 800, color: "#064e3b", marginBottom: 6,
+    fontSize: 14, fontWeight: 800, color: "#10b981", marginBottom: 6,
     textTransform: "uppercase", letterSpacing: 0.5,
     display: "flex", alignItems: "center", gap: 8,
   };
   const legalText: React.CSSProperties = {
-    fontSize: 12.5, lineHeight: 1.7, color: "#374151", marginBottom: 12,
+    fontSize: 12.5, lineHeight: 1.7, color: "#8b8fa3", marginBottom: 12,
   };
   const bulletItem: React.CSSProperties = {
-    fontSize: 12.5, lineHeight: 1.6, color: "#374151", paddingLeft: 20,
+    fontSize: 12.5, lineHeight: 1.6, color: "#8b8fa3", paddingLeft: 20,
     position: "relative" as const, marginBottom: 4,
   };
   const bulletDot: React.CSSProperties = {
     position: "absolute" as const, left: 6, top: 8,
-    width: 5, height: 5, borderRadius: "50%", background: "#059669",
+    width: 5, height: 5, borderRadius: "50%", background: "#10b981",
   };
   const divider: React.CSSProperties = {
-    height: 1, background: "#e5e7eb", margin: "18px 0",
+    height: 1, background: "rgba(255,255,255,0.06)", margin: "18px 0",
   };
   const checkRow: React.CSSProperties = {
     display: "flex", alignItems: "flex-start", gap: 10,
     marginBottom: 12, cursor: "pointer",
   };
   const infoBox: React.CSSProperties = {
-    background: "#f0fdf4", borderRadius: 10, padding: 14,
-    border: "1px solid #bbf7d0", marginBottom: 16,
+    background: "rgba(16,185,129,0.08)", borderRadius: 10, padding: 14,
+    border: "1px solid rgba(16,185,129,0.2)", marginBottom: 16,
   };
   const infoRow: React.CSSProperties = {
     display: "grid", gridTemplateColumns: "1fr 1fr",
-    gap: 6, fontSize: 12, color: "#374151",
+    gap: 6, fontSize: 12, color: "#8b8fa3",
   };
   const btn: React.CSSProperties = {
     padding: "14px 28px", borderRadius: 10, border: "none",
@@ -270,13 +270,13 @@ export default function CMSConsentForm({
     <div style={card}>
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: "#059669", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+        <div style={{ fontSize: 13, color: "#10b981", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
           📋 CMS Marketplace
         </div>
-        <div style={{ fontSize: 20, fontWeight: 900, color: "#064e3b", lineHeight: 1.2 }}>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "#10b981", lineHeight: 1.2 }}>
           {txt.title}
         </div>
-        <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+        <div style={{ fontSize: 13, color: "#5a5e72", marginTop: 4 }}>
           {txt.subtitle}
         </div>
       </div>
@@ -292,7 +292,7 @@ export default function CMSConsentForm({
           catastrophic: { en: "Catastrophic", es: "Catastrófico" },
         };
         const metalColors: Record<string, string> = {
-          catastrophic: "#374151", bronze: "#92400e", silver: "#6b7280", gold: "#b45309", platinum: "#4338ca",
+          catastrophic: "#6b7280", bronze: "#92400e", silver: "#9ca3af", gold: "#b45309", platinum: "#4338ca",
         };
         const metalLabel = metalLabels[selectedPlan.metal]?.[isEs ? "es" : "en"] || selectedPlan.metal;
         return (
@@ -301,7 +301,7 @@ export default function CMSConsentForm({
             border: "1.5px solid #6ee7b7",
             borderRadius: 12, padding: 16, marginBottom: 20,
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
               {isEs ? "Plan seleccionado" : "Selected Plan"}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
@@ -309,43 +309,43 @@ export default function CMSConsentForm({
                 <span style={{
                   display: "inline-block", padding: "2px 10px", borderRadius: 4,
                   fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8,
-                  color: "#fff", backgroundColor: metalColors[selectedPlan.metal] || "#6b7280",
+                  color: "#fff", backgroundColor: metalColors[selectedPlan.metal] || "#5a5e72",
                 }}>
                   {metalLabel}
                 </span>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a", marginTop: 6, lineHeight: 1.3 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#f0f1f5", marginTop: 6, lineHeight: 1.3 }}>
                   {selectedPlan.name}
                 </div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "#5a5e72", marginTop: 2 }}>
                   {selectedPlan.issuer}
                 </div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
                 {selectedPlan.afterSubsidy < selectedPlan.premium && (
-                  <div style={{ fontSize: 11, color: "#b0b0b0", textDecoration: "line-through" }}>
+                  <div style={{ fontSize: 11, color: "#5a5e72", textDecoration: "line-through" }}>
                     ${selectedPlan.premium}{isEs ? "/mes" : "/mo"}
                   </div>
                 )}
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#059669", letterSpacing: -0.5 }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#10b981", letterSpacing: -0.5 }}>
                   ${selectedPlan.afterSubsidy}
                 </div>
-                <div style={{ fontSize: 10, color: "#6b7280" }}>{isEs ? "/mes" : "/mo"}</div>
+                <div style={{ fontSize: 10, color: "#5a5e72" }}>{isEs ? "/mes" : "/mo"}</div>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div style={{ background: "rgba(255,255,255,.7)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
+              <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#5a5e72", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
                   {isEs ? "Prima mensual" : "Monthly Premium"}
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 2 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f1f5", marginTop: 2 }}>
                   ${selectedPlan.afterSubsidy}
                 </div>
               </div>
-              <div style={{ background: "rgba(255,255,255,.7)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
+              <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#5a5e72", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
                   {isEs ? "Deducible" : "Deductible"}
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 2 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f1f5", marginTop: 2 }}>
                   ${selectedPlan.deductible.toLocaleString()}
                 </div>
               </div>
@@ -361,7 +361,7 @@ export default function CMSConsentForm({
       <div style={legalText}>
         {txt.part1Body(consumerName, agentDisplay)}
       </div>
-      <div style={{ ...legalText, fontWeight: 600, color: "#064e3b", marginBottom: 8 }}>
+      <div style={{ ...legalText, fontWeight: 600, color: "#10b981", marginBottom: 8 }}>
         {txt.authIntro}
       </div>
       {txt.authItems.map((item, i) => (
@@ -370,13 +370,13 @@ export default function CMSConsentForm({
           {item}
         </div>
       ))}
-      <div style={{ ...legalText, marginTop: 12, fontStyle: "italic", color: "#6b7280" }}>
+      <div style={{ ...legalText, marginTop: 12, fontStyle: "italic", color: "#5a5e72" }}>
         {txt.privacyNote}
       </div>
 
       {/* Duration */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#8b8fa3", marginBottom: 6 }}>
           {txt.durationLabel}
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -387,8 +387,8 @@ export default function CMSConsentForm({
               style={{
                 padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600,
                 border: duration === opt ? "1.5px solid #059669" : "1px solid #d1d5db",
-                background: duration === opt ? "#ecfdf5" : "#fff",
-                color: duration === opt ? "#059669" : "#6b7280",
+                background: duration === opt ? "rgba(16,185,129,0.1)" : "#12141c",
+                color: duration === opt ? "#10b981" : "#5a5e72",
                 cursor: "pointer", fontFamily: "inherit",
               }}
             >
@@ -396,7 +396,7 @@ export default function CMSConsentForm({
             </button>
           ))}
         </div>
-        <div style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 6 }}>
+        <div style={{ fontSize: 11.5, color: "#5a5e72", marginTop: 6 }}>
           {txt.revokeNote(txt.revokeMethod)}
         </div>
       </div>
@@ -445,9 +445,9 @@ export default function CMSConsentForm({
           type="checkbox"
           checked={checkConsent}
           onChange={() => setCheckConsent(!checkConsent)}
-          style={{ width: 20, height: 20, accentColor: "#059669", cursor: "pointer", flexShrink: 0, marginTop: 1 }}
+          style={{ width: 20, height: 20, accentColor: "#10b981", cursor: "pointer", flexShrink: 0, marginTop: 1 }}
         />
-        <span style={{ fontSize: 13, color: "#1f2937", lineHeight: 1.5 }}>
+        <span style={{ fontSize: 13, color: "#f0f1f5", lineHeight: 1.5 }}>
           {txt.checkConsent}
         </span>
       </label>
@@ -456,9 +456,9 @@ export default function CMSConsentForm({
           type="checkbox"
           checked={checkEligibility}
           onChange={() => setCheckEligibility(!checkEligibility)}
-          style={{ width: 20, height: 20, accentColor: "#059669", cursor: "pointer", flexShrink: 0, marginTop: 1 }}
+          style={{ width: 20, height: 20, accentColor: "#10b981", cursor: "pointer", flexShrink: 0, marginTop: 1 }}
         />
-        <span style={{ fontSize: 13, color: "#1f2937", lineHeight: 1.5 }}>
+        <span style={{ fontSize: 13, color: "#f0f1f5", lineHeight: 1.5 }}>
           {txt.checkEligibility}
         </span>
       </label>
@@ -466,7 +466,7 @@ export default function CMSConsentForm({
       {/* Signature Pad */}
       <div style={{ marginTop: 8, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{txt.signHere}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#8b8fa3" }}>{txt.signHere}</div>
           {hasSig && (
             <button onClick={clearSig} style={{
               fontSize: 11, color: "#ef4444", background: "none", border: "none",
@@ -476,7 +476,7 @@ export default function CMSConsentForm({
         </div>
         <div style={{
           border: showError && !hasSig ? "2px solid #ef4444" : "1.5px solid #d1d5db",
-          borderRadius: 10, overflow: "hidden", background: "#fafafa",
+          borderRadius: 10, overflow: "hidden", background: "#0e1018",
           touchAction: "none",
         }}>
           <canvas
@@ -495,15 +495,15 @@ export default function CMSConsentForm({
           <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{txt.sigRequired}</div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-          <div style={{ fontSize: 11, color: "#9ca3af" }}>{txt.dateLine}: {dateStr}</div>
-          <div style={{ fontSize: 10, color: "#d1d5db" }}>{txt.cmsRef}</div>
+          <div style={{ fontSize: 11, color: "#5a5e72" }}>{txt.dateLine}: {dateStr}</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.1)" }}>{txt.cmsRef}</div>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div style={{ display: "flex", gap: 10 }}>
         <button onClick={onBack} style={{
-          ...btn, flex: 1, background: "#f3f4f6", color: "#374151",
+          ...btn, flex: 1, background: "#181a24", color: "#8b8fa3",
           border: "1px solid #e5e7eb",
         }}>
           {txt.back}
@@ -513,8 +513,8 @@ export default function CMSConsentForm({
           disabled={!isValid}
           style={{
             ...btn, flex: 2,
-            background: isValid ? "#059669" : "#d1d5db",
-            color: isValid ? "#fff" : "#9ca3af",
+            background: isValid ? "#10b981" : "rgba(255,255,255,0.1)",
+            color: isValid ? "#fff" : "#5a5e72",
           }}
         >
           {txt.submit}

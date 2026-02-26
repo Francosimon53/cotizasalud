@@ -70,6 +70,140 @@ function StepLabel({ num, label }: { num: number; label: string }) {
   );
 }
 
+// ==================== SUBSIDY CLIFF ALERT ====================
+function SubsidyCliffAlert({ fplPct, income, houseSize, lang }: {
+  fplPct: number; income: number; houseSize: number; lang: string;
+}) {
+  const [open, setOpen] = useState(true);
+
+  const fplBase = 15650 + (houseSize - 1) * 5500;
+  const threshold400 = fplBase * 4;
+  const isEs = lang === "es";
+
+  type Zone = "medicaid" | "green" | "yellow" | "red";
+  let zone: Zone;
+  if (fplPct < 138) zone = "medicaid";
+  else if (fplPct < 350) zone = "green";
+  else if (fplPct <= 400) zone = "yellow";
+  else zone = "red";
+
+  const cfg = {
+    medicaid: {
+      icon: "ℹ️", color: "#60a5fa",
+      bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.25)",
+      title: isEs ? "Posible elegibilidad para Medicaid" : "Possible Medicaid Eligibility",
+      body: isEs
+        ? "Con este ingreso podrías calificar para Medicaid en Florida. Te recomendamos verificar tu elegibilidad antes de comprar un plan del Marketplace."
+        : "At this income level, you may qualify for Medicaid in Florida. We recommend verifying your eligibility before purchasing a Marketplace plan.",
+    },
+    green: {
+      icon: "✅", color: "#10b981",
+      bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.25)",
+      title: isEs ? "Calificas para subsidio APTC" : "You qualify for APTC subsidy",
+      body: isEs
+        ? "Tu estimado de ahorro aparecerá en los planes. Estás en una zona cómoda, lejos del límite de subsidio."
+        : "Your estimated savings will appear on plans. You're in a comfortable zone, well below the subsidy cliff.",
+    },
+    yellow: {
+      icon: "⚠️", color: "#fbbf24",
+      bg: "rgba(251,191,36,0.08)", border: "rgba(251,191,36,0.3)",
+      title: isEs ? "Cerca del límite de subsidio" : "Near the Subsidy Cliff",
+      body: isEs
+        ? `Tu ingreso está cerca del límite de subsidio (400% FPL). Si tu ingreso real en 2026 supera $${threshold400.toLocaleString()}, perderías TODO el subsidio.\n\nTip: Contribuciones a HSA o cuentas de retiro pre-tax pueden reducir tu ingreso elegible (MAGI).`
+        : `Your income is near the subsidy cliff (400% FPL). If your actual 2026 income exceeds $${threshold400.toLocaleString()}, you'd lose ALL subsidy.\n\nTip: HSA contributions or pre-tax retirement accounts can reduce your eligible income (MAGI).`,
+    },
+    red: {
+      icon: "🚨", color: "#ef4444",
+      bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.3)",
+      title: isEs ? "Subsidy Cliff — Sin subsidio" : "Subsidy Cliff — No Subsidy",
+      body: isEs
+        ? "Tu ingreso supera el 400% del nivel federal de pobreza. No calificas para subsidio APTC en 2026. Tu prima será el precio completo.\n\nOpciones: Revisa si puedes reducir tu MAGI con HSA ($4,150 individual / $8,300 familia) o contribuciones a IRA tradicional."
+        : "Your income exceeds 400% of the Federal Poverty Level. You don't qualify for APTC subsidy in 2026. Your premium will be full price.\n\nOptions: Check if you can reduce your MAGI with HSA ($4,150 individual / $8,300 family) or traditional IRA contributions.",
+    },
+  };
+
+  const a = cfg[zone];
+  const meterMax = 500;
+  const pctPos = Math.min((fplPct / meterMax) * 100, 100);
+  const z300 = (300 / meterMax) * 100;
+  const z380 = (380 / meterMax) * 100;
+  const z400 = (400 / meterMax) * 100;
+
+  return (
+    <div style={{ background: a.bg, border: `1px solid ${a.border}`, borderRadius: 10, marginBottom: 18, overflow: "hidden" }}>
+      {/* Header — always visible */}
+      <div onClick={() => setOpen(!open)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", cursor: "pointer" }}>
+        <span style={{ fontSize: 18 }}>{a.icon}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: a.color }}>{a.title}</div>
+          <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>
+            ${income.toLocaleString()}{isEs ? "/año" : "/yr"} · {fplPct}% FPL · {houseSize}{isEs ? " personas" : "p"}
+          </div>
+        </div>
+        <span style={{ fontSize: 11, color: "#5a5e72", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
+      </div>
+
+      {/* Collapsible body */}
+      {open && (
+        <div style={{ padding: "0 16px 16px" }}>
+          {/* FPL Meter */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ position: "relative", height: 8, borderRadius: 4, background: "rgba(255,255,255,0.06)" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${z300}%`, borderRadius: "4px 0 0 4px", background: "rgba(16,185,129,0.4)" }} />
+              <div style={{ position: "absolute", left: `${z300}%`, top: 0, bottom: 0, width: `${z380 - z300}%`, background: "rgba(251,191,36,0.4)" }} />
+              <div style={{ position: "absolute", left: `${z380}%`, top: 0, bottom: 0, width: `${z400 - z380}%`, background: "rgba(249,115,22,0.5)" }} />
+              <div style={{ position: "absolute", left: `${z400}%`, top: 0, bottom: 0, right: 0, borderRadius: "0 4px 4px 0", background: "rgba(239,68,68,0.4)" }} />
+              <div style={{ position: "absolute", left: `${z400}%`, top: -4, bottom: -4, width: 2, background: "#ef4444", zIndex: 2 }} />
+              <div style={{ position: "absolute", left: `${pctPos}%`, top: "50%", transform: "translate(-50%, -50%)", width: 14, height: 14, borderRadius: 7, background: a.color, border: "2px solid #08090d", zIndex: 3, boxShadow: `0 0 8px ${a.color}40` }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 9, color: "#5a5e72", fontWeight: 600 }}>
+              <span>138%</span>
+              <span>300%</span>
+              <span style={{ color: "#ef4444", fontWeight: 800 }}>400%</span>
+              <span>500%</span>
+            </div>
+          </div>
+
+          {/* Alert message */}
+          <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "#8b8fa3" }}>
+            {a.body.split("\n\n").map((p, i) => (
+              <div key={i} style={{ marginBottom: i < a.body.split("\n\n").length - 1 ? 8 : 0 }}>
+                {i > 0 && <span style={{ color: a.color, fontWeight: 700 }}>💡 </span>}{p}
+              </div>
+            ))}
+          </div>
+
+          {/* Threshold callout for yellow/red */}
+          {(zone === "yellow" || zone === "red") && (
+            <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 16, alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {isEs ? "Límite 400% FPL" : "400% FPL Threshold"}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>${threshold400.toLocaleString()}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {isEs ? "Tu ingreso" : "Your Income"}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: a.color, marginTop: 2 }}>${income.toLocaleString()}</div>
+              </div>
+              {zone === "yellow" && (
+                <div style={{ marginLeft: "auto" }}>
+                  <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    {isEs ? "Margen" : "Buffer"}
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#fbbf24", marginTop: 2 }}>${(threshold400 - income).toLocaleString()}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ==================== STYLES ====================
 const S = {
   app: { fontFamily: "'Satoshi', 'DM Sans', 'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: "#08090d", color: "#f0f1f5" } as React.CSSProperties,
@@ -302,7 +436,7 @@ export default function QuoterPage() {
         <div style={{ ...S.hero, paddingBottom: 44 }}>
           <div style={{ color: "#fff", fontSize: 20, fontWeight: 800 }}>{t.s4}</div>
           <div style={{ color: "rgba(255,255,255,.6)", fontSize: 13, marginTop: 4 }}>
-            {county?.name}, {county?.state} · {house.length}p · ${Number(income).toLocaleString()}/yr
+            {county?.name}, {county?.state} · {house.length}p · ${Number(income).toLocaleString()}{lang === "es" ? "/año" : "/yr"} ({fpl}% FPL)
           </div>
         </div>
       )}
@@ -456,6 +590,9 @@ export default function QuoterPage() {
         {/* Step 5: Plans */}
         {step === 5 && results && (
           <div>
+            {/* Subsidy Cliff Alert */}
+            <SubsidyCliffAlert fplPct={fpl} income={Number(income)} houseSize={house.length} lang={lang} />
+
             {results.aptc > 0 && (
               <div style={S.subBanner}>
                 <div style={{ fontSize: 12, color: "#10b981", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{t.subsidyLabel}</div>

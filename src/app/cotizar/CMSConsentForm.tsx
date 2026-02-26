@@ -301,7 +301,7 @@ export default function CMSConsentForm({
             border: "1.5px solid #6ee7b7",
             borderRadius: 12, padding: 16, marginBottom: 20,
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
               {isEs ? "Plan seleccionado" : "Selected Plan"}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
@@ -309,43 +309,43 @@ export default function CMSConsentForm({
                 <span style={{
                   display: "inline-block", padding: "2px 10px", borderRadius: 4,
                   fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8,
-                  color: "#fff", backgroundColor: metalColors[selectedPlan.metal] || "#5a5e72",
+                  color: "#fff", backgroundColor: metalColors[selectedPlan.metal] || "#6b7280",
                 }}>
                   {metalLabel}
                 </span>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#f0f1f5", marginTop: 6, lineHeight: 1.3 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a", marginTop: 6, lineHeight: 1.3 }}>
                   {selectedPlan.name}
                 </div>
-                <div style={{ fontSize: 12, color: "#5a5e72", marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
                   {selectedPlan.issuer}
                 </div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
                 {selectedPlan.afterSubsidy < selectedPlan.premium && (
-                  <div style={{ fontSize: 11, color: "#5a5e72", textDecoration: "line-through" }}>
+                  <div style={{ fontSize: 11, color: "#9ca3af", textDecoration: "line-through" }}>
                     ${selectedPlan.premium}{isEs ? "/mes" : "/mo"}
                   </div>
                 )}
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#10b981", letterSpacing: -0.5 }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#059669", letterSpacing: -0.5 }}>
                   ${selectedPlan.afterSubsidy}
                 </div>
-                <div style={{ fontSize: 10, color: "#5a5e72" }}>{isEs ? "/mes" : "/mo"}</div>
+                <div style={{ fontSize: 10, color: "#6b7280" }}>{isEs ? "/mes" : "/mo"}</div>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#5a5e72", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
+              <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
                   {isEs ? "Prima mensual" : "Monthly Premium"}
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f1f5", marginTop: 2 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 2 }}>
                   ${selectedPlan.afterSubsidy}
                 </div>
               </div>
-              <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#5a5e72", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
+              <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
                   {isEs ? "Deducible" : "Deductible"}
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f1f5", marginTop: 2 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 2 }}>
                   ${selectedPlan.deductible.toLocaleString()}
                 </div>
               </div>

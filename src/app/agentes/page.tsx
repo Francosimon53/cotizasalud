@@ -989,8 +989,8 @@ export default function AgentesPage() {
           <div className="ag-stat-label">Bilingüe ES/EN</div>
         </div>
         <div className="ag-stat">
-          <div className="ag-stat-value">22M</div>
-          <div className="ag-stat-label">Afectados por el Subsidy Cliff</div>
+          <div className="ag-stat-value">1 IA</div>
+          <div className="ag-stat-label">Plan + Finanzas + Ahorro en una explicación</div>
         </div>
       </div>
 
@@ -998,11 +998,9 @@ export default function AgentesPage() {
       <section className="ag-ai-section" id="ai-advisor">
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="ag-section-label ag-reveal">Función estrella</div>
-          <h2 className="ag-reveal">Tu <em>asistente de IA</em> que explica cada plan</h2>
+          <h2 className="ag-reveal">Tu <em>asesor de salud</em> con inteligencia artificial</h2>
           <p className="ag-section-desc ag-reveal">
-            El AI Plan Advisor analiza el perfil de tu cliente y explica cada plan
-            con escenarios reales — copagos, deducibles, costos de emergencia —
-            en el idioma que tu cliente entienda mejor.
+            Un solo asesor de IA que le explica a tu cliente TODO: qué cubre el plan, cuánto cuesta en la vida real, qué cambió en 2026 vs 2025, y si hay estrategias para pagar menos — en español simple, sin jerga de seguros.
           </p>
 
           <div className="ag-ai-grid">
@@ -1017,34 +1015,35 @@ export default function AgentesPage() {
               </div>
 
               <div className="ag-ai-chat-msg user" style={{ animationDelay: "0.3s" }}>
-                Mi cliente gana $63,000 al año, familia de 1. ¿Qué opciones tiene?
+                Mi cliente gana $65,000 al año, familia de 1. Explícame el plan Bronze HSA.
               </div>
 
               <div className="ag-ai-chat-msg ai" style={{ animationDelay: "0.8s" }}>
-                ⚠️ <strong>Atención:</strong> Con $63,000 tu cliente está justo sobre el Subsidy Cliff (400% FPL = $62,600). Pierde <strong>TODO</strong> el subsidio APTC.<br /><br />
-                💡 <strong>Estrategia:</strong> Si abre una HSA y contribuye $4,300, su MAGI baja a $58,700 — vuelve a calificar para subsidio.<br /><br />
-                Con subsidio recuperado, el plan <strong>Ambetter Bronze HSA</strong> le costaría <strong>~$0/mes</strong> en vez de $450/mes. Ahorro anual: <strong>~$5,400</strong>.<br /><br />
-                <em>¿Quieres que le muestre los planes HSA-elegibles?</em>
+                <strong>Blue Cross Bronze HSA — Tu Guía Completa</strong><br /><br />
+                Este plan es ideal si buscas la prima más baja: <strong>$254/mes</strong>. Funciona como una membresía de gym económica — pagas poco mensual, pero si necesitas algo grande, gastas más de tu bolsillo.<br /><br />
+                <strong>📉 Lo que cambió en 2026:</strong> El año pasado, con tu mismo ingreso, hubieras pagado ~$80/mes porque el gobierno ayudaba a todos. Esa protección expiró. Ahora pagas $254 — son <strong>$174 más al mes</strong>, o sea <strong>$2,088 al año</strong>.<br /><br />
+                <strong>💡 Pero hay buenas noticias:</strong> Este plan tiene cuenta de ahorros médicos. Si depositas $4,300, tu ingreso para el gobierno baja de $65,000 a $60,700 — debajo del límite de $62,600. <strong>Recuperas el descuento y tu prima podría bajar a ~$0/mes.</strong><br /><br />
+                <strong>✅ Lo que te recomiendo:</strong> Elige este plan, abre una cuenta de ahorros médicos, y deposita $4,300. Te ahorras ~$3,048/año en primas + $946 en impuestos = <strong>$3,994 de ahorro total.</strong>
               </div>
             </div>
 
             {/* Feature Cards */}
             <div className="ag-ai-features-list ag-reveal">
               <div className="ag-ai-feature-card">
-                <h4>🎯 Escenarios personalizados</h4>
-                <p>La IA calcula costos reales basándose en el perfil familiar — embarazos, condiciones crónicas, niños, medicamentos frecuentes.</p>
+                <h4>🧠 Un asesor, todo incluido</h4>
+                <p>Plan de salud + situación financiera + estrategia de ahorro + comparación con el año pasado — todo en una sola explicación, sin necesidad de abrir 4 pantallas diferentes.</p>
               </div>
               <div className="ag-ai-feature-card">
-                <h4>🌐 Bilingüe nativo</h4>
-                <p>Explica en español o inglés con terminología que tu cliente realmente entiende. Nada de jerga de seguros.</p>
+                <h4>📉 Comparación 2025 vs 2026 automática</h4>
+                <p>La IA le muestra a tu cliente exactamente cuánto más está pagando vs el año pasado y por qué. El gancho perfecto para que entienda la urgencia de actuar.</p>
               </div>
               <div className="ag-ai-feature-card">
-                <h4>⚡ Respuestas en segundos</h4>
-                <p>Tu cliente pregunta, la IA responde al instante. Sin esperas, sin "déjame revisar". Cierra más rápido.</p>
+                <h4>🗣️ Cero jerga, puro español</h4>
+                <p>Nada de MAGI, FPL, APTC ni siglas. La IA habla como un amigo que sabe de seguros: &ldquo;el descuento del gobierno&rdquo;, &ldquo;tu cuenta de ahorros médicos&rdquo;. Tu cliente entiende todo a la primera.</p>
               </div>
               <div className="ag-ai-feature-card">
-                <h4>🏦 Educación HSA integrada</h4>
-                <p>Tu cliente pregunta &ldquo;¿Qué es una HSA?&rdquo; y la plataforma le explica en español simple con ejemplos reales. Ahórrales 15 minutos por cliente.</p>
+                <h4>💰 Estrategia financiera personalizada</h4>
+                <p>Si tu cliente está cerca del límite o sobre él, la IA calcula exactamente cuánto depositar para recuperar el descuento del gobierno. Con sus números reales, no ejemplos genéricos.</p>
               </div>
             </div>
           </div>
@@ -1078,9 +1077,9 @@ export default function AgentesPage() {
             <p>Ve quién cotizó, qué plan eligió, y si firmó el consent. Pipeline visual para que no se te escape ningún prospecto.</p>
           </div>
           <div className="ag-bento-card wide ag-reveal">
-            <div className="ag-bento-icon red">🚨</div>
-            <h3>Subsidy Cliff Alert 2026</h3>
-            <p>Detecta automáticamente si tu cliente está cerca del límite del 400% FPL. Sugiere estrategias legales como HSA y contribuciones pre-tax para mantener el subsidio. Ningún otro cotizador tiene esto.</p>
+            <div className="ag-bento-icon red">🧠</div>
+            <h3>Asesor IA Unificado</h3>
+            <p>Una sola inteligencia artificial que explica el plan, tu situación financiera, qué cambió en 2026, y te da una recomendación clara de qué hacer. En español simple, con tus números reales.</p>
           </div>
         </div>
       </section>
@@ -1126,7 +1125,7 @@ export default function AgentesPage() {
           </div>
           <div className="ag-testimonial ag-reveal">
             <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;La alerta del Subsidy Cliff me salvó con 3 clientes que iban a perder su subsidio. Les recomendé abrir una HSA y mantuvieron sus planes a $0/mes. Eso no lo hace ninguna otra herramienta.&rdquo;</p>
+            <p className="ag-testimonial-text">&ldquo;La IA le explicó a mi cliente que estaba pagando $200 más al mes que el año pasado y exactamente cómo recuperar ese dinero. El cliente abrió su cuenta de ahorros médicos ese mismo día. Ninguna otra herramienta hace eso.&rdquo;</p>
             <div className="ag-testimonial-author">
               <div className="ag-testimonial-avatar">RM</div>
               <div className="ag-testimonial-info">

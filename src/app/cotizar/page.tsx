@@ -636,33 +636,23 @@ export default function QuoterPage() {
                     <div style={S.stat}><div style={S.statL}>{t.deductible}</div><div style={{ ...S.statV, fontSize: 14 }}>${plan.deductible.toLocaleString()}</div></div>
                     <div style={S.stat}><div style={S.statL}>{t.oopMax}</div><div style={{ ...S.statV, fontSize: 14 }}>${plan.oopMax.toLocaleString()}</div></div>
                     <div style={S.stat}><div style={S.statL}>{t.quality}</div><Stars n={plan.rating} /></div>
-                    {(() => {
-                      const hsaHighlight = plan.hsa && fpl >= 350;
-                      const hsaUrgent = plan.hsa && fpl > 400;
-                      if (hsaHighlight) {
-                        return (
-                          <div style={{
-                            ...S.stat,
-                            background: hsaUrgent ? "rgba(251,191,36,0.12)" : "rgba(16,185,129,0.12)",
-                            border: `1px solid ${hsaUrgent ? "rgba(251,191,36,0.3)" : "rgba(16,185,129,0.25)"}`,
-                            borderRadius: 8, padding: "8px 10px", gridColumn: "1 / -1",
-                            animation: "hsa-glow 2s ease-in-out infinite",
-                          }}>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: hsaUrgent ? "#fbbf24" : "#10b981", display: "flex", alignItems: "center", gap: 6 }}>
-                              {hsaUrgent ? "🏦" : "✓"} HSA
-                            </div>
-                            <div style={{ fontSize: 11, color: hsaUrgent ? "#fcd34d" : "#34d399", fontWeight: 600, marginTop: 2 }}>
-                              {hsaUrgent
-                                ? (lang === "es" ? "Podría devolverte el subsidio" : "Could restore your subsidy")
-                                : (lang === "es" ? "Puede reducir tu ingreso" : "Can lower your income")}
-                            </div>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: plan.hsa ? "#10b981" : "#2a2d3a" }}>{plan.hsa ? "✓" : "—"}</div></div>
-                      );
-                    })()}
+                    {plan.hsa && fpl >= 350 ? (
+                      <div style={{
+                        ...S.stat,
+                        background: fpl > 400 ? "rgba(251,191,36,0.12)" : "rgba(16,185,129,0.12)",
+                        border: `1px solid ${fpl > 400 ? "rgba(251,191,36,0.3)" : "rgba(16,185,129,0.25)"}`,
+                        borderRadius: 8, padding: "8px 10px", gridColumn: "1 / -1",
+                        animation: "hsa-glow 2s ease-in-out infinite",
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: fpl > 400 ? "#fbbf24" : "#10b981" }}>
+                          🏦 HSA {lang === "es" ? "Elegible" : "Eligible"} — {fpl > 400
+                            ? (lang === "es" ? "Ver cómo recuperar tu subsidio ↓" : "See how to restore your subsidy ↓")
+                            : (lang === "es" ? "Ver cómo proteger tu subsidio ↓" : "See how to protect your subsidy ↓")}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: plan.hsa ? "#10b981" : "#2a2d3a" }}>{plan.hsa ? "✓" : "—"}</div></div>
+                    )}
                   </div>
                   {exp && (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #e5e7eb" }}>
@@ -679,6 +669,195 @@ export default function QuoterPage() {
                         <div style={{ ...S.stat, background: "rgba(251,191,36,0.08)" }}><div style={S.statL}>{t.med}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yMed.toLocaleString()}</div></div>
                         <div style={{ ...S.stat, background: "rgba(239,68,68,0.08)" }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yHigh.toLocaleString()}</div></div>
                       </div>
+
+                      {/* HSA Education Card — only for HSA plans when FPL >= 350% */}
+                      {plan.hsa && fpl >= 350 && (() => {
+                        const isEs = lang === "es";
+                        const userIncome = Number(income);
+                        const fplBase = 15650 + (house.length - 1) * 5500;
+                        const threshold400 = fplBase * 4;
+                        const overCliff = fpl > 400;
+                        const excess = userIncome - threshold400;
+                        const hsaLimit = house.length >= 2 ? 8550 : 4300;
+                        const contribution = overCliff ? Math.min(excess + 100, hsaLimit) : 0;
+                        const newMagi = userIncome - contribution;
+                        const recoversSubsidy = newMagi < threshold400;
+                        const estMonthlySavings = recoversSubsidy ? (fpl > 450 ? 300 : fpl > 420 ? 400 : 500) : 0;
+
+                        const sH = { fontSize: 13, fontWeight: 700 as const, color: "#10b981", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6 };
+                        const sP = { fontSize: 12.5, lineHeight: 1.65, color: "#8b8fa3", marginBottom: 0 };
+                        const sBullet = { display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3, fontSize: 12.5, color: "#8b8fa3" as const };
+                        const sDot = { color: "#10b981", fontSize: 8, marginTop: 6, flexShrink: 0 as const };
+
+                        return (
+                          <div onClick={(e) => e.stopPropagation()} style={{
+                            marginTop: 16, background: "#1a1c26", borderRadius: 10,
+                            borderLeft: "4px solid #10b981", border: "1px solid rgba(16,185,129,0.2)",
+                            borderLeftWidth: 4, overflow: "hidden",
+                          }}>
+                            <div style={{ padding: "16px 16px 14px" }}>
+                              {/* Title */}
+                              <div style={{ fontSize: 15, fontWeight: 800, color: "#f0f1f5", display: "flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ fontSize: 18 }}>🏦</span>
+                                {isEs ? "Plan Elegible para HSA (Health Savings Account)" : "HSA-Eligible Plan (Health Savings Account)"}
+                              </div>
+
+                              {/* Section 1 — What is an HSA */}
+                              <div style={sH}>
+                                {isEs ? "¿Qué es una HSA?" : "What is an HSA?"}
+                              </div>
+                              <div style={sP}>
+                                {isEs
+                                  ? "Una HSA es una cuenta de ahorros especial exclusivamente para gastos médicos. El dinero que depositas NO paga impuestos — ni al entrar, ni al crecer, ni al usarlo en gastos médicos."
+                                  : "An HSA is a special savings account exclusively for medical expenses. The money you deposit is NOT taxed — not going in, not while growing, and not when used for medical expenses."}
+                              </div>
+
+                              {/* Section 2 — Contribution limits */}
+                              <div style={sH}>
+                                {isEs ? "¿Cuánto puedes depositar en 2026?" : "How much can you contribute in 2026?"}
+                              </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 2 }}>
+                                {[
+                                  { label: "Individual", value: "$4,300", sub: isEs ? "/año" : "/yr" },
+                                  { label: isEs ? "Familia" : "Family", value: "$8,550", sub: isEs ? "/año" : "/yr" },
+                                  { label: "55+", value: "+$1,000", sub: "Bonus" },
+                                ].map((item, idx) => (
+                                  <div key={idx} style={{ background: "rgba(16,185,129,0.06)", borderRadius: 6, padding: "8px 10px", textAlign: "center" }}>
+                                    <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{item.label}</div>
+                                    <div style={{ fontSize: 16, fontWeight: 800, color: "#10b981", marginTop: 2 }}>{item.value}</div>
+                                    <div style={{ fontSize: 9, color: "#5a5e72" }}>{item.sub}</div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Section 3 — What can you pay for */}
+                              <div style={sH}>
+                                {isEs ? "¿Para qué sirve?" : "What can you use it for?"}
+                              </div>
+                              <div style={sP}>
+                                {isEs
+                                  ? "Paga doctor, especialista, medicinas, lentes, dentista, laboratorios, emergencias — todo libre de impuestos. Lo que no uses se acumula año tras año. No lo pierdes nunca."
+                                  : "Pay for doctor, specialist, prescriptions, glasses, dentist, labs, emergencies — all tax-free. Unused funds roll over year after year. You never lose them."}
+                              </div>
+
+                              {/* Section 4 — Subsidy strategy (ONLY > 400% FPL) */}
+                              {overCliff && (
+                                <>
+                                  <div style={{ ...sH, color: "#fbbf24", marginTop: 18 }}>
+                                    💡 {isEs ? "Estrategia para recuperar tu subsidio" : "Strategy to restore your subsidy"}
+                                  </div>
+                                  <div style={{
+                                    background: "rgba(16,185,129,0.06)", borderRadius: 8, padding: 14,
+                                    border: "1px solid rgba(16,185,129,0.12)", marginBottom: 2,
+                                  }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                                      <div>
+                                        <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>
+                                          {isEs ? "Tu ingreso" : "Your income"}
+                                        </div>
+                                        <div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>${userIncome.toLocaleString()}</div>
+                                      </div>
+                                      <div>
+                                        <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>
+                                          {isEs ? "Límite 400% FPL" : "400% FPL Limit"}
+                                        </div>
+                                        <div style={{ fontSize: 18, fontWeight: 800, color: "#fbbf24", marginTop: 2 }}>${threshold400.toLocaleString()}</div>
+                                      </div>
+                                    </div>
+                                    <div style={{ fontSize: 12, color: "#8b8fa3", marginBottom: 10 }}>
+                                      {isEs ? "Excedes el límite por" : "You exceed the limit by"}: <strong style={{ color: "#ef4444" }}>${excess.toLocaleString()}</strong>
+                                    </div>
+
+                                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
+                                      <div style={{ fontSize: 12, color: "#8b8fa3", marginBottom: 6 }}>
+                                        {isEs ? `Si contribuyes $${contribution.toLocaleString()} a una HSA:` : `If you contribute $${contribution.toLocaleString()} to an HSA:`}
+                                      </div>
+                                      <div style={{ fontSize: 12, color: "#8b8fa3", marginBottom: 4 }}>
+                                        → MAGI: <strong style={{ color: "#f0f1f5" }}>${newMagi.toLocaleString()}</strong>
+                                      </div>
+                                      {recoversSubsidy ? (
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981", marginTop: 8, padding: "8px 10px", background: "rgba(16,185,129,0.1)", borderRadius: 6 }}>
+                                          ✅ {isEs ? "Vuelves a calificar para subsidio APTC" : "You qualify for APTC subsidy again"}
+                                        </div>
+                                      ) : (
+                                        <div style={{ fontSize: 12, fontWeight: 600, color: "#fbbf24", marginTop: 8, padding: "8px 10px", background: "rgba(251,191,36,0.08)", borderRadius: 6 }}>
+                                          ⚠️ {isEs
+                                            ? "Aún sobre el límite. Considera también IRA tradicional ($7,000/año) o contribuciones 401k."
+                                            : "Still over the limit. Also consider traditional IRA ($7,000/yr) or 401k contributions."}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {recoversSubsidy && estMonthlySavings > 0 && (
+                                      <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: "#10b981", textAlign: "center" }}>
+                                        {isEs ? "Ahorro potencial" : "Potential savings"}: ~${(estMonthlySavings * 12).toLocaleString()}/{isEs ? "año en primas" : "yr in premiums"}
+                                      </div>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Section 5 — How to open */}
+                              <div style={sH}>
+                                {isEs ? "¿Cómo abrir una HSA?" : "How to open an HSA?"}
+                              </div>
+                              <div style={{ paddingLeft: 4 }}>
+                                {(isEs ? [
+                                  "Elige este plan HSA-elegible",
+                                  "Abre una cuenta HSA en tu banco (Fidelity, Lively, y muchos bancos ofrecen cuentas gratis)",
+                                  "Deposita antes del 15 de abril de 2027 para que cuente para impuestos 2026",
+                                  "Usa los fondos con tu tarjeta HSA cuando vayas al doctor o farmacia",
+                                ] : [
+                                  "Choose this HSA-eligible plan",
+                                  "Open an HSA at your bank (Fidelity, Lively, and many banks offer free accounts)",
+                                  "Deposit by April 15, 2027 for it to count toward 2026 taxes",
+                                  "Use the funds with your HSA card at the doctor or pharmacy",
+                                ]).map((item, idx) => (
+                                  <div key={idx} style={sBullet}>
+                                    <span style={{ color: "#10b981", fontWeight: 700, fontSize: 12, minWidth: 16, flexShrink: 0 }}>{idx + 1}.</span>
+                                    <span>{item}</span>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Section 6 — Real example (ONLY > 400% FPL) */}
+                              {overCliff && (
+                                <>
+                                  <div style={sH}>
+                                    {isEs ? "Ejemplo real" : "Real-world example"}
+                                  </div>
+                                  <div style={{
+                                    background: "rgba(255,255,255,0.03)", borderRadius: 6, padding: 12,
+                                    border: "1px solid rgba(255,255,255,0.06)", fontSize: 12, lineHeight: 1.7, color: "#8b8fa3",
+                                  }}>
+                                    {isEs ? (
+                                      <>
+                                        <strong style={{ color: "#f0f1f5" }}>María</strong> gana $65,000/año (familia de 1). El límite es $62,600.<br />
+                                        <span style={{ color: "#ef4444" }}>Sin HSA:</span> Paga $450/mes de prima completa = $5,400/año<br />
+                                        <span style={{ color: "#10b981" }}>Con HSA:</span> Deposita $4,300 → MAGI baja a $60,700 → Recupera subsidio → Prima $0/mes<br />
+                                        <strong style={{ color: "#10b981" }}>Ahorro total: $5,400/año en primas + $1,075 en impuestos = $6,475/año</strong>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <strong style={{ color: "#f0f1f5" }}>María</strong> earns $65,000/yr (family of 1). The limit is $62,600.<br />
+                                        <span style={{ color: "#ef4444" }}>Without HSA:</span> Pays $450/mo full premium = $5,400/yr<br />
+                                        <span style={{ color: "#10b981" }}>With HSA:</span> Deposits $4,300 → MAGI drops to $60,700 → Subsidy restored → $0/mo premium<br />
+                                        <strong style={{ color: "#10b981" }}>Total savings: $5,400/yr in premiums + $1,075 in taxes = $6,475/yr</strong>
+                                      </>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Source */}
+                              <div style={{ fontSize: 10, color: "#3a3d4a", marginTop: 14, textAlign: "right" }}>
+                                {isEs ? "Fuente" : "Source"}: IRS.gov Publication 969
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {/* AI Plan Advisor */}
                       <AIPlanAdvisor
                         plan={plan}

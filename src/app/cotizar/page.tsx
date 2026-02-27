@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { saveLead, saveConsent, savePlanSelection } from "@/lib/save-lead";
 import { i18n, type Lang, type Translations } from "@/lib/i18n";
 import { lookupCounties, getFPL, getFPLpct } from "@/lib/data";
@@ -71,10 +71,14 @@ function StepLabel({ num, label }: { num: number; label: string }) {
 }
 
 // ==================== SUBSIDY CLIFF ALERT ====================
-function SubsidyCliffAlert({ fplPct, income, houseSize, lang, maxAge }: {
-  fplPct: number; income: number; houseSize: number; lang: string; maxAge: number;
+function SubsidyCliffAlert({ fplPct, income, houseSize, lang, maxAge, plans }: {
+  fplPct: number; income: number; houseSize: number; lang: string; maxAge: number; plans: any[];
 }) {
-  const [eduOpen, setEduOpen] = useState(false);
+  const [aiText, setAiText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(false);
+  const [techOpen, setTechOpen] = useState(false);
+  const aiCalled = useRef(false);
   const isEs = lang === "es";
   const fplBase = 15650 + (houseSize - 1) * 5500;
   const threshold400 = fplBase * 4;
@@ -83,7 +87,6 @@ function SubsidyCliffAlert({ fplPct, income, houseSize, lang, maxAge }: {
   const isFamily = houseSize >= 2;
   const hsaLimit = isFamily ? 8550 : 4300;
 
-  // Zone
   type Zone = "medicaid" | "max" | "moderate" | "yellow" | "red";
   let zone: Zone;
   if (fplPct < 138) zone = "medicaid";
@@ -98,76 +101,182 @@ function SubsidyCliffAlert({ fplPct, income, houseSize, lang, maxAge }: {
     ? { medicaid: "Posible Medicaid", max: "Subsidio Máximo", moderate: "Subsidio Moderado", yellow: "Zona de Riesgo", red: "Sin Subsidio (Cliff)" }[zone]
     : { medicaid: "Possible Medicaid", max: "Maximum Subsidy", moderate: "Moderate Subsidy", yellow: "Risk Zone", red: "No Subsidy (Cliff)" }[zone];
 
-  // Premium estimates
   const fullPremium = maxAge >= 55 ? 950 : maxAge >= 40 ? 650 : 400;
-  const subsidizedMap: Record<string, number> = { medicaid: 0, max: 50, moderate: 150, yellow: 300, red: fullPremium };
-  const subsidizedPremium = subsidizedMap[zone];
-
-  // Recovery calc for red zone
-  const recoveryCalc = () => {
-    if (zone !== "red") return null;
-    const hsaContrib = Math.min(excess + 100, hsaLimit);
-    const afterHsa = income - hsaContrib;
-    const hsaRecovers = afterHsa < threshold400;
-    const iraLimit = maxAge >= 50 ? 8000 : 7000;
-    const afterHsaIra = income - hsaLimit - iraLimit;
-    const hsaIraRecovers = afterHsaIra < threshold400;
-    const k401needed = afterHsaIra >= threshold400 ? afterHsaIra - threshold400 + 100 : 0;
-    const afterAll = income - hsaLimit - iraLimit - k401needed;
-    return { hsaContrib, afterHsa, hsaRecovers, iraLimit, afterHsaIra, hsaIraRecovers, k401needed, afterAll };
-  };
-  const rc = recoveryCalc();
-
-  // Protection calc for yellow zone
-  const protectionCalc = () => {
-    if (zone !== "yellow") return null;
-    const suggested = Math.min(buffer < 3000 ? hsaLimit : Math.round(hsaLimit * 0.5), hsaLimit);
-    const iraAmount = Math.min(buffer < 1500 ? (maxAge >= 50 ? 8000 : 7000) : 0, maxAge >= 50 ? 8000 : 7000);
-    const newMagi = income - suggested - iraAmount;
-    return { suggested, iraAmount, newMagi, totalContrib: suggested + iraAmount };
-  };
-  const pc = protectionCalc();
 
   // Meter positions
   const meterMax = 520;
   const pctPos = Math.min(Math.max((fplPct - 100) / (meterMax - 100) * 100, 0), 100);
   const zP = (v: number) => ((v - 100) / (meterMax - 100)) * 100;
 
-  // Shared styles
-  const sH = { fontSize: 13, fontWeight: 700 as const, marginBottom: 6, marginTop: 16, display: "flex" as const, alignItems: "center" as const, gap: 6 };
-  const sBox = { background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 8 };
-  const sLabel = { fontSize: 10, color: "#5a5e72", fontWeight: 600 as const, textTransform: "uppercase" as const, letterSpacing: 0.3 };
-  const sBig = (c: string) => ({ fontSize: 20, fontWeight: 800 as const, color: c, marginTop: 2 });
+  // AI call — auto-trigger once
+  useEffect(() => {
+    if (aiCalled.current || aiText) return;
+    aiCalled.current = true;
+    setAiLoading(true);
+
+    const hsaPlans = plans.filter((p: any) => p.hsa).slice(0, 3);
+    const topPlans = plans.slice(0, 5);
+    const planSummary = topPlans.map((p: any) => `${p.name} (${p.metal}) — $${p.afterSubsidy}/mo, deductible $${p.deductible.toLocaleString()}${p.hsa ? ", HSA-eligible" : ""}`).join("\n");
+
+    const sysPrompt = isEs
+      ? `Eres un asesor de seguros de salud amigable y bilingüe que ayuda a una persona real a entender su situación financiera para el seguro médico ACA en 2026.
+
+REGLAS CRÍTICAS:
+- Habla como un amigo o familiar que se preocupa por ti, NO como un asesor financiero
+- NUNCA uses siglas como MAGI, FPL, APTC, ACA, IRA sin explicarlas primero en lenguaje simple
+- En lugar de "MAGI" di "tu ingreso ajustado para el gobierno"
+- En lugar de "FPL" di "el límite de pobreza federal"
+- En lugar de "APTC" di "la ayuda del gobierno para pagar tu seguro"
+- En lugar de "HSA" di "cuenta de ahorros médicos (HSA)" la primera vez, luego solo "cuenta de ahorros médicos"
+- En lugar de "subsidio" di "la ayuda del gobierno" o "el descuento del gobierno"
+- Usa analogías del mundo real y ejemplos con los números de esta persona
+- Da UNA recomendación clara al final: "Lo que yo te recomiendo hacer:"
+- Usa "tú" no "usted"
+- Máximo 350 palabras
+
+FORMATO:
+## Tu Situación
+Un párrafo explicando dónde estás (usa sus números reales)
+
+## Qué Significa Para Ti
+Qué significa esto en términos prácticos (costo mensual, qué pueden/no pueden obtener)
+
+## Lo Que Te Recomiendo
+UNA recomendación clara y accionable con pasos exactos. Si es relevante, incluye un ejemplo con números: "Por ejemplo: Si depositas $X en [tipo de cuenta], tu ingreso baja a $Y y recuperas el descuento."`
+      : `You are a friendly bilingual health insurance advisor helping a real person understand their financial situation for ACA health insurance in 2026.
+
+CRITICAL RULES:
+- Speak like a caring friend or family member, NOT a financial advisor
+- NEVER use acronyms like MAGI, FPL, APTC, ACA, IRA without explaining them first in simple language
+- Instead of "MAGI" say "your adjusted income for the government"
+- Instead of "FPL" say "the federal poverty guideline"
+- Instead of "APTC" say "the government's help paying for your insurance"
+- Instead of "HSA" say "medical savings account (HSA)" the first time, then just "medical savings account"
+- Instead of "subsidy" say "government help" or "government discount"
+- Use real-world analogies and examples with this person's actual numbers
+- Give ONE clear recommendation at the end: "What I recommend you do:"
+- Keep it warm and conversational
+- Maximum 350 words
+
+FORMAT:
+## Your Situation
+One paragraph explaining where they stand (use their real numbers)
+
+## What This Means For You
+What this means in practical terms (monthly cost, what they can/can't get)
+
+## What I Recommend
+ONE clear, actionable recommendation with exact steps. If relevant, include an example: "For example: If you deposit $X into [account type], your income drops to $Y and you get the discount back."`;
+
+    const userPrompt = isEs
+      ? `Mi situación:
+- Ingreso anual: $${income.toLocaleString()}
+- Tamaño del hogar: ${houseSize} persona${houseSize > 1 ? "s" : ""}
+- Porcentaje del límite de pobreza: ${fplPct}%
+- Límite para ayuda del gobierno (400%): $${threshold400.toLocaleString()}
+- ${zone === "red" ? `Estoy $${excess.toLocaleString()} POR ENCIMA del límite — NO recibo ayuda` : zone === "yellow" ? `Estoy a solo $${buffer.toLocaleString()} del límite — en riesgo` : zone === "max" ? "Estoy en la mejor zona — máxima ayuda disponible" : zone === "moderate" ? "Recibo ayuda moderada" : "Podría calificar para Medicaid"}
+- Persona mayor del hogar: ${maxAge} años
+- ${isFamily ? "Familia" : "Individual"}
+- Límite de cuenta de ahorros médicos: $${hsaLimit.toLocaleString()}/año
+- Prima completa estimada (sin ayuda): ~$${fullPremium}/mes
+
+Planes disponibles (los mejores 5):
+${planSummary}
+
+${hsaPlans.length > 0 ? `Planes elegibles para cuenta de ahorros médicos: ${hsaPlans.map((p: any) => p.name).join(", ")}` : "Ningún plan elegible para cuenta de ahorros médicos en los primeros resultados"}
+
+Explícame mi situación y qué debo hacer.`
+      : `My situation:
+- Annual income: $${income.toLocaleString()}
+- Household size: ${houseSize} person${houseSize > 1 ? "s" : ""}
+- Federal poverty percentage: ${fplPct}%
+- Government help limit (400%): $${threshold400.toLocaleString()}
+- ${zone === "red" ? `I'm $${excess.toLocaleString()} ABOVE the limit — I get NO help` : zone === "yellow" ? `I'm only $${buffer.toLocaleString()} from the limit — at risk` : zone === "max" ? "I'm in the best zone — maximum help available" : zone === "moderate" ? "I receive moderate help" : "I may qualify for Medicaid"}
+- Oldest person in household: ${maxAge} years old
+- ${isFamily ? "Family" : "Individual"}
+- Medical savings account limit: $${hsaLimit.toLocaleString()}/year
+- Estimated full premium (no help): ~$${fullPremium}/mo
+
+Available plans (top 5):
+${planSummary}
+
+${hsaPlans.length > 0 ? `Plans eligible for medical savings account: ${hsaPlans.map((p: any) => p.name).join(", ")}` : "No medical savings account eligible plans in top results"}
+
+Explain my situation and what I should do.`;
+
+    fetch("/api/ai-explain", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1200,
+        system: sysPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      }),
+    })
+      .then((r) => { if (!r.ok) throw new Error("API error"); return r.json(); })
+      .then((data) => { setAiText(data.content?.map((c: any) => c.text || "").join("") || ""); })
+      .catch(() => setAiError(true))
+      .finally(() => setAiLoading(false));
+  }, []);
+
+  // Render AI text with simple markdown
+  const renderAI = (text: string) => {
+    return text.split("\n").map((line, i) => {
+      if (line.startsWith("## ")) {
+        const t = line.replace(/^##\s+/, "").replace(/\*\*/g, "");
+        const isRec = t.includes("Recomiendo") || t.includes("Recommend");
+        return <div key={i} style={{ fontSize: 14, fontWeight: 800, color: isRec ? "#10b981" : "#f0f1f5", marginTop: i > 0 ? 16 : 0, marginBottom: 6 }}>{t}</div>;
+      }
+      if (!line.trim()) return <div key={i} style={{ height: 4 }} />;
+      // Inline bold
+      const parts: React.ReactNode[] = [];
+      let last = 0;
+      const re = /\*\*(.*?)\*\*/g;
+      let m;
+      while ((m = re.exec(line)) !== null) {
+        if (m.index > last) parts.push(<span key={`t${i}-${last}`}>{line.slice(last, m.index)}</span>);
+        parts.push(<strong key={`b${i}-${m.index}`} style={{ color: "#f0f1f5" }}>{m[1]}</strong>);
+        last = m.index + m[0].length;
+      }
+      if (last < line.length) parts.push(<span key={`e${i}-${last}`}>{line.slice(last)}</span>);
+      const isRecLine = line.includes("Recomiendo") || line.includes("recommend") || line.includes("ejemplo:") || line.includes("example:");
+      return (
+        <div key={i} style={{
+          fontSize: 13, lineHeight: 1.7, color: "#8b8fa3", marginBottom: 2,
+          ...(isRecLine ? { background: "rgba(16,185,129,0.08)", borderRadius: 6, padding: "6px 10px", borderLeft: "3px solid #10b981", marginTop: 4, marginBottom: 4 } : {}),
+        }}>
+          {parts.length > 0 ? parts : line}
+        </div>
+      );
+    });
+  };
 
   return (
     <div style={{ background: "#12141c", border: `1px solid ${zoneBorder}`, borderRadius: 12, marginBottom: 18, overflow: "hidden" }}>
       {/* Title bar */}
       <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: "#f0f1f5", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 18 }}>📊</span>
-          {isEs ? "Tu Análisis de Subsidio APTC 2026" : "Your 2026 APTC Subsidy Analysis"}
+          <span style={{ fontSize: 18 }}>🧠</span>
+          {isEs ? "Tu Asesor Financiero de Salud" : "Your Health Financial Advisor"}
         </div>
         <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 3 }}>
-          {isEs ? "Análisis personalizado basado en tu perfil" : "Personalized analysis based on your profile"}
+          {isEs ? "Análisis personalizado de tu situación" : "Personalized analysis of your situation"}
         </div>
       </div>
 
       <div style={{ padding: 18 }}>
-        {/* PART 1: FPL METER */}
+        {/* FPL METER — kept */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ position: "relative", height: 14, borderRadius: 7, background: "rgba(255,255,255,0.04)", overflow: "visible" }}>
-            {/* Zone segments */}
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${zP(250)}%`, borderRadius: "7px 0 0 7px", background: "rgba(16,185,129,0.35)" }} />
             <div style={{ position: "absolute", left: `${zP(250)}%`, top: 0, bottom: 0, width: `${zP(300) - zP(250)}%`, background: "rgba(16,185,129,0.2)" }} />
             <div style={{ position: "absolute", left: `${zP(300)}%`, top: 0, bottom: 0, width: `${zP(350) - zP(300)}%`, background: "rgba(251,191,36,0.25)" }} />
             <div style={{ position: "absolute", left: `${zP(350)}%`, top: 0, bottom: 0, width: `${zP(400) - zP(350)}%`, background: "rgba(249,115,22,0.35)" }} />
             <div style={{ position: "absolute", left: `${zP(400)}%`, top: 0, bottom: 0, right: 0, borderRadius: "0 7px 7px 0", background: "rgba(239,68,68,0.35)" }} />
-            {/* 400% cliff line */}
             <div style={{ position: "absolute", left: `${zP(400)}%`, top: -6, bottom: -6, width: 2, background: "#ef4444", zIndex: 2 }} />
-            {/* User marker */}
             <div style={{ position: "absolute", left: `${pctPos}%`, top: "50%", transform: "translate(-50%, -50%)", width: 18, height: 18, borderRadius: 9, background: "#fff", border: `3px solid ${zoneColor}`, zIndex: 3, boxShadow: `0 0 10px ${zoneColor}60` }} />
           </div>
-          {/* Zone labels */}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 9, color: "#5a5e72", fontWeight: 600 }}>
             <span style={{ color: "#10b981" }}>138%</span>
             <span>250%</span>
@@ -176,327 +285,76 @@ function SubsidyCliffAlert({ fplPct, income, houseSize, lang, maxAge }: {
             <span style={{ color: "#ef4444", fontWeight: 800 }}>400%</span>
             <span>500%+</span>
           </div>
-          {/* User position label */}
           <div style={{ textAlign: "center", marginTop: 8, fontSize: 12, color: "#8b8fa3" }}>
-            {isEs ? "Tu posición" : "Your position"}: <strong style={{ color: zoneColor, fontSize: 14 }}>{fplPct}% FPL</strong> — <span style={{ color: zoneColor, fontWeight: 600 }}>{zoneName}</span>
+            {isEs ? "Tu posición" : "Your position"}: <strong style={{ color: zoneColor, fontSize: 14 }}>{fplPct}%</strong> — <span style={{ color: zoneColor, fontWeight: 600 }}>{zoneName}</span>
           </div>
         </div>
 
-        {/* PART 2: ZONE-SPECIFIC CONTENT */}
+        {/* AI EXPLANATION */}
         <div style={{ borderLeft: `4px solid ${zoneBorder}`, borderRadius: 8, background: "rgba(255,255,255,0.02)", padding: 16 }}>
-
-          {/* ===== MEDICAID ===== */}
-          {zone === "medicaid" && (<>
-            <div style={{ ...sH, color: "#60a5fa" }}>ℹ️ {isEs ? "Posible elegibilidad para Medicaid" : "Possible Medicaid eligibility"}</div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.7, color: "#8b8fa3" }}>
-              {isEs
-                ? `Con un ingreso de $${income.toLocaleString()} para ${houseSize} persona${houseSize > 1 ? "s" : ""}, estás al ${fplPct}% del nivel federal de pobreza. En Florida, podrías calificar para Medicaid. Te recomendamos verificar tu elegibilidad en AccessFlorida.com antes de comprar un plan del Marketplace.`
-                : `With an income of $${income.toLocaleString()} for ${houseSize} person${houseSize > 1 ? "s" : ""}, you're at ${fplPct}% of the Federal Poverty Level. In Florida, you may qualify for Medicaid. We recommend verifying your eligibility at AccessFlorida.com before purchasing a Marketplace plan.`}
-            </div>
-          </>)}
-
-          {/* ===== MAX SUBSIDY (138-250%) ===== */}
-          {zone === "max" && (<>
-            <div style={{ ...sH, color: "#10b981" }}>✅ {isEs ? "Máximo subsidio disponible" : "Maximum subsidy available"}</div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.7, color: "#8b8fa3" }}>
-              {isEs
-                ? `Excelente posición. Con $${income.toLocaleString()} para ${houseSize} persona${houseSize > 1 ? "s" : ""} (${fplPct}% FPL), calificas para el máximo nivel de subsidio APTC. También podrías calificar para Cost Sharing Reductions (CSR) en planes Plata, que reducen tus deducibles y copagos.`
-                : `Excellent position. With $${income.toLocaleString()} for ${houseSize} person${houseSize > 1 ? "s" : ""} (${fplPct}% FPL), you qualify for the maximum level of APTC subsidy. You may also qualify for Cost Sharing Reductions (CSR) on Silver plans, which reduce your deductibles and copays.`}
-            </div>
-            <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 6, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)", fontSize: 12, color: "#10b981", fontWeight: 600, lineHeight: 1.6 }}>
-              💡 {isEs
-                ? "Tip: Los planes PLATA con CSR son tu mejor opción — pides precio de Plata pero recibes beneficios casi de Oro."
-                : "Tip: SILVER plans with CSR are your best option — you pay Silver prices but get near-Gold benefits."}
-            </div>
-          </>)}
-
-          {/* ===== MODERATE SUBSIDY (250-350%) ===== */}
-          {zone === "moderate" && (<>
-            <div style={{ ...sH, color: "#10b981" }}>✅ {isEs ? "Subsidio moderado disponible" : "Moderate subsidy available"}</div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.7, color: "#8b8fa3" }}>
-              {isEs
-                ? `Con $${income.toLocaleString()} para ${houseSize} persona${houseSize > 1 ? "s" : ""} (${fplPct}% FPL), calificas para subsidio APTC que reducirá tu prima mensual. Tu subsidio estimado se refleja en los precios de los planes abajo.`
-                : `With $${income.toLocaleString()} for ${houseSize} person${houseSize > 1 ? "s" : ""} (${fplPct}% FPL), you qualify for APTC subsidy that will reduce your monthly premium. Your estimated subsidy is reflected in plan prices below.`}
-            </div>
-            <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 6, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)", fontSize: 12, color: "#10b981", fontWeight: 600, lineHeight: 1.6 }}>
-              💡 {isEs
-                ? "Tip: Compara bien entre Bronce y Plata. A veces la diferencia de prima es pequeña pero la cobertura de Plata es significativamente mejor."
-                : "Tip: Compare Bronze and Silver carefully. Sometimes the premium difference is small but Silver coverage is significantly better."}
-            </div>
-          </>)}
-
-          {/* ===== YELLOW ZONE (350-400%) ===== */}
-          {zone === "yellow" && (<>
-            <div style={{ ...sH, color: "#fbbf24", fontSize: 14 }}>⚠️ {isEs ? "ZONA DE RIESGO — Cerca del Subsidy Cliff" : "RISK ZONE — Near the Subsidy Cliff"}</div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.7, color: "#8b8fa3", marginBottom: 12 }}>
-              {isEs
-                ? `Con $${income.toLocaleString()} para ${houseSize} persona${houseSize > 1 ? "s" : ""}, estás al ${fplPct}% del FPL — a solo $${buffer.toLocaleString()} del límite donde PIERDES TODO el subsidio.`
-                : `With $${income.toLocaleString()} for ${houseSize} person${houseSize > 1 ? "s" : ""}, you're at ${fplPct}% FPL — only $${buffer.toLocaleString()} from the limit where you LOSE ALL subsidy.`}
-            </div>
-
-            {/* Urgency box */}
-            <div style={{ ...sBox, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)" }}>
-              <div style={{ fontSize: 12.5, lineHeight: 1.7, color: "#8b8fa3" }}>
-                <strong style={{ color: "#fbbf24" }}>⚠️ {isEs ? `Si tu ingreso real en 2026 supera $${threshold400.toLocaleString()} por tan solo $1:` : `If your actual 2026 income exceeds $${threshold400.toLocaleString()} by just $1:`}</strong>
-                <div style={{ paddingLeft: 10, marginTop: 6 }}>
-                  {(isEs ? [
-                    "Pierdes TODO el subsidio APTC",
-                    `Tu prima sube de ~$${subsidizedPremium}/mes a ~$${fullPremium}/mes`,
-                    "Tendrías que devolver el subsidio al IRS al declarar impuestos",
-                  ] : [
-                    "You lose ALL APTC subsidy",
-                    `Your premium jumps from ~$${subsidizedPremium}/mo to ~$${fullPremium}/mo`,
-                    "You'd have to repay the subsidy to the IRS when filing taxes",
-                  ]).map((item, i) => (
-                    <div key={i} style={{ display: "flex", gap: 6, marginBottom: 3 }}>
-                      <span style={{ color: "#ef4444", flexShrink: 0 }}>•</span><span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: 8, fontSize: 11.5, color: "#6b7280", fontStyle: "italic" }}>
-                  {isEs
-                    ? "El 21% de las personas en el Marketplace tienen ingresos volátiles. Un bono, horas extras, o ingreso freelance podría empujarte sobre el límite."
-                    : "21% of Marketplace enrollees have volatile incomes. A bonus, overtime, or freelance income could push you over the limit."}
-                </div>
+          {aiLoading && (
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ width: 32, height: 32, border: "3px solid rgba(16,185,129,0.2)", borderTopColor: "#10b981", borderRadius: "50%", animation: "aispin 0.8s linear infinite", margin: "0 auto 10px" }} />
+              <div style={{ color: "#10b981", fontWeight: 700, fontSize: 13 }}>
+                🧠 {isEs ? "Analizando tu situación financiera..." : "Analyzing your financial situation..."}
               </div>
+              <div style={{ color: "#5a5e72", fontSize: 11, marginTop: 4 }}>
+                {isEs ? "Preparando recomendaciones personalizadas" : "Preparing personalized recommendations"}
+              </div>
+              <style>{`@keyframes aispin { to { transform: rotate(360deg) } }`}</style>
             </div>
+          )}
 
-            {/* Strategies */}
-            <div style={{ ...sH, color: "#10b981", marginTop: 14 }}>🛡️ {isEs ? "ESTRATEGIAS PARA PROTEGER TU SUBSIDIO" : "STRATEGIES TO PROTECT YOUR SUBSIDY"}</div>
-            {(isEs ? [
-              [`Contribuye a una HSA (si eliges plan HSA-elegible)`, `Individual: hasta $4,300 · Familia: hasta $8,550 — reduce tu MAGI directamente`],
-              [`Contribuye a IRA Tradicional`, `Hasta $7,000/año ($8,000 si tienes 50+) — reduce directamente tu MAGI`],
-              [`Contribuye más a tu 401(k) o 403(b)`, `Hasta $23,500/año en 2026. Las contribuciones pre-tax reducen tu MAGI`],
-              [`Monitorea tu ingreso durante el año`, `Reporta cambios al Marketplace inmediatamente. Ajusta tu estimado si recibes un aumento o bono`],
-            ] : [
-              [`Contribute to an HSA (if you choose an HSA-eligible plan)`, `Individual: up to $4,300 · Family: up to $8,550 — directly reduces your MAGI`],
-              [`Contribute to Traditional IRA`, `Up to $7,000/yr ($8,000 if age 50+) — directly reduces your MAGI`],
-              [`Increase your 401(k) or 403(b) contributions`, `Up to $23,500/yr in 2026. Pre-tax contributions reduce your MAGI`],
-              [`Monitor your income throughout the year`, `Report changes to the Marketplace immediately. Adjust your estimate if you receive a raise or bonus`],
-            ]).map(([title, desc], i) => (
-              <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, fontSize: 12.5 }}>
-                <span style={{ color: "#10b981", fontWeight: 800, fontSize: 13, minWidth: 18, flexShrink: 0 }}>{i + 1}.</span>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#f0f1f5" }}>{title}</div>
-                  <div style={{ color: "#6b7280", marginTop: 1, lineHeight: 1.5 }}>{desc}</div>
-                </div>
+          {aiError && (
+            <div style={{ textAlign: "center", padding: "16px 0" }}>
+              <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>
+                {isEs ? "No se pudo generar el análisis" : "Could not generate analysis"}
               </div>
-            ))}
-
-            {/* Personalized calculation */}
-            {pc && (
-              <div style={{ ...sBox, background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)", marginTop: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981", marginBottom: 10 }}>
-                  💰 {isEs ? "CÁLCULO PERSONALIZADO" : "PERSONALIZED CALCULATION"}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-                  <div><div style={sLabel}>{isEs ? "Tu ingreso" : "Your income"}</div><div style={sBig("#f0f1f5")}>${income.toLocaleString()}</div></div>
-                  <div><div style={sLabel}>{isEs ? "Límite 400%" : "400% limit"}</div><div style={sBig("#ef4444")}>${threshold400.toLocaleString()}</div></div>
-                  <div><div style={sLabel}>{isEs ? "Margen" : "Buffer"}</div><div style={sBig("#fbbf24")}>${buffer.toLocaleString()}</div></div>
-                </div>
-                <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: 10, fontSize: 12, color: "#8b8fa3", lineHeight: 1.7 }}>
-                  {isEs
-                    ? `Si contribuyes $${pc.totalContrib.toLocaleString()} a HSA${pc.iraAmount > 0 ? " + IRA" : ""}:`
-                    : `If you contribute $${pc.totalContrib.toLocaleString()} to HSA${pc.iraAmount > 0 ? " + IRA" : ""}:`}<br />
-                  → MAGI: <strong style={{ color: "#f0f1f5" }}>${pc.newMagi.toLocaleString()}</strong><br />
-                  → {isEs ? "Resultado" : "Result"}: <strong style={{ color: "#10b981" }}>
-                    {isEs ? "Subsidio protegido ✅" : "Subsidy protected ✅"}
-                  </strong><br />
-                  → {isEs ? "Ahorro estimado" : "Est. savings"}: <strong style={{ color: "#10b981" }}>~${((fullPremium - subsidizedPremium) * 12).toLocaleString()}/{isEs ? "año en primas" : "yr in premiums"}</strong>
-                </div>
-              </div>
-            )}
-          </>)}
-
-          {/* ===== RED ZONE (>400%) ===== */}
-          {zone === "red" && (<>
-            <div style={{ ...sH, color: "#ef4444", fontSize: 14 }}>🚨 {isEs ? "SUBSIDY CLIFF — Sin subsidio APTC" : "SUBSIDY CLIFF — No APTC Subsidy"}</div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.7, color: "#8b8fa3", marginBottom: 12 }}>
-              {isEs
-                ? `Con $${income.toLocaleString()} para ${houseSize} persona${houseSize > 1 ? "s" : ""} (${fplPct}% FPL), tu ingreso supera el límite de $${threshold400.toLocaleString()} (400% FPL) por $${excess.toLocaleString()}. No calificas para ningún subsidio APTC en 2026. Los precios que ves abajo son el costo completo.`
-                : `With $${income.toLocaleString()} for ${houseSize} person${houseSize > 1 ? "s" : ""} (${fplPct}% FPL), your income exceeds the $${threshold400.toLocaleString()} limit (400% FPL) by $${excess.toLocaleString()}. You don't qualify for any APTC subsidy in 2026. The prices below are full cost.`}
+              <button onClick={() => { setAiError(false); aiCalled.current = false; }} style={{
+                padding: "8px 20px", borderRadius: 8, border: "none", background: "#10b981",
+                color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}>{isEs ? "Reintentar" : "Retry"}</button>
             </div>
+          )}
 
-            {/* Impact box */}
-            <div style={{ ...sBox, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", marginBottom: 10 }}>
-                📊 {isEs ? "IMPACTO EN TU BOLSILLO" : "IMPACT ON YOUR WALLET"}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div style={{ background: "rgba(16,185,129,0.06)", borderRadius: 6, padding: 10 }}>
-                  <div style={{ fontSize: 10, color: "#10b981", fontWeight: 600, marginBottom: 4 }}>
-                    {isEs ? `Si estuvieras $1 debajo ($${(threshold400 - 1).toLocaleString()})` : `If you were $1 below ($${(threshold400 - 1).toLocaleString()})`}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#5a5e72" }}>{isEs ? "Prima estimada" : "Est. premium"}</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#10b981" }}>~$350<span style={{ fontSize: 11, fontWeight: 600 }}>{isEs ? "/mes" : "/mo"}</span></div>
-                  <div style={{ fontSize: 10, color: "#5a5e72" }}>{isEs ? "Costo anual" : "Annual cost"}: ~$4,200</div>
-                </div>
-                <div style={{ background: "rgba(239,68,68,0.06)", borderRadius: 6, padding: 10 }}>
-                  <div style={{ fontSize: 10, color: "#ef4444", fontWeight: 600, marginBottom: 4 }}>
-                    {isEs ? "Tu situación actual (sobre el cliff)" : "Your current situation (over cliff)"}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#5a5e72" }}>{isEs ? "Prima" : "Premium"}</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#ef4444" }}>~${fullPremium}<span style={{ fontSize: 11, fontWeight: 600 }}>{isEs ? "/mes" : "/mo"}</span></div>
-                  <div style={{ fontSize: 10, color: "#5a5e72" }}>{isEs ? "Costo anual" : "Annual cost"}: ~${(fullPremium * 12).toLocaleString()}</div>
-                </div>
-              </div>
-              <div style={{ marginTop: 10, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>
-                💸 {isEs ? "Diferencia" : "Difference"}: ~${((fullPremium * 12) - 4200).toLocaleString()}/{isEs ? "año — este es el costo real del Subsidy Cliff" : "yr — this is the real cost of the Subsidy Cliff"}
-              </div>
+          {aiText && (
+            <div style={{ wordBreak: "break-word" }}>
+              {renderAI(aiText)}
             </div>
-
-            {/* Recovery strategies */}
-            {rc && (
-              <>
-                <div style={{ ...sH, color: "#10b981", marginTop: 14, fontSize: 13 }}>
-                  🔧 {isEs ? "PLAN DE ACCIÓN PARA RECUPERAR EL SUBSIDIO" : "ACTION PLAN TO RESTORE YOUR SUBSIDY"}
-                </div>
-                <div style={{ fontSize: 12, color: "#8b8fa3", marginBottom: 10 }}>
-                  {isEs
-                    ? `Necesitas reducir tu MAGI en al menos $${(excess + 1).toLocaleString()}`
-                    : `You need to reduce your MAGI by at least $${(excess + 1).toLocaleString()}`}
-                </div>
-
-                {/* Option A — HSA only */}
-                {excess < hsaLimit && (
-                  <div style={{ ...sBox, background: excess < hsaLimit ? "rgba(16,185,129,0.06)" : "rgba(255,255,255,0.02)", border: "1px solid rgba(16,185,129,0.15)" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981", marginBottom: 6 }}>
-                      {isEs ? "Opción A — Solo HSA" : "Option A — HSA Only"} {rc.hsaRecovers ? "✅" : ""}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#8b8fa3", lineHeight: 1.7 }}>
-                      HSA: ${rc.hsaContrib.toLocaleString()} → MAGI: <strong style={{ color: "#f0f1f5" }}>${rc.afterHsa.toLocaleString()}</strong>
-                      {rc.hsaRecovers && <span style={{ color: "#10b981", fontWeight: 700 }}> → {isEs ? "Subsidio recuperado" : "Subsidy restored"} ✅</span>}
-                    </div>
-                  </div>
-                )}
-
-                {/* Option B — HSA + IRA */}
-                {excess >= hsaLimit && excess < (hsaLimit + rc.iraLimit) && (
-                  <div style={{ ...sBox, background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981", marginBottom: 6 }}>
-                      {isEs ? "Opción B — HSA + IRA Tradicional" : "Option B — HSA + Traditional IRA"} {rc.hsaIraRecovers ? "✅" : ""}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#8b8fa3", lineHeight: 1.7 }}>
-                      HSA: ${hsaLimit.toLocaleString()} + IRA: ${Math.min(excess - hsaLimit + 100, rc.iraLimit).toLocaleString()} = <strong style={{ color: "#f0f1f5" }}>${(hsaLimit + Math.min(excess - hsaLimit + 100, rc.iraLimit)).toLocaleString()}</strong><br />
-                      → MAGI: <strong style={{ color: "#f0f1f5" }}>${rc.afterHsaIra.toLocaleString()}</strong>
-                      {rc.hsaIraRecovers && <span style={{ color: "#10b981", fontWeight: 700 }}> → {isEs ? "Subsidio recuperado" : "Subsidy restored"} ✅</span>}
-                    </div>
-                  </div>
-                )}
-
-                {/* Option C — HSA + IRA + 401k */}
-                {excess >= (hsaLimit + rc.iraLimit) && (
-                  <div style={{ ...sBox, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24", marginBottom: 6 }}>
-                      {isEs ? "Opción C — HSA + IRA + 401(k)" : "Option C — HSA + IRA + 401(k)"}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#8b8fa3", lineHeight: 1.7 }}>
-                      HSA: ${hsaLimit.toLocaleString()} + IRA: ${rc.iraLimit.toLocaleString()} + 401(k): ${rc.k401needed.toLocaleString()}<br />
-                      → MAGI: <strong style={{ color: "#f0f1f5" }}>${rc.afterAll.toLocaleString()}</strong>
-                      {rc.afterAll < threshold400
-                        ? <span style={{ color: "#10b981", fontWeight: 700 }}> → {isEs ? "Subsidio recuperado" : "Subsidy restored"} ✅</span>
-                        : <span style={{ color: "#fbbf24", fontWeight: 700 }}> → {isEs ? "Necesitas más reducción" : "Needs more reduction"} ⚠️</span>}
-                    </div>
-                  </div>
-                )}
-
-                {/* Option D — fallback */}
-                <div style={{ ...sBox, background: "rgba(255,255,255,0.02)" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#8b8fa3", marginBottom: 6 }}>
-                    {isEs ? "Si no puedes reducir tu MAGI lo suficiente:" : "If you can't reduce your MAGI enough:"}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.7 }}>
-                    {(isEs ? [
-                      "Considera planes Catastrophic (disponibles sin límite de edad si no tienes subsidio)",
-                      "Busca planes Bronze HSA para primas más bajas",
-                      "El dinero que depositas en HSA al menos te da beneficio fiscal",
-                    ] : [
-                      "Consider Catastrophic plans (available without age limit if you have no subsidy)",
-                      "Look for Bronze HSA plans for lower premiums",
-                      "Money you deposit in an HSA at least gives you a tax benefit",
-                    ]).map((item, i) => (
-                      <div key={i} style={{ display: "flex", gap: 6, marginBottom: 2 }}>
-                        <span style={{ color: "#5a5e72", flexShrink: 0 }}>•</span><span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Personalized example with user's numbers */}
-            {rc && (
-              <div style={{ ...sBox, background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)", marginTop: 6 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981", marginBottom: 10 }}>
-                  📝 {isEs ? "EJEMPLO CON TUS NÚMEROS" : "EXAMPLE WITH YOUR NUMBERS"}
-                </div>
-                <div style={{ fontSize: 12, color: "#8b8fa3", lineHeight: 1.8 }}>
-                  {isEs ? "Tu ingreso" : "Your income"}: <strong style={{ color: "#f0f1f5" }}>${income.toLocaleString()}</strong><br />
-                  {isEs ? "Contribuyes" : "You contribute"} ${Math.min(hsaLimit, excess + 500).toLocaleString()} {isEs ? "a HSA" : "to HSA"} → MAGI: <strong style={{ color: "#f0f1f5" }}>${(income - Math.min(hsaLimit, excess + 500)).toLocaleString()}</strong>
-                  {(income - Math.min(hsaLimit, excess + 500)) < threshold400 ? (
-                    <><br /><strong style={{ color: "#10b981" }}>→ {isEs ? "Bajo el límite — subsidio recuperado" : "Under the limit — subsidy restored"} ✅</strong></>
-                  ) : (
-                    <><br />{isEs ? "Aún sobre el límite. Agrega IRA" : "Still over. Add IRA"}: ${Math.min(rc.iraLimit, (income - Math.min(hsaLimit, excess + 500)) - threshold400 + 100).toLocaleString()} → MAGI: <strong style={{ color: "#f0f1f5" }}>${(income - Math.min(hsaLimit, excess + 500) - Math.min(rc.iraLimit, (income - Math.min(hsaLimit, excess + 500)) - threshold400 + 100)).toLocaleString()}</strong>
-                    {(income - Math.min(hsaLimit, excess + 500) - Math.min(rc.iraLimit, (income - Math.min(hsaLimit, excess + 500)) - threshold400 + 100)) < threshold400 && <><br /><strong style={{ color: "#10b981" }}>→ {isEs ? "Subsidio recuperado" : "Subsidy restored"} ✅</strong></>}
-                    </>
-                  )}<br /><br />
-                  {isEs ? "Beneficio fiscal de HSA" : "HSA tax benefit"}: ~${Math.round(Math.min(hsaLimit, excess + 500) * 0.22).toLocaleString()} ({isEs ? "bracket 22%" : "22% bracket"})<br />
-                  {(income - Math.min(hsaLimit, excess + 500)) < threshold400 && (
-                    <>{isEs ? "Beneficio en subsidio" : "Subsidy benefit"}: ~${((fullPremium - 350) * 12).toLocaleString()}/{isEs ? "año" : "yr"}<br />
-                    <strong style={{ color: "#10b981" }}>{isEs ? "Total ahorrado" : "Total saved"}: ~${(Math.round(Math.min(hsaLimit, excess + 500) * 0.22) + (fullPremium - 350) * 12).toLocaleString()}/{isEs ? "año" : "yr"}</strong></>
-                  )}
-                </div>
-              </div>
-            )}
-          </>)}
+          )}
         </div>
 
-        {/* PART 3: Educational section — collapsible */}
-        <div style={{ marginTop: 16, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        {/* Technical details toggle */}
+        <div style={{ marginTop: 14, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
           <button
-            onClick={() => setEduOpen(!eduOpen)}
+            onClick={() => setTechOpen(!techOpen)}
             style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "none",
               cursor: "pointer", fontFamily: "inherit",
             }}
           >
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#8b8fa3" }}>
-              📚 {isEs ? "Entender el Subsidy Cliff — ¿Por qué pasa esto?" : "Understanding the Subsidy Cliff — Why does this happen?"}
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#5a5e72" }}>
+              📊 {isEs ? "Ver datos técnicos detallados" : "View detailed technical data"}
             </span>
-            <span style={{ fontSize: 10, color: "#5a5e72", transition: "transform .2s", transform: eduOpen ? "rotate(180deg)" : "none" }}>▼</span>
+            <span style={{ fontSize: 10, color: "#5a5e72", transition: "transform .2s", transform: techOpen ? "rotate(180deg)" : "none" }}>▼</span>
           </button>
-          <div style={{ maxHeight: eduOpen ? 800 : 0, overflow: "hidden", transition: "max-height .4s ease" }}>
-            <div style={{ padding: "12px 14px", fontSize: 12, lineHeight: 1.75, color: "#6b7280" }}>
-              {isEs ? (<>
-                <p style={{ marginBottom: 10 }}>El &ldquo;Subsidy Cliff&rdquo; (precipicio de subsidio) es una regla del ACA (Obamacare) que elimina TODA la ayuda financiera si tu ingreso supera el 400% del Nivel Federal de Pobreza.</p>
-                <p style={{ fontWeight: 700, color: "#8b8fa3", marginBottom: 4 }}>¿Por qué existe?</p>
-                <p style={{ marginBottom: 10 }}>De 2021 a 2025, el gobierno eliminó temporalmente este límite gracias al American Rescue Plan. Cualquier persona podía recibir subsidio sin importar su ingreso. Pero el Congreso no extendió esta protección para 2026, y el cliff regresó.</p>
-                <p style={{ fontWeight: 700, color: "#8b8fa3", marginBottom: 4 }}>¿A quién afecta?</p>
-                <div style={{ paddingLeft: 8, marginBottom: 10 }}>
-                  • 22 millones de personas vieron sus primas aumentar en 2026<br />
-                  • Las primas se duplicaron en promedio para quienes recibían subsidio<br />
-                  • 1.6 millones de personas perdieron TODO su subsidio por estar sobre el 400% FPL
-                </div>
-                <p style={{ fontWeight: 700, color: "#8b8fa3", marginBottom: 4 }}>¿Qué es MAGI?</p>
-                <p style={{ marginBottom: 10 }}>MAGI (Modified Adjusted Gross Income) es el ingreso que usa el IRS para calcular tu elegibilidad. NO es tu salario bruto — es tu ingreso después de ciertas deducciones como HSA, IRA tradicional, y contribuciones 401(k) pre-tax. Por eso estas contribuciones pueden &ldquo;bajar&rdquo; tu ingreso para efectos del subsidio.</p>
-                <p style={{ fontWeight: 700, color: "#8b8fa3", marginBottom: 4 }}>¿Puede cambiar esto?</p>
-                <p>Sí. El Congreso puede votar para extender los subsidios mejorados en cualquier momento. Varios proyectos de ley están en discusión. Mientras tanto, las estrategias de reducción de MAGI son la mejor herramienta disponible.</p>
-              </>) : (<>
-                <p style={{ marginBottom: 10 }}>The &ldquo;Subsidy Cliff&rdquo; is an ACA (Obamacare) rule that eliminates ALL financial assistance if your income exceeds 400% of the Federal Poverty Level.</p>
-                <p style={{ fontWeight: 700, color: "#8b8fa3", marginBottom: 4 }}>Why does it exist?</p>
-                <p style={{ marginBottom: 10 }}>From 2021 to 2025, the government temporarily removed this limit through the American Rescue Plan. Anyone could receive a subsidy regardless of income. But Congress did not extend this protection for 2026, and the cliff returned.</p>
-                <p style={{ fontWeight: 700, color: "#8b8fa3", marginBottom: 4 }}>Who is affected?</p>
-                <div style={{ paddingLeft: 8, marginBottom: 10 }}>
-                  • 22 million people saw their premiums increase in 2026<br />
-                  • Premiums doubled on average for those receiving subsidies<br />
-                  • 1.6 million people lost ALL subsidy for being over 400% FPL
-                </div>
-                <p style={{ fontWeight: 700, color: "#8b8fa3", marginBottom: 4 }}>What is MAGI?</p>
-                <p style={{ marginBottom: 10 }}>MAGI (Modified Adjusted Gross Income) is the income the IRS uses to calculate your eligibility. It&apos;s NOT your gross salary — it&apos;s your income after certain deductions like HSA, traditional IRA, and pre-tax 401(k) contributions. That&apos;s why these contributions can &ldquo;lower&rdquo; your income for subsidy purposes.</p>
-                <p style={{ fontWeight: 700, color: "#8b8fa3", marginBottom: 4 }}>Can this change?</p>
-                <p>Yes. Congress can vote to extend the enhanced subsidies at any time. Several bills are under discussion. In the meantime, MAGI reduction strategies are the best available tool.</p>
-              </>)}
+          <div style={{ maxHeight: techOpen ? 2000 : 0, overflow: "hidden", transition: "max-height .4s ease" }}>
+            <div style={{ padding: "12px 14px", fontSize: 12, lineHeight: 1.7, color: "#6b7280" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>FPL%</div><div style={{ fontSize: 18, fontWeight: 800, color: zoneColor, marginTop: 2 }}>{fplPct}%</div></div>
+                <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{isEs ? "Límite 400%" : "400% Limit"}</div><div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>${threshold400.toLocaleString()}</div></div>
+                <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{zone === "red" ? (isEs ? "Exceso" : "Excess") : (isEs ? "Margen" : "Buffer")}</div><div style={{ fontSize: 18, fontWeight: 800, color: zone === "red" ? "#ef4444" : "#fbbf24", marginTop: 2 }}>${(zone === "red" ? excess : buffer).toLocaleString()}</div></div>
+              </div>
+              <div style={{ marginBottom: 8, fontSize: 11 }}>
+                <strong style={{ color: "#8b8fa3" }}>MAGI {isEs ? "reducción opciones" : "reduction options"}:</strong>
+              </div>
+              <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.6 }}>
+                • HSA ({isFamily ? (isEs ? "familia" : "family") : "individual"}): ${hsaLimit.toLocaleString()}/{isEs ? "año" : "yr"}<br />
+                • IRA: ${(maxAge >= 50 ? 8000 : 7000).toLocaleString()}/{isEs ? "año" : "yr"}<br />
+                • 401(k): $23,500/{isEs ? "año" : "yr"}<br />
+                • {isEs ? "Prima completa est." : "Est. full premium"}: ~${fullPremium}/{isEs ? "mes" : "mo"}
+              </div>
               <div style={{ marginTop: 10, fontSize: 10, color: "#3a3d4a" }}>
                 {isEs ? "Fuente" : "Source"}: IRS.gov, Healthcare.gov, KFF.org
               </div>
@@ -505,10 +363,10 @@ function SubsidyCliffAlert({ fplPct, income, houseSize, lang, maxAge }: {
         </div>
 
         {/* Disclaimer */}
-        <div style={{ marginTop: 12, fontSize: 10, color: "#3a3d4a", lineHeight: 1.5, textAlign: "center" }}>
+        <div style={{ marginTop: 10, fontSize: 10, color: "#3a3d4a", lineHeight: 1.5, textAlign: "center" }}>
           ⚠️ {isEs
-            ? "Las estimaciones son aproximadas y con fines educativos. Consulta con tu agente o un asesor fiscal para cálculos exactos. CotizaSalud no provee asesoría fiscal."
-            : "Estimates are approximate and for educational purposes. Consult your agent or a tax advisor for exact calculations. CotizaSalud does not provide tax advice."}
+            ? "Explicación generada por IA con fines educativos. Consulta con un profesional para decisiones fiscales."
+            : "AI-generated explanation for educational purposes. Consult a professional for tax decisions."}
         </div>
       </div>
     </div>
@@ -578,7 +436,7 @@ export default function QuoterPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [urlParams, setUrlParams] = useState<ReturnType<typeof parseSmartLink>>({ name: "", zip: "", phone: "", email: "", source: "direct", agentSlug: "", utm_source: "", utm_medium: "", utm_campaign: "", lang: "" });
   const [agentBrand, setAgentBrand] = useState<AgentBrand | null>(null);
-  const [hsaOpen, setHsaOpen] = useState(false);
+
 
   const t: Record<string, string> = i18n[lang];
 
@@ -904,7 +762,7 @@ export default function QuoterPage() {
           <div>
             <style>{`@keyframes hsa-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } 50% { box-shadow: 0 0 12px 2px rgba(16,185,129,0.15); } }`}</style>
             {/* Subsidy Cliff Alert */}
-            <SubsidyCliffAlert fplPct={fpl} income={Number(income)} houseSize={house.length} lang={lang} maxAge={Math.max(...house.map(h => h.age))} />
+            <SubsidyCliffAlert fplPct={fpl} income={Number(income)} houseSize={house.length} lang={lang} maxAge={Math.max(...house.map(h => h.age))} plans={filtered || results.plans} />
 
             {results.aptc > 0 && (
               <div style={S.subBanner}>
@@ -947,22 +805,22 @@ export default function QuoterPage() {
                     <div style={S.stat}><div style={S.statL}>{t.deductible}</div><div style={{ ...S.statV, fontSize: 14 }}>${plan.deductible.toLocaleString()}</div></div>
                     <div style={S.stat}><div style={S.statL}>{t.oopMax}</div><div style={{ ...S.statV, fontSize: 14 }}>${plan.oopMax.toLocaleString()}</div></div>
                     <div style={S.stat}><div style={S.statL}>{t.quality}</div><Stars n={plan.rating} /></div>
-                    {plan.hsa && fpl >= 350 ? (
+                    {plan.hsa ? (
                       <div style={{
                         ...S.stat,
-                        background: fpl > 400 ? "rgba(251,191,36,0.12)" : "rgba(16,185,129,0.12)",
-                        border: `1px solid ${fpl > 400 ? "rgba(251,191,36,0.3)" : "rgba(16,185,129,0.25)"}`,
+                        background: fpl >= 350 ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.06)",
+                        border: fpl >= 350 ? "1px solid rgba(16,185,129,0.25)" : "none",
                         borderRadius: 8, padding: "8px 10px", gridColumn: "1 / -1",
-                        animation: "hsa-glow 2s ease-in-out infinite",
+                        ...(fpl >= 350 ? { animation: "hsa-glow 2s ease-in-out infinite" } : {}),
                       }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: fpl > 400 ? "#fbbf24" : "#10b981" }}>
-                          🏦 HSA {lang === "es" ? "Elegible" : "Eligible"} — {fpl > 400
-                            ? (lang === "es" ? "Ver cómo recuperar tu subsidio ↓" : "See how to restore your subsidy ↓")
-                            : (lang === "es" ? "Ver cómo proteger tu subsidio ↓" : "See how to protect your subsidy ↓")}
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981" }}>
+                          {fpl >= 350
+                            ? (lang === "es" ? "🏦 HSA Elegible — Tu asesor de IA arriba te explica cómo esto te puede ahorrar dinero ☝️" : "🏦 HSA Eligible — Your AI advisor above explains how this can save you money ☝️")
+                            : (lang === "es" ? "🏦 HSA Elegible — Cuenta de ahorros médicos libre de impuestos" : "🏦 HSA Eligible — Tax-free medical savings account")}
                         </div>
                       </div>
                     ) : (
-                      <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: plan.hsa ? "#10b981" : "#2a2d3a" }}>{plan.hsa ? "✓" : "—"}</div></div>
+                      <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: "#2a2d3a" }}>—</div></div>
                     )}
                   </div>
                   {exp && (
@@ -981,193 +839,20 @@ export default function QuoterPage() {
                         <div style={{ ...S.stat, background: "rgba(239,68,68,0.08)" }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yHigh.toLocaleString()}</div></div>
                       </div>
 
-                      {/* HSA Education Card — only for HSA plans when FPL >= 350% */}
-                      {plan.hsa && fpl >= 350 && (() => {
-                        const isEs = lang === "es";
-                        const userIncome = Number(income);
-                        const fplBase = 15650 + (house.length - 1) * 5500;
-                        const threshold400 = fplBase * 4;
-                        const overCliff = fpl > 400;
-                        const excess = userIncome - threshold400;
-                        const hsaLimit = house.length >= 2 ? 8550 : 4300;
-                        const contribution = overCliff ? Math.min(excess + 100, hsaLimit) : 0;
-                        const newMagi = userIncome - contribution;
-                        const recoversSubsidy = newMagi < threshold400;
-                        const estMonthlySavings = recoversSubsidy ? (fpl > 450 ? 300 : fpl > 420 ? 400 : 500) : 0;
-
-                        const sH = { fontSize: 13, fontWeight: 700 as const, color: "#10b981", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6 };
-                        const sP = { fontSize: 12.5, lineHeight: 1.65, color: "#8b8fa3", marginBottom: 0 };
-                        const sBullet = { display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3, fontSize: 12.5, color: "#8b8fa3" as const };
-                        const sDot = { color: "#10b981", fontSize: 8, marginTop: 6, flexShrink: 0 as const };
-
-                        return (
-                          <div onClick={(e) => e.stopPropagation()} style={{
-                            marginTop: 16, background: "#1a1c26", borderRadius: 10,
-                            borderLeft: "4px solid #10b981", border: "1px solid rgba(16,185,129,0.2)",
-                            borderLeftWidth: 4, overflow: "hidden",
-                          }}>
-                            <div style={{ padding: "16px 16px 14px" }}>
-                              {/* Title */}
-                              <div style={{ fontSize: 15, fontWeight: 800, color: "#f0f1f5", display: "flex", alignItems: "center", gap: 8 }}>
-                                <span style={{ fontSize: 18 }}>🏦</span>
-                                {isEs ? "Plan Elegible para HSA (Health Savings Account)" : "HSA-Eligible Plan (Health Savings Account)"}
-                              </div>
-
-                              {/* Section 1 — What is an HSA */}
-                              <div style={sH}>
-                                {isEs ? "¿Qué es una HSA?" : "What is an HSA?"}
-                              </div>
-                              <div style={sP}>
-                                {isEs
-                                  ? "Una HSA es una cuenta de ahorros especial exclusivamente para gastos médicos. El dinero que depositas NO paga impuestos — ni al entrar, ni al crecer, ni al usarlo en gastos médicos."
-                                  : "An HSA is a special savings account exclusively for medical expenses. The money you deposit is NOT taxed — not going in, not while growing, and not when used for medical expenses."}
-                              </div>
-
-                              {/* Section 2 — Contribution limits */}
-                              <div style={sH}>
-                                {isEs ? "¿Cuánto puedes depositar en 2026?" : "How much can you contribute in 2026?"}
-                              </div>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 2 }}>
-                                {[
-                                  { label: "Individual", value: "$4,300", sub: isEs ? "/año" : "/yr" },
-                                  { label: isEs ? "Familia" : "Family", value: "$8,550", sub: isEs ? "/año" : "/yr" },
-                                  { label: "55+", value: "+$1,000", sub: "Bonus" },
-                                ].map((item, idx) => (
-                                  <div key={idx} style={{ background: "rgba(16,185,129,0.06)", borderRadius: 6, padding: "8px 10px", textAlign: "center" }}>
-                                    <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{item.label}</div>
-                                    <div style={{ fontSize: 16, fontWeight: 800, color: "#10b981", marginTop: 2 }}>{item.value}</div>
-                                    <div style={{ fontSize: 9, color: "#5a5e72" }}>{item.sub}</div>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Section 3 — What can you pay for */}
-                              <div style={sH}>
-                                {isEs ? "¿Para qué sirve?" : "What can you use it for?"}
-                              </div>
-                              <div style={sP}>
-                                {isEs
-                                  ? "Paga doctor, especialista, medicinas, lentes, dentista, laboratorios, emergencias — todo libre de impuestos. Lo que no uses se acumula año tras año. No lo pierdes nunca."
-                                  : "Pay for doctor, specialist, prescriptions, glasses, dentist, labs, emergencies — all tax-free. Unused funds roll over year after year. You never lose them."}
-                              </div>
-
-                              {/* Section 4 — Subsidy strategy (ONLY > 400% FPL) */}
-                              {overCliff && (
-                                <>
-                                  <div style={{ ...sH, color: "#fbbf24", marginTop: 18 }}>
-                                    💡 {isEs ? "Estrategia para recuperar tu subsidio" : "Strategy to restore your subsidy"}
-                                  </div>
-                                  <div style={{
-                                    background: "rgba(16,185,129,0.06)", borderRadius: 8, padding: 14,
-                                    border: "1px solid rgba(16,185,129,0.12)", marginBottom: 2,
-                                  }}>
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-                                      <div>
-                                        <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>
-                                          {isEs ? "Tu ingreso" : "Your income"}
-                                        </div>
-                                        <div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>${userIncome.toLocaleString()}</div>
-                                      </div>
-                                      <div>
-                                        <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>
-                                          {isEs ? "Límite 400% FPL" : "400% FPL Limit"}
-                                        </div>
-                                        <div style={{ fontSize: 18, fontWeight: 800, color: "#fbbf24", marginTop: 2 }}>${threshold400.toLocaleString()}</div>
-                                      </div>
-                                    </div>
-                                    <div style={{ fontSize: 12, color: "#8b8fa3", marginBottom: 10 }}>
-                                      {isEs ? "Excedes el límite por" : "You exceed the limit by"}: <strong style={{ color: "#ef4444" }}>${excess.toLocaleString()}</strong>
-                                    </div>
-
-                                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
-                                      <div style={{ fontSize: 12, color: "#8b8fa3", marginBottom: 6 }}>
-                                        {isEs ? `Si contribuyes $${contribution.toLocaleString()} a una HSA:` : `If you contribute $${contribution.toLocaleString()} to an HSA:`}
-                                      </div>
-                                      <div style={{ fontSize: 12, color: "#8b8fa3", marginBottom: 4 }}>
-                                        → MAGI: <strong style={{ color: "#f0f1f5" }}>${newMagi.toLocaleString()}</strong>
-                                      </div>
-                                      {recoversSubsidy ? (
-                                        <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981", marginTop: 8, padding: "8px 10px", background: "rgba(16,185,129,0.1)", borderRadius: 6 }}>
-                                          ✅ {isEs ? "Vuelves a calificar para subsidio APTC" : "You qualify for APTC subsidy again"}
-                                        </div>
-                                      ) : (
-                                        <div style={{ fontSize: 12, fontWeight: 600, color: "#fbbf24", marginTop: 8, padding: "8px 10px", background: "rgba(251,191,36,0.08)", borderRadius: 6 }}>
-                                          ⚠️ {isEs
-                                            ? "Aún sobre el límite. Considera también IRA tradicional ($7,000/año) o contribuciones 401k."
-                                            : "Still over the limit. Also consider traditional IRA ($7,000/yr) or 401k contributions."}
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {recoversSubsidy && estMonthlySavings > 0 && (
-                                      <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: "#10b981", textAlign: "center" }}>
-                                        {isEs ? "Ahorro potencial" : "Potential savings"}: ~${(estMonthlySavings * 12).toLocaleString()}/{isEs ? "año en primas" : "yr in premiums"}
-                                      </div>
-                                    )}
-                                  </div>
-                                </>
-                              )}
-
-                              {/* Section 5 — How to open */}
-                              <div style={sH}>
-                                {isEs ? "¿Cómo abrir una HSA?" : "How to open an HSA?"}
-                              </div>
-                              <div style={{ paddingLeft: 4 }}>
-                                {(isEs ? [
-                                  "Elige este plan HSA-elegible",
-                                  "Abre una cuenta HSA en tu banco (Fidelity, Lively, y muchos bancos ofrecen cuentas gratis)",
-                                  "Deposita antes del 15 de abril de 2027 para que cuente para impuestos 2026",
-                                  "Usa los fondos con tu tarjeta HSA cuando vayas al doctor o farmacia",
-                                ] : [
-                                  "Choose this HSA-eligible plan",
-                                  "Open an HSA at your bank (Fidelity, Lively, and many banks offer free accounts)",
-                                  "Deposit by April 15, 2027 for it to count toward 2026 taxes",
-                                  "Use the funds with your HSA card at the doctor or pharmacy",
-                                ]).map((item, idx) => (
-                                  <div key={idx} style={sBullet}>
-                                    <span style={{ color: "#10b981", fontWeight: 700, fontSize: 12, minWidth: 16, flexShrink: 0 }}>{idx + 1}.</span>
-                                    <span>{item}</span>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Section 6 — Real example (ONLY > 400% FPL) */}
-                              {overCliff && (
-                                <>
-                                  <div style={sH}>
-                                    {isEs ? "Ejemplo real" : "Real-world example"}
-                                  </div>
-                                  <div style={{
-                                    background: "rgba(255,255,255,0.03)", borderRadius: 6, padding: 12,
-                                    border: "1px solid rgba(255,255,255,0.06)", fontSize: 12, lineHeight: 1.7, color: "#8b8fa3",
-                                  }}>
-                                    {isEs ? (
-                                      <>
-                                        <strong style={{ color: "#f0f1f5" }}>María</strong> gana $65,000/año (familia de 1). El límite es $62,600.<br />
-                                        <span style={{ color: "#ef4444" }}>Sin HSA:</span> Paga $450/mes de prima completa = $5,400/año<br />
-                                        <span style={{ color: "#10b981" }}>Con HSA:</span> Deposita $4,300 → MAGI baja a $60,700 → Recupera subsidio → Prima $0/mes<br />
-                                        <strong style={{ color: "#10b981" }}>Ahorro total: $5,400/año en primas + $1,075 en impuestos = $6,475/año</strong>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <strong style={{ color: "#f0f1f5" }}>María</strong> earns $65,000/yr (family of 1). The limit is $62,600.<br />
-                                        <span style={{ color: "#ef4444" }}>Without HSA:</span> Pays $450/mo full premium = $5,400/yr<br />
-                                        <span style={{ color: "#10b981" }}>With HSA:</span> Deposits $4,300 → MAGI drops to $60,700 → Subsidy restored → $0/mo premium<br />
-                                        <strong style={{ color: "#10b981" }}>Total savings: $5,400/yr in premiums + $1,075 in taxes = $6,475/yr</strong>
-                                      </>
-                                    )}
-                                  </div>
-                                </>
-                              )}
-
-                              {/* Source */}
-                              <div style={{ fontSize: 10, color: "#3a3d4a", marginTop: 14, textAlign: "right" }}>
-                                {isEs ? "Fuente" : "Source"}: IRS.gov Publication 969
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
+                      {/* HSA Simple Badge */}
+                      {plan.hsa && (
+                        <div style={{
+                          marginTop: 12, background: "rgba(16,185,129,0.08)", borderRadius: 8,
+                          padding: "10px 14px", border: "1px solid rgba(16,185,129,0.15)",
+                          display: "flex", alignItems: "center", gap: 8,
+                        }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#10b981", lineHeight: 1.5 }}>
+                            {fpl >= 350
+                              ? (lang === "es" ? "🏦 HSA Elegible — Tu asesor de IA arriba te explica cómo esto te puede ahorrar dinero ☝️" : "🏦 HSA Eligible — Your AI advisor above explains how this can save you money ☝️")
+                              : (lang === "es" ? "🏦 HSA Elegible — Cuenta de ahorros médicos libre de impuestos" : "🏦 HSA Eligible — Tax-free medical savings account")}
+                          </span>
+                        </div>
+                      )}
 
                       {/* AI Plan Advisor */}
                       <AIPlanAdvisor
@@ -1260,111 +945,20 @@ export default function QuoterPage() {
                 <div style={{ ...S.stat, background: "rgba(239,68,68,0.08)", padding: 14 }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yHigh.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
               </div>
 
-              {/* HSA Expandable Card */}
-              {plan.hsa && (() => {
-                const isEs = lang === "es";
-                return (
-                  <div style={{ marginTop: 16, borderRadius: 10, border: "1px solid rgba(16,185,129,0.2)", background: "#12141c", overflow: "hidden" }}>
-                    {/* Collapsed header — always visible */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setHsaOpen(!hsaOpen); }}
-                      style={{
-                        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                        padding: "12px 14px", background: "rgba(16,185,129,0.08)", border: "none",
-                        cursor: "pointer", fontFamily: "inherit", gap: 8,
-                      }}
-                    >
-                      <span style={{ fontSize: 13, color: "#10b981", fontWeight: 600 }}>
-                        ✅ {isEs ? "Este plan es elegible para HSA — ahorra antes de impuestos" : "This plan is HSA-eligible — save pre-tax for medical expenses"}
-                      </span>
-                      <span style={{
-                        fontSize: 11, color: "#5a5e72", fontWeight: 600, flexShrink: 0,
-                        transition: "transform .2s", transform: hsaOpen ? "rotate(180deg)" : "rotate(0deg)",
-                      }}>▼</span>
-                    </button>
-
-                    {/* Expanded body */}
-                    <div style={{
-                      maxHeight: hsaOpen ? 600 : 0, overflow: "hidden",
-                      transition: "max-height .35s ease",
-                    }}>
-                      <div style={{ padding: "16px 14px", fontSize: 13, lineHeight: 1.7, color: "#8b8fa3" }}>
-                        {/* Title */}
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#10b981", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 20 }}>🏦</span>
-                          {isEs ? "¿Qué es una HSA? (Health Savings Account)" : "What is an HSA? (Health Savings Account)"}
-                        </div>
-
-                        <div style={{ marginBottom: 14 }}>
-                          {isEs
-                            ? "Una HSA es como una cuenta de ahorros especial SOLO para gastos médicos. La ventaja es que el dinero que depositas NO paga impuestos."
-                            : "An HSA is like a special savings account ONLY for medical expenses. The advantage is that the money you deposit is NOT taxed."}
-                        </div>
-
-                        {/* Tax savings */}
-                        <div style={{ fontWeight: 700, color: "#f0f1f5", marginBottom: 6, fontSize: 13 }}>
-                          💰 {isEs ? "¿Cuánto puedes ahorrar en impuestos?" : "How much can you save in taxes?"}
-                        </div>
-                        <div style={{ paddingLeft: 8, marginBottom: 14 }}>
-                          {[
-                            isEs ? "Individual: hasta $4,300/año (2026)" : "Individual: up to $4,300/year (2026)",
-                            isEs ? "Familia: hasta $8,550/año (2026)" : "Family: up to $8,550/year (2026)",
-                            isEs ? "Si tienes 55+: $1,000 adicional" : "Age 55+: additional $1,000 catch-up",
-                          ].map((item, idx) => (
-                            <div key={idx} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3 }}>
-                              <span style={{ color: "#10b981", fontSize: 8, marginTop: 6, flexShrink: 0 }}>●</span>
-                              <span>{item}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* How it works */}
-                        <div style={{ fontWeight: 700, color: "#f0f1f5", marginBottom: 6, fontSize: 13 }}>
-                          🏦 {isEs ? "¿Cómo funciona?" : "How does it work?"}
-                        </div>
-                        <div style={{ paddingLeft: 8, marginBottom: 14 }}>
-                          {(isEs ? [
-                            "Abres una cuenta HSA en tu banco (muchos son gratis)",
-                            "Depositas dinero antes de impuestos",
-                            "Usas ese dinero para pagar doctor, medicinas, lentes, dentista",
-                            "Lo que no uses se acumula — no lo pierdes nunca",
-                          ] : [
-                            "Open an HSA at your bank (many are free)",
-                            "Deposit money pre-tax",
-                            "Use that money to pay for doctor, prescriptions, glasses, dentist",
-                            "Unused funds roll over — you never lose them",
-                          ]).map((item, idx) => (
-                            <div key={idx} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3 }}>
-                              <span style={{ color: "#10b981", fontWeight: 700, fontSize: 12, minWidth: 18, flexShrink: 0 }}>{idx + 1}.</span>
-                              <span>{item}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Agent bonus tip */}
-                        <div style={{
-                          background: "rgba(16,185,129,0.08)", borderRadius: 8, padding: 12,
-                          border: "1px solid rgba(16,185,129,0.15)", marginBottom: 4,
-                        }}>
-                          <div style={{ fontWeight: 700, color: "#10b981", marginBottom: 6, fontSize: 13 }}>
-                            ⚡ {isEs ? "Beneficio extra para agentes:" : "Bonus tip for agents:"}
-                          </div>
-                          <div style={{ marginBottom: 8 }}>
-                            {isEs
-                              ? "Contribuir a una HSA REDUCE tu ingreso gravable (MAGI). Si tu cliente está cerca del límite de subsidio (400% FPL), una HSA puede ayudarle a mantenerse elegible para el subsidio APTC."
-                              : "Contributing to an HSA REDUCES your taxable income (MAGI). If your client is near the subsidy cliff (400% FPL), an HSA can help them stay eligible for the APTC subsidy."}
-                          </div>
-                          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: "8px 10px", fontSize: 12, color: "#f0f1f5", lineHeight: 1.6 }}>
-                            {isEs
-                              ? "Ejemplo: Si ganas $64,000 (sobre el límite), contribuir $4,300 a una HSA baja tu MAGI a $59,700 — y vuelves a calificar para subsidio."
-                              : "Example: If you earn $64,000 (over the limit), contributing $4,300 to an HSA lowers your MAGI to $59,700 — and you qualify for subsidy again."}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* HSA Simple Badge */}
+              {plan.hsa && (
+                <div style={{
+                  marginTop: 16, background: "rgba(16,185,129,0.08)", borderRadius: 10,
+                  padding: "12px 16px", border: "1px solid rgba(16,185,129,0.2)",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#10b981", lineHeight: 1.5 }}>
+                    {fpl >= 350
+                      ? (lang === "es" ? "🏦 HSA Elegible — Tu asesor de IA en la página de planes te explica cómo esto te puede ahorrar dinero" : "🏦 HSA Eligible — Your AI advisor on the plans page explains how this can save you money")
+                      : (lang === "es" ? "🏦 HSA Elegible — Cuenta de ahorros médicos libre de impuestos" : "🏦 HSA Eligible — Tax-free medical savings account")}
+                  </span>
+                </div>
+              )}
 
               {/* Summary for lead */}
               <div style={{ background: "#0e1018", borderRadius: 10, padding: 16, marginTop: 20, border: "1px solid #e5e7eb" }}>

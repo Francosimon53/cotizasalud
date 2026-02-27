@@ -530,6 +530,7 @@ body {
 .ag-bento-icon.cyan { background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.15); }
 .ag-bento-icon.purple { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.15); }
 .ag-bento-icon.amber { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.15); }
+.ag-bento-icon.red { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.15); }
 .ag-bento-card h3 {
   font-size: 20px;
   font-weight: 700;
@@ -566,7 +567,7 @@ body {
 }
 .ag-testimonials-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   max-width: 1200px;
   margin: 0 auto;
@@ -988,8 +989,8 @@ export default function AgentesPage() {
           <div className="ag-stat-label">Bilingüe ES/EN</div>
         </div>
         <div className="ag-stat">
-          <div className="ag-stat-value">$0</div>
-          <div className="ag-stat-label">Para empezar</div>
+          <div className="ag-stat-value">22M</div>
+          <div className="ag-stat-label">Afectados por el Subsidy Cliff</div>
         </div>
       </div>
 
@@ -1016,20 +1017,14 @@ export default function AgentesPage() {
               </div>
 
               <div className="ag-ai-chat-msg user" style={{ animationDelay: "0.3s" }}>
-                Explícame el plan Blue Cross Gold para una familia de 4 con ingreso de $55K
+                Mi cliente gana $63,000 al año, familia de 1. ¿Qué opciones tiene?
               </div>
 
               <div className="ag-ai-chat-msg ai" style={{ animationDelay: "0.8s" }}>
-                <strong>Blue Cross Gold HMO</strong><br /><br />
-                Con tu ingreso de $55,000 y una familia de 4, calificas para un subsidio
-                estimado de <strong>$1,200/mes</strong>. Tu costo real sería{" "}
-                <strong>~$180/mes</strong>.<br /><br />
-                📋 <strong>Deducible:</strong> $500/persona<br />
-                🏥 <strong>Visita de emergencia:</strong> $350 copago<br />
-                👨‍⚕️ <strong>Visita al doctor:</strong> $25 copago<br />
-                💊 <strong>Medicamentos genéricos:</strong> $10<br /><br />
-                <em>Para tu familia, esto significa que una visita de rutina con tus
-                hijos te costaría solo $25 por visita.</em>
+                ⚠️ <strong>Atención:</strong> Con $63,000 tu cliente está justo sobre el Subsidy Cliff (400% FPL = $62,600). Pierde <strong>TODO</strong> el subsidio APTC.<br /><br />
+                💡 <strong>Estrategia:</strong> Si abre una HSA y contribuye $4,300, su MAGI baja a $58,700 — vuelve a calificar para subsidio.<br /><br />
+                Con subsidio recuperado, el plan <strong>Ambetter Bronze HSA</strong> le costaría <strong>~$0/mes</strong> en vez de $450/mes. Ahorro anual: <strong>~$5,400</strong>.<br /><br />
+                <em>¿Quieres que le muestre los planes HSA-elegibles?</em>
               </div>
             </div>
 
@@ -1048,8 +1043,8 @@ export default function AgentesPage() {
                 <p>Tu cliente pregunta, la IA responde al instante. Sin esperas, sin "déjame revisar". Cierra más rápido.</p>
               </div>
               <div className="ag-ai-feature-card">
-                <h4>📊 Comparación inteligente</h4>
-                <p>Compara planes lado a lado con recomendaciones basadas en el perfil específico de cada cliente.</p>
+                <h4>🏦 Educación HSA integrada</h4>
+                <p>Tu cliente pregunta &ldquo;¿Qué es una HSA?&rdquo; y la plataforma le explica en español simple con ejemplos reales. Ahórrales 15 minutos por cliente.</p>
               </div>
             </div>
           </div>
@@ -1083,9 +1078,9 @@ export default function AgentesPage() {
             <p>Ve quién cotizó, qué plan eligió, y si firmó el consent. Pipeline visual para que no se te escape ningún prospecto.</p>
           </div>
           <div className="ag-bento-card wide ag-reveal">
-            <div className="ag-bento-icon green">🏥</div>
-            <h3>Medicaid Screening + Medicare Lead Capture</h3>
-            <p>Detecta automáticamente si el prospecto califica para Medicaid (referral inmediato) o si es elegible para Medicare por edad. Convierte cada cotización ACA en una oportunidad multi-producto.</p>
+            <div className="ag-bento-icon red">🚨</div>
+            <h3>Subsidy Cliff Alert 2026</h3>
+            <p>Detecta automáticamente si tu cliente está cerca del límite del 400% FPL. Sugiere estrategias legales como HSA y contribuciones pre-tax para mantener el subsidio. Ningún otro cotizador tiene esto.</p>
           </div>
         </div>
       </section>
@@ -1129,6 +1124,17 @@ export default function AgentesPage() {
               </div>
             </div>
           </div>
+          <div className="ag-testimonial ag-reveal">
+            <div className="ag-testimonial-stars">★★★★★</div>
+            <p className="ag-testimonial-text">&ldquo;La alerta del Subsidy Cliff me salvó con 3 clientes que iban a perder su subsidio. Les recomendé abrir una HSA y mantuvieron sus planes a $0/mes. Eso no lo hace ninguna otra herramienta.&rdquo;</p>
+            <div className="ag-testimonial-author">
+              <div className="ag-testimonial-avatar">RM</div>
+              <div className="ag-testimonial-info">
+                <h4>Roberto Méndez</h4>
+                <p>Agente Senior · Fort Myers, FL</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1139,9 +1145,9 @@ export default function AgentesPage() {
 
         <div className="ag-roi-cards">
           <div className="ag-roi-card ag-reveal">
-            <div className="ag-roi-number">76</div>
-            <h4>Días de OEP</h4>
-            <p>El 80% de tu ingreso anual se concentra en 76 días. CotizaSalud maximiza cada minuto.</p>
+            <div className="ag-roi-number">45</div>
+            <h4>Días de OEP 2027</h4>
+            <p>El OEP 2027 se acorta a solo 45 días (Nov 1 – Dec 15). CotizaSalud te prepara para cerrar más en menos tiempo.</p>
           </div>
           <div className="ag-roi-card ag-reveal">
             <div className="ag-roi-number">5.6x</div>

@@ -29,10 +29,45 @@ export default function AIPlanAdvisor({ plan, household, income, fplPct, aptc, l
   const maxAge = Math.max(...household.map(m => m.age));
   const fullPremium = maxAge >= 55 ? 950 : maxAge >= 40 ? 650 : 400;
 
+  // Estimate 2025 ARP premium (enhanced subsidies capped premiums as % of income, no cliff)
+  const show2025 = fplPct > 300;
+  let est2025Monthly = 0;
+  if (show2025) {
+    let pctOfIncome: number;
+    if (fplPct <= 150) pctOfIncome = 0;
+    else if (fplPct <= 200) pctOfIncome = 0.02;
+    else if (fplPct <= 250) pctOfIncome = 0.04;
+    else if (fplPct <= 300) pctOfIncome = 0.06;
+    else if (fplPct <= 350) pctOfIncome = 0.085;
+    else pctOfIncome = 0.085; // 400%+ was still 8.5% under ARP
+    est2025Monthly = Math.round((income * pctOfIncome) / 12 / 10) * 10;
+  }
+  const current2026Monthly = plan.afterSubsidy;
+  const monthlyDiff = current2026Monthly - est2025Monthly;
+  const annualDiff = monthlyDiff * 12;
+
   const generateExplanation = async () => {
     setLoading(true);
     setError(false);
     setExplanation("");
+
+    const section2025es = show2025 ? `
+## Lo Que Cambió en 2026
+INCLUYE ESTA SECCIÓN (3-4 oraciones máximo). Datos que te doy:
+- En 2025, esta persona hubiera pagado aproximadamente $${est2025Monthly}/mes por un plan similar gracias a una protección del gobierno que ayudaba a todos.
+- En 2026, con este plan paga $${current2026Monthly}/mes — eso son $${monthlyDiff} más al mes ($${annualDiff.toLocaleString()} más al año).
+- Explica esto de forma empática: reconoce que duele, explica brevemente que el Congreso no renovó la ley que extendía la ayuda, y luego transiciona a las soluciones: "La buena noticia es que hay formas de recuperar parte de esa ayuda..."
+- NO hagas esta sección larga. 3-4 oraciones y pasa a la siguiente sección.
+` : "";
+
+    const section2025en = show2025 ? `
+## What Changed in 2026
+INCLUDE THIS SECTION (3-4 sentences max). Data provided:
+- In 2025, this person would have paid approximately $${est2025Monthly}/mo for a similar plan thanks to government protection that helped everyone.
+- In 2026, with this plan they pay $${current2026Monthly}/mo — that's $${monthlyDiff} more per month ($${annualDiff.toLocaleString()} more per year).
+- Explain empathetically: acknowledge it sucks, briefly explain Congress didn't renew the law that extended help, then transition to solutions: "The good news is there are ways to recover some of that help..."
+- Do NOT make this section long. 3-4 sentences then move to the next section.
+` : "";
 
     const systemPrompt = lang === "es"
       ? `Eres un asesor de seguros de salud amigable y bilingüe. Cuando explicas un plan, debes cubrir TODO lo que la persona necesita saber en UNA sola conversación — tanto los detalles del plan COMO su situación financiera.
@@ -42,9 +77,9 @@ ESTRUCTURA TU RESPUESTA:
 ## Resumen Rápido
 Qué es este plan, para quién es, costo mensual. Mantenlo simple. 2-3 oraciones.
 
-## Cómo Funciona Tu Deducible: Ejemplo Real
+## Cómo Funciona: Ejemplo Real
 Usa un escenario real con los números del plan. Explica como si hablaras con alguien que nunca ha tenido seguro.
-
+${section2025es}
 ## Tu Situación Financiera con Este Plan
 ESTO ES CRÍTICO:
 - Explica su situación de descuento del gobierno en lenguaje simple (SIN siglas)
@@ -77,9 +112,9 @@ STRUCTURE YOUR RESPONSE:
 ## Quick Summary
 What this plan is, who it's for, monthly cost. Keep it simple. 2-3 sentences.
 
-## How Your Deductible Works: Real Example
+## How It Works: Real Example
 Use a real scenario with actual plan numbers. Explain as if talking to someone who's never had insurance before.
-
+${section2025en}
 ## Your Financial Situation with This Plan
 THIS IS CRITICAL:
 - Explain their government discount situation in simple language (NO acronyms)
@@ -160,6 +195,12 @@ ${household.map((m, i) => `- Persona ${i + 1}: ${m.age} años, ${m.gender === "F
 - IRA tradicional: $${(maxAge >= 50 ? 8000 : 7000).toLocaleString()}/año
 - 401(k): $23,500/año
 - Prima completa estimada sin ayuda: ~$${fullPremium}/mes
+${show2025 ? `
+**COMPARACIÓN 2025 vs 2026:**
+- Prima estimada en 2025 (con protección extendida): ~$${est2025Monthly}/mes
+- Prima actual en 2026 con este plan: $${current2026Monthly}/mes
+- Diferencia: +$${monthlyDiff}/mes (+$${annualDiff.toLocaleString()}/año)
+- Razón: El Congreso no renovó la ley que extendía la ayuda del gobierno a más personas.` : ""}
 
 Explícame todo lo que necesito saber sobre este plan y mi situación financiera en UNA sola explicación.`
       : `Explain this health insurance plan AND my financial situation in a clear, personalized way.
@@ -195,6 +236,12 @@ ${household.map((m, i) => `- Person ${i + 1}: ${m.age} years old, ${m.gender}${m
 - Traditional IRA: $${(maxAge >= 50 ? 8000 : 7000).toLocaleString()}/yr
 - 401(k): $23,500/yr
 - Estimated full premium without help: ~$${fullPremium}/mo
+${show2025 ? `
+**2025 vs 2026 COMPARISON:**
+- Estimated 2025 premium (with extended protection): ~$${est2025Monthly}/mo
+- Actual 2026 premium with this plan: $${current2026Monthly}/mo
+- Difference: +$${monthlyDiff}/mo (+$${annualDiff.toLocaleString()}/yr)
+- Reason: Congress did not renew the law that extended government help to more people.` : ""}
 
 Explain everything I need to know about this plan and my financial situation in ONE explanation.`;
 

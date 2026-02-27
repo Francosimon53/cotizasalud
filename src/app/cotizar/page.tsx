@@ -117,8 +117,8 @@ function SubsidyCliffAlert({ fplPct, income, houseSize, lang }: {
       bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.3)",
       title: isEs ? "Subsidy Cliff — Sin subsidio" : "Subsidy Cliff — No Subsidy",
       body: isEs
-        ? "Tu ingreso supera el 400% del nivel federal de pobreza. No calificas para subsidio APTC en 2026. Tu prima será el precio completo.\n\nOpciones: Revisa si puedes reducir tu MAGI con HSA ($4,150 individual / $8,300 familia) o contribuciones a IRA tradicional."
-        : "Your income exceeds 400% of the Federal Poverty Level. You don't qualify for APTC subsidy in 2026. Your premium will be full price.\n\nOptions: Check if you can reduce your MAGI with HSA ($4,150 individual / $8,300 family) or traditional IRA contributions.",
+        ? "Tu ingreso supera el 400% del nivel federal de pobreza. No calificas para subsidio APTC en 2026. Tu prima será el precio completo.\n\nOpciones: Revisa si puedes reducir tu MAGI con HSA ($4,300 individual / $8,550 familia) o contribuciones a IRA tradicional."
+        : "Your income exceeds 400% of the Federal Poverty Level. You don't qualify for APTC subsidy in 2026. Your premium will be full price.\n\nOptions: Check if you can reduce your MAGI with HSA ($4,300 individual / $8,550 family) or traditional IRA contributions.",
     },
   };
 

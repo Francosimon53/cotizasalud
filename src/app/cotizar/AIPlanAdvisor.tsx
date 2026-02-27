@@ -9,73 +9,140 @@ interface AIPlanAdvisorProps {
   aptc: number;
   lang: string;
   t: Record<string, string>;
+  householdSize: number;
+  fplThreshold400: number;
+  isOverCliff: boolean;
+  isNearCliff: boolean;
+  excessOverCliff: number;
 }
 
-export default function AIPlanAdvisor({ plan, household, income, fplPct, aptc, lang, t }: AIPlanAdvisorProps) {
+export default function AIPlanAdvisor({ plan, household, income, fplPct, aptc, lang, t, householdSize, fplThreshold400, isOverCliff, isNearCliff, excessOverCliff }: AIPlanAdvisorProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [explanation, setExplanation] = useState("");
   const [error, setError] = useState(false);
-  const [streaming, setStreaming] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const householdDesc = household.map((m, i) =>
-    `Person ${i + 1}: ${m.age}yo ${m.gender}${m.tobacco ? " (tobacco)" : ""}`
-  ).join(", ");
+  const isFamily = householdSize >= 2;
+  const hsaLimit = isFamily ? 8550 : 4300;
+  const buffer = fplThreshold400 - income;
+  const maxAge = Math.max(...household.map(m => m.age));
+  const fullPremium = maxAge >= 55 ? 950 : maxAge >= 40 ? 650 : 400;
 
   const generateExplanation = async () => {
     setLoading(true);
     setError(false);
     setExplanation("");
-    setStreaming(true);
 
     const systemPrompt = lang === "es"
-      ? `Eres un asesor de seguros médicos ACA experto. Explicas planes de salud en español simple y claro para familias hispanas.
+      ? `Eres un asesor de seguros de salud amigable y bilingüe. Cuando explicas un plan, debes cubrir TODO lo que la persona necesita saber en UNA sola conversación — tanto los detalles del plan COMO su situación financiera.
 
-REGLAS DE FORMATO ESTRICTAS:
-- Usa ## para títulos de sección principales (máximo 5 secciones)
-- Usa **texto** para resaltar cifras y conceptos clave dentro de párrafos
-- Usa viñetas (- ) para listas cortas de pros/contras
-- Usa números (1. 2. 3.) para pasos o escenarios secuenciales
-- NO uses ### (solo ## para secciones)
-- NO uses emojis en títulos de sección
-- Usa UN emoji relevante al inicio de líneas importantes de veredicto (✅ o ⚠️)
-- Escribe párrafos fluidos de 2-3 oraciones, no oraciones sueltas
-- Separa secciones con una línea vacía
-- El tono debe ser como un amigo experto que te explica en la cocina de su casa
-- Usa analogías cotidianas (plan de celular, membresía de gym, etc.)
-- SIEMPRE incluye cifras específicas en dólares, nunca digas "depende"
+ESTRUCTURA TU RESPUESTA:
+
+## Resumen Rápido
+Qué es este plan, para quién es, costo mensual. Mantenlo simple. 2-3 oraciones.
+
+## Cómo Funciona Tu Deducible: Ejemplo Real
+Usa un escenario real con los números del plan. Explica como si hablaras con alguien que nunca ha tenido seguro.
+
+## Tu Situación Financiera con Este Plan
+ESTO ES CRÍTICO:
+- Explica su situación de descuento del gobierno en lenguaje simple (SIN siglas)
+- Si están por encima del límite: explica qué significa para su bolsillo, cuánto más están pagando
+- Si este plan es elegible para cuenta de ahorros médicos Y están cerca/por encima del límite: explica exactamente cómo abrir una cuenta de ahorros médicos con este plan podría ayudarles a recuperar el descuento del gobierno. Usa sus números REALES.
+- Da un ejemplo concreto: "Si eliges este plan y depositas $X en tu cuenta de ahorros médicos, tu ingreso para el gobierno baja de $Y a $Z. Eso te devuelve el descuento y tu prima podría bajar a $0/mes. Te ahorras $W al año."
+- Si están bien por debajo del límite: explica que tienen el descuento del gobierno y cuánto están ahorrando
+
+## Lo Que Te Recomiendo
+UNA recomendación clara que combine la mejor opción de plan CON la mejor estrategia financiera. Si aplica, incluye los pasos exactos.
+
+REGLAS:
+- NUNCA uses MAGI, FPL, APTC, ACA, IRA como siglas solas. Siempre explica en lenguaje simple.
+- En lugar de "MAGI" di "tu ingreso ajustado para el gobierno"
+- En lugar de "subsidio/APTC" di "el descuento del gobierno" o "la ayuda del gobierno"
+- En lugar de "HSA" di "cuenta de ahorros médicos (HSA)" la primera vez, luego "cuenta de ahorros médicos"
+- Habla como un amigo que se preocupa, usa "tú"
+- Usa cifras reales en dólares del plan y del ingreso del usuario
+- Máximo 500 palabras
+- Si el plan es elegible para cuenta de ahorros médicos y el usuario está por encima/cerca del límite, esto es lo MÁS importante a resaltar
+- Usa ## para títulos de sección
+- Usa **texto** para resaltar cifras clave
+- Usa viñetas (- ) para listas cortas
+- Usa UN emoji (✅ o ⚠️) solo al inicio de líneas de veredicto
 - NUNCA recomiendes inscribirse sin un agente licenciado`
-      : `You are an expert ACA health insurance advisor. You explain health plans in simple, clear English for families.
+      : `You are a friendly bilingual health insurance advisor. When explaining a plan, you must cover EVERYTHING the person needs to know in ONE conversation — both the plan details AND their financial situation.
 
-STRICT FORMAT RULES:
-- Use ## for main section headers (max 5 sections)
-- Use **text** to highlight dollar amounts and key concepts within paragraphs
-- Use bullets (- ) for short pro/con lists
-- Use numbers (1. 2. 3.) for sequential steps or scenarios
-- Do NOT use ### (only ## for sections)
-- Do NOT use emojis in section headers
-- Use ONE relevant emoji at the start of verdict lines only (✅ or ⚠️)
-- Write fluid 2-3 sentence paragraphs, not single sentences
-- Separate sections with a blank line
-- Tone should be like a knowledgeable friend explaining at their kitchen table
-- Use everyday analogies (cell phone plan, gym membership, etc.)
-- ALWAYS include specific dollar figures, never say "it depends"
+STRUCTURE YOUR RESPONSE:
+
+## Quick Summary
+What this plan is, who it's for, monthly cost. Keep it simple. 2-3 sentences.
+
+## How Your Deductible Works: Real Example
+Use a real scenario with actual plan numbers. Explain as if talking to someone who's never had insurance before.
+
+## Your Financial Situation with This Plan
+THIS IS CRITICAL:
+- Explain their government discount situation in simple language (NO acronyms)
+- If they're over the cliff: explain what that means for their wallet, how much more they're paying
+- If this plan is medical savings account eligible AND they're near/over the cliff: explain exactly how opening a medical savings account with this plan could help them get the government discount back. Use their ACTUAL numbers.
+- Give a concrete example: "If you choose this plan and deposit $X into your medical savings account, your income for the government drops from $Y to $Z. That gets your discount back and your premium could drop to $0/mo. You save $W per year."
+- If they're well under the cliff: explain they have the government discount and how much they're saving
+
+## What I Recommend
+ONE clear recommendation that combines the best plan choice WITH the best financial strategy. If applicable, include exact steps.
+
+RULES:
+- NEVER use MAGI, FPL, APTC, ACA, IRA as standalone acronyms. Always explain in plain language.
+- Instead of "MAGI" say "your adjusted income for the government"
+- Instead of "subsidy/APTC" say "the government discount" or "government help"
+- Instead of "HSA" say "medical savings account (HSA)" first time, then "medical savings account"
+- Speak like a caring friend, use "you"
+- Use real dollar amounts from the plan and the user's income
+- Maximum 500 words
+- If the plan is medical savings account eligible and the user is over/near the cliff, this is the MOST important thing to highlight
+- Use ## for section headers
+- Use **text** to highlight key dollar amounts
+- Use bullets (- ) for short lists
+- Use ONE emoji (✅ or ⚠️) only at the start of verdict lines
 - NEVER recommend enrolling without a licensed agent`;
 
+    const cliffDesc = lang === "es"
+      ? (isOverCliff
+          ? `ESTOY POR ENCIMA del límite del descuento del gobierno por $${excessOverCliff.toLocaleString()}. NO recibo ninguna ayuda ahora mismo. Pago prima completa (~$${fullPremium}/mes).`
+          : isNearCliff
+            ? `Estoy a solo $${buffer.toLocaleString()} del límite. EN RIESGO de perder el descuento si mi ingreso sube.`
+            : fplPct < 138
+              ? "Podría calificar para Medicaid."
+              : fplPct < 250
+                ? "Recibo la MÁXIMA ayuda del gobierno disponible."
+                : "Recibo ayuda moderada del gobierno.")
+      : (isOverCliff
+          ? `I'm ABOVE the government discount limit by $${excessOverCliff.toLocaleString()}. I get NO help right now. I pay full premium (~$${fullPremium}/mo).`
+          : isNearCliff
+            ? `I'm only $${buffer.toLocaleString()} from the limit. AT RISK of losing the discount if my income goes up.`
+            : fplPct < 138
+              ? "I may qualify for Medicaid."
+              : fplPct < 250
+                ? "I receive MAXIMUM government help available."
+                : "I receive moderate government help.");
+
     const userPrompt = lang === "es"
-      ? `Explica este plan de seguro médico para mi familia de forma clara y personalizada.
+      ? `Explica este plan de seguro médico Y mi situación financiera de forma clara y personalizada.
 
 **MI FAMILIA:**
 ${household.map((m, i) => `- Persona ${i + 1}: ${m.age} años, ${m.gender === "Female" ? "Mujer" : "Hombre"}${m.tobacco ? " (usa tabaco)" : ""}`).join("\n")}
-- Ingreso anual: $${income.toLocaleString()} (${fplPct}% del Nivel Federal de Pobreza)
-- Subsidio mensual estimado (APTC): $${aptc}
+- Ingreso anual: $${income.toLocaleString()}
+- Tamaño del hogar: ${householdSize} persona${householdSize > 1 ? "s" : ""}
+- Porcentaje del límite de pobreza: ${fplPct}%
+- Límite para descuento del gobierno (400%): $${fplThreshold400.toLocaleString()}
+- ${cliffDesc}
+- Descuento mensual estimado: $${aptc}
 
 **EL PLAN:**
 - Nombre: ${plan.name}
 - Aseguradora: ${plan.issuer}
 - Nivel: ${plan.metal}
-- Prima mensual: $${plan.premium} → $${plan.afterSubsidy}/mes después del subsidio
+- Prima mensual: $${plan.premium} → $${plan.afterSubsidy}/mes con descuento
 - Deducible: $${plan.deductible.toLocaleString()}
 - Máximo de bolsillo: $${plan.oopMax.toLocaleString()}
 - Visita médico general: $${plan.pcp} copay
@@ -83,32 +150,34 @@ ${household.map((m, i) => `- Persona ${i + 1}: ${m.age} años, ${m.gender === "F
 - Medicamento genérico: $${plan.genericRx} copay
 - Emergencia: $${plan.er} copay
 - Calificación: ${plan.rating}/5 estrellas
-- HSA elegible: ${plan.hsa ? "Sí" : "No"}
+- Elegible para cuenta de ahorros médicos (HSA): ${plan.hsa ? "SÍ" : "No"}
 - Costo anual estimado (uso bajo): $${plan.yLow.toLocaleString()}
 - Costo anual estimado (uso medio): $${plan.yMed.toLocaleString()}
 - Costo anual estimado (uso alto): $${plan.yHigh.toLocaleString()}
 
-Por favor incluye:
-1. **Resumen rápido** - ¿Para quién es ideal este plan? (2-3 oraciones)
-2. **Cómo funciona tu deducible** - Explica con un ejemplo real basado en mi familia
-3. **3 escenarios reales** para mi hogar específico:
-   - Año saludable (solo chequeos y visitas preventivas)
-   - Año con necesidades moderadas (una persona necesita especialista + medicamentos)
-   - Año con emergencia o cirugía
-4. **Lo bueno y lo malo** - Pros y contras honestos de este plan
-5. **Veredicto** - ¿Vale la pena este plan para mi familia?`
-      : `Explain this health insurance plan to my family in a clear, personalized way.
+**DATOS FINANCIEROS:**
+- Límite de cuenta de ahorros médicos (HSA): $${hsaLimit.toLocaleString()}/año ${isFamily ? "(familia)" : "(individual)"}
+- IRA tradicional: $${(maxAge >= 50 ? 8000 : 7000).toLocaleString()}/año
+- 401(k): $23,500/año
+- Prima completa estimada sin ayuda: ~$${fullPremium}/mes
+
+Explícame todo lo que necesito saber sobre este plan y mi situación financiera en UNA sola explicación.`
+      : `Explain this health insurance plan AND my financial situation in a clear, personalized way.
 
 **MY FAMILY:**
 ${household.map((m, i) => `- Person ${i + 1}: ${m.age} years old, ${m.gender}${m.tobacco ? " (tobacco user)" : ""}`).join("\n")}
-- Annual income: $${income.toLocaleString()} (${fplPct}% of Federal Poverty Level)
-- Estimated monthly subsidy (APTC): $${aptc}
+- Annual income: $${income.toLocaleString()}
+- Household size: ${householdSize} person${householdSize > 1 ? "s" : ""}
+- Federal poverty percentage: ${fplPct}%
+- Government discount limit (400%): $${fplThreshold400.toLocaleString()}
+- ${cliffDesc}
+- Estimated monthly discount: $${aptc}
 
 **THE PLAN:**
 - Name: ${plan.name}
 - Issuer: ${plan.issuer}
 - Metal level: ${plan.metal}
-- Monthly premium: $${plan.premium} → $${plan.afterSubsidy}/mo after subsidy
+- Monthly premium: $${plan.premium} → $${plan.afterSubsidy}/mo with discount
 - Deductible: $${plan.deductible.toLocaleString()}
 - Out-of-pocket max: $${plan.oopMax.toLocaleString()}
 - Doctor visit: $${plan.pcp} copay
@@ -116,20 +185,18 @@ ${household.map((m, i) => `- Person ${i + 1}: ${m.age} years old, ${m.gender}${m
 - Generic Rx: $${plan.genericRx} copay
 - Emergency room: $${plan.er} copay
 - Quality rating: ${plan.rating}/5 stars
-- HSA eligible: ${plan.hsa ? "Yes" : "No"}
+- Medical savings account (HSA) eligible: ${plan.hsa ? "YES" : "No"}
 - Est. annual cost (low use): $${plan.yLow.toLocaleString()}
 - Est. annual cost (medium use): $${plan.yMed.toLocaleString()}
 - Est. annual cost (high use): $${plan.yHigh.toLocaleString()}
 
-Please include:
-1. **Quick summary** - Who is this plan ideal for? (2-3 sentences)
-2. **How your deductible works** - Explain with a real example based on my family
-3. **3 real scenarios** for my specific household:
-   - Healthy year (just checkups and preventive visits)
-   - Moderate needs year (one person needs specialist + medications)
-   - Emergency or surgery year
-4. **The good and the bad** - Honest pros and cons
-5. **Verdict** - Is this plan worth it for my family?`;
+**FINANCIAL DATA:**
+- Medical savings account (HSA) limit: $${hsaLimit.toLocaleString()}/yr ${isFamily ? "(family)" : "(individual)"}
+- Traditional IRA: $${(maxAge >= 50 ? 8000 : 7000).toLocaleString()}/yr
+- 401(k): $23,500/yr
+- Estimated full premium without help: ~$${fullPremium}/mo
+
+Explain everything I need to know about this plan and my financial situation in ONE explanation.`;
 
     try {
       const response = await fetch("/api/ai-explain", {
@@ -137,7 +204,7 @@ Please include:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: 1500,
+          max_tokens: 1800,
           system: systemPrompt,
           messages: [{ role: "user", content: userPrompt }],
         }),
@@ -152,7 +219,6 @@ Please include:
       setError(true);
     } finally {
       setLoading(false);
-      setStreaming(false);
     }
   };
 
@@ -217,7 +283,7 @@ Please include:
         color: "#fff",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 18 }}>🤖</span>
+          <span style={{ fontSize: 18 }}>🧠</span>
           <span style={{ fontSize: 13, fontWeight: 800 }}>{t.aiTitle}</span>
         </div>
         <button onClick={() => setOpen(false)} style={{
@@ -236,7 +302,7 @@ Please include:
       {/* Content */}
       <div ref={contentRef} style={{
         padding: 16,
-        maxHeight: 400,
+        maxHeight: 500,
         overflowY: "auto",
         fontSize: 13,
         lineHeight: 1.7,
@@ -371,8 +437,8 @@ Please include:
               // Empty lines
               if (!line.trim()) return <div key={i} style={{ height: 6 }} />;
 
-              // Verdict/highlight lines (contains ✅ ⚠️ 🏆 💡)
-              if (/^[✅⚠️🏆💡🎯]/.test(line.trim()) || line.includes("Veredicto") || line.includes("Verdict")) {
+              // Verdict/highlight lines (contains checkmarks, warnings, etc.)
+              if (/^[✅⚠️🏆💡🎯]/.test(line.trim()) || line.includes("Veredicto") || line.includes("Verdict") || line.includes("Recomiendo") || line.includes("Recommend")) {
                 return (
                   <div key={i} style={{
                     background: line.includes("✅") || line.includes("Sí,") ? "rgba(16,185,129,0.08)" : line.includes("⚠️") ? "rgba(251,191,36,0.08)" : "rgba(139,92,246,0.08)",

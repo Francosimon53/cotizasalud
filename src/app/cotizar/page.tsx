@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { saveLead, saveConsent, savePlanSelection } from "@/lib/save-lead";
 import { i18n, type Lang, type Translations } from "@/lib/i18n";
 import { lookupCounties, getFPL, getFPLpct } from "@/lib/data";
@@ -70,15 +70,11 @@ function StepLabel({ num, label }: { num: number; label: string }) {
   );
 }
 
-// ==================== SUBSIDY CLIFF ALERT ====================
-function SubsidyCliffAlert({ fplPct, income, houseSize, lang, maxAge, plans }: {
-  fplPct: number; income: number; houseSize: number; lang: string; maxAge: number; plans: any[];
+// ==================== FPL INDICATOR BAR ====================
+function FPLIndicator({ fplPct, income, houseSize, lang, maxAge }: {
+  fplPct: number; income: number; houseSize: number; lang: string; maxAge: number;
 }) {
-  const [aiText, setAiText] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState(false);
   const [techOpen, setTechOpen] = useState(false);
-  const aiCalled = useRef(false);
   const isEs = lang === "es";
   const fplBase = 15650 + (houseSize - 1) * 5500;
   const threshold400 = fplBase * 4;
@@ -102,271 +98,71 @@ function SubsidyCliffAlert({ fplPct, income, houseSize, lang, maxAge, plans }: {
     : { medicaid: "Possible Medicaid", max: "Maximum Subsidy", moderate: "Moderate Subsidy", yellow: "Risk Zone", red: "No Subsidy (Cliff)" }[zone];
 
   const fullPremium = maxAge >= 55 ? 950 : maxAge >= 40 ? 650 : 400;
-
-  // Meter positions
   const meterMax = 520;
   const pctPos = Math.min(Math.max((fplPct - 100) / (meterMax - 100) * 100, 0), 100);
   const zP = (v: number) => ((v - 100) / (meterMax - 100)) * 100;
 
-  // AI call — auto-trigger once
-  useEffect(() => {
-    if (aiCalled.current || aiText) return;
-    aiCalled.current = true;
-    setAiLoading(true);
-
-    const hsaPlans = plans.filter((p: any) => p.hsa).slice(0, 3);
-    const topPlans = plans.slice(0, 5);
-    const planSummary = topPlans.map((p: any) => `${p.name} (${p.metal}) — $${p.afterSubsidy}/mo, deductible $${p.deductible.toLocaleString()}${p.hsa ? ", HSA-eligible" : ""}`).join("\n");
-
-    const sysPrompt = isEs
-      ? `Eres un asesor de seguros de salud amigable y bilingüe que ayuda a una persona real a entender su situación financiera para el seguro médico ACA en 2026.
-
-REGLAS CRÍTICAS:
-- Habla como un amigo o familiar que se preocupa por ti, NO como un asesor financiero
-- NUNCA uses siglas como MAGI, FPL, APTC, ACA, IRA sin explicarlas primero en lenguaje simple
-- En lugar de "MAGI" di "tu ingreso ajustado para el gobierno"
-- En lugar de "FPL" di "el límite de pobreza federal"
-- En lugar de "APTC" di "la ayuda del gobierno para pagar tu seguro"
-- En lugar de "HSA" di "cuenta de ahorros médicos (HSA)" la primera vez, luego solo "cuenta de ahorros médicos"
-- En lugar de "subsidio" di "la ayuda del gobierno" o "el descuento del gobierno"
-- Usa analogías del mundo real y ejemplos con los números de esta persona
-- Da UNA recomendación clara al final: "Lo que yo te recomiendo hacer:"
-- Usa "tú" no "usted"
-- Máximo 350 palabras
-
-FORMATO:
-## Tu Situación
-Un párrafo explicando dónde estás (usa sus números reales)
-
-## Qué Significa Para Ti
-Qué significa esto en términos prácticos (costo mensual, qué pueden/no pueden obtener)
-
-## Lo Que Te Recomiendo
-UNA recomendación clara y accionable con pasos exactos. Si es relevante, incluye un ejemplo con números: "Por ejemplo: Si depositas $X en [tipo de cuenta], tu ingreso baja a $Y y recuperas el descuento."`
-      : `You are a friendly bilingual health insurance advisor helping a real person understand their financial situation for ACA health insurance in 2026.
-
-CRITICAL RULES:
-- Speak like a caring friend or family member, NOT a financial advisor
-- NEVER use acronyms like MAGI, FPL, APTC, ACA, IRA without explaining them first in simple language
-- Instead of "MAGI" say "your adjusted income for the government"
-- Instead of "FPL" say "the federal poverty guideline"
-- Instead of "APTC" say "the government's help paying for your insurance"
-- Instead of "HSA" say "medical savings account (HSA)" the first time, then just "medical savings account"
-- Instead of "subsidy" say "government help" or "government discount"
-- Use real-world analogies and examples with this person's actual numbers
-- Give ONE clear recommendation at the end: "What I recommend you do:"
-- Keep it warm and conversational
-- Maximum 350 words
-
-FORMAT:
-## Your Situation
-One paragraph explaining where they stand (use their real numbers)
-
-## What This Means For You
-What this means in practical terms (monthly cost, what they can/can't get)
-
-## What I Recommend
-ONE clear, actionable recommendation with exact steps. If relevant, include an example: "For example: If you deposit $X into [account type], your income drops to $Y and you get the discount back."`;
-
-    const userPrompt = isEs
-      ? `Mi situación:
-- Ingreso anual: $${income.toLocaleString()}
-- Tamaño del hogar: ${houseSize} persona${houseSize > 1 ? "s" : ""}
-- Porcentaje del límite de pobreza: ${fplPct}%
-- Límite para ayuda del gobierno (400%): $${threshold400.toLocaleString()}
-- ${zone === "red" ? `Estoy $${excess.toLocaleString()} POR ENCIMA del límite — NO recibo ayuda` : zone === "yellow" ? `Estoy a solo $${buffer.toLocaleString()} del límite — en riesgo` : zone === "max" ? "Estoy en la mejor zona — máxima ayuda disponible" : zone === "moderate" ? "Recibo ayuda moderada" : "Podría calificar para Medicaid"}
-- Persona mayor del hogar: ${maxAge} años
-- ${isFamily ? "Familia" : "Individual"}
-- Límite de cuenta de ahorros médicos: $${hsaLimit.toLocaleString()}/año
-- Prima completa estimada (sin ayuda): ~$${fullPremium}/mes
-
-Planes disponibles (los mejores 5):
-${planSummary}
-
-${hsaPlans.length > 0 ? `Planes elegibles para cuenta de ahorros médicos: ${hsaPlans.map((p: any) => p.name).join(", ")}` : "Ningún plan elegible para cuenta de ahorros médicos en los primeros resultados"}
-
-Explícame mi situación y qué debo hacer.`
-      : `My situation:
-- Annual income: $${income.toLocaleString()}
-- Household size: ${houseSize} person${houseSize > 1 ? "s" : ""}
-- Federal poverty percentage: ${fplPct}%
-- Government help limit (400%): $${threshold400.toLocaleString()}
-- ${zone === "red" ? `I'm $${excess.toLocaleString()} ABOVE the limit — I get NO help` : zone === "yellow" ? `I'm only $${buffer.toLocaleString()} from the limit — at risk` : zone === "max" ? "I'm in the best zone — maximum help available" : zone === "moderate" ? "I receive moderate help" : "I may qualify for Medicaid"}
-- Oldest person in household: ${maxAge} years old
-- ${isFamily ? "Family" : "Individual"}
-- Medical savings account limit: $${hsaLimit.toLocaleString()}/year
-- Estimated full premium (no help): ~$${fullPremium}/mo
-
-Available plans (top 5):
-${planSummary}
-
-${hsaPlans.length > 0 ? `Plans eligible for medical savings account: ${hsaPlans.map((p: any) => p.name).join(", ")}` : "No medical savings account eligible plans in top results"}
-
-Explain my situation and what I should do.`;
-
-    fetch("/api/ai-explain", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 1200,
-        system: sysPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      }),
-    })
-      .then((r) => { if (!r.ok) throw new Error("API error"); return r.json(); })
-      .then((data) => { setAiText(data.content?.map((c: any) => c.text || "").join("") || ""); })
-      .catch(() => setAiError(true))
-      .finally(() => setAiLoading(false));
-  }, []);
-
-  // Render AI text with simple markdown
-  const renderAI = (text: string) => {
-    return text.split("\n").map((line, i) => {
-      if (line.startsWith("## ")) {
-        const t = line.replace(/^##\s+/, "").replace(/\*\*/g, "");
-        const isRec = t.includes("Recomiendo") || t.includes("Recommend");
-        return <div key={i} style={{ fontSize: 14, fontWeight: 800, color: isRec ? "#10b981" : "#f0f1f5", marginTop: i > 0 ? 16 : 0, marginBottom: 6 }}>{t}</div>;
-      }
-      if (!line.trim()) return <div key={i} style={{ height: 4 }} />;
-      // Inline bold
-      const parts: React.ReactNode[] = [];
-      let last = 0;
-      const re = /\*\*(.*?)\*\*/g;
-      let m;
-      while ((m = re.exec(line)) !== null) {
-        if (m.index > last) parts.push(<span key={`t${i}-${last}`}>{line.slice(last, m.index)}</span>);
-        parts.push(<strong key={`b${i}-${m.index}`} style={{ color: "#f0f1f5" }}>{m[1]}</strong>);
-        last = m.index + m[0].length;
-      }
-      if (last < line.length) parts.push(<span key={`e${i}-${last}`}>{line.slice(last)}</span>);
-      const isRecLine = line.includes("Recomiendo") || line.includes("recommend") || line.includes("ejemplo:") || line.includes("example:");
-      return (
-        <div key={i} style={{
-          fontSize: 13, lineHeight: 1.7, color: "#8b8fa3", marginBottom: 2,
-          ...(isRecLine ? { background: "rgba(16,185,129,0.08)", borderRadius: 6, padding: "6px 10px", borderLeft: "3px solid #10b981", marginTop: 4, marginBottom: 4 } : {}),
-        }}>
-          {parts.length > 0 ? parts : line}
-        </div>
-      );
-    });
-  };
-
   return (
-    <div style={{ background: "#12141c", border: `1px solid ${zoneBorder}`, borderRadius: 12, marginBottom: 18, overflow: "hidden" }}>
-      {/* Title bar */}
-      <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#f0f1f5", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 18 }}>🧠</span>
-          {isEs ? "Tu Asesor Financiero de Salud" : "Your Health Financial Advisor"}
+    <div style={{ background: "#12141c", border: `1px solid ${zoneBorder}`, borderRadius: 12, marginBottom: 18, overflow: "hidden", padding: 18 }}>
+      {/* FPL METER BAR */}
+      <div style={{ marginBottom: 4 }}>
+        <div style={{ position: "relative", height: 14, borderRadius: 7, background: "rgba(255,255,255,0.04)", overflow: "visible" }}>
+          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${zP(250)}%`, borderRadius: "7px 0 0 7px", background: "rgba(16,185,129,0.35)" }} />
+          <div style={{ position: "absolute", left: `${zP(250)}%`, top: 0, bottom: 0, width: `${zP(300) - zP(250)}%`, background: "rgba(16,185,129,0.2)" }} />
+          <div style={{ position: "absolute", left: `${zP(300)}%`, top: 0, bottom: 0, width: `${zP(350) - zP(300)}%`, background: "rgba(251,191,36,0.25)" }} />
+          <div style={{ position: "absolute", left: `${zP(350)}%`, top: 0, bottom: 0, width: `${zP(400) - zP(350)}%`, background: "rgba(249,115,22,0.35)" }} />
+          <div style={{ position: "absolute", left: `${zP(400)}%`, top: 0, bottom: 0, right: 0, borderRadius: "0 7px 7px 0", background: "rgba(239,68,68,0.35)" }} />
+          <div style={{ position: "absolute", left: `${zP(400)}%`, top: -6, bottom: -6, width: 2, background: "#ef4444", zIndex: 2 }} />
+          <div style={{ position: "absolute", left: `${pctPos}%`, top: "50%", transform: "translate(-50%, -50%)", width: 18, height: 18, borderRadius: 9, background: "#fff", border: `3px solid ${zoneColor}`, zIndex: 3, boxShadow: `0 0 10px ${zoneColor}60` }} />
         </div>
-        <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 3 }}>
-          {isEs ? "Análisis personalizado de tu situación" : "Personalized analysis of your situation"}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 9, color: "#5a5e72", fontWeight: 600 }}>
+          <span style={{ color: "#10b981" }}>138%</span>
+          <span>250%</span>
+          <span>300%</span>
+          <span>350%</span>
+          <span style={{ color: "#ef4444", fontWeight: 800 }}>400%</span>
+          <span>500%+</span>
+        </div>
+        <div style={{ textAlign: "center", marginTop: 8, fontSize: 12, color: "#8b8fa3" }}>
+          {isEs ? "Tu posición" : "Your position"}: <strong style={{ color: zoneColor, fontSize: 14 }}>{fplPct}%</strong> — <span style={{ color: zoneColor, fontWeight: 600 }}>{zoneName}</span>
         </div>
       </div>
 
-      <div style={{ padding: 18 }}>
-        {/* FPL METER — kept */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ position: "relative", height: 14, borderRadius: 7, background: "rgba(255,255,255,0.04)", overflow: "visible" }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${zP(250)}%`, borderRadius: "7px 0 0 7px", background: "rgba(16,185,129,0.35)" }} />
-            <div style={{ position: "absolute", left: `${zP(250)}%`, top: 0, bottom: 0, width: `${zP(300) - zP(250)}%`, background: "rgba(16,185,129,0.2)" }} />
-            <div style={{ position: "absolute", left: `${zP(300)}%`, top: 0, bottom: 0, width: `${zP(350) - zP(300)}%`, background: "rgba(251,191,36,0.25)" }} />
-            <div style={{ position: "absolute", left: `${zP(350)}%`, top: 0, bottom: 0, width: `${zP(400) - zP(350)}%`, background: "rgba(249,115,22,0.35)" }} />
-            <div style={{ position: "absolute", left: `${zP(400)}%`, top: 0, bottom: 0, right: 0, borderRadius: "0 7px 7px 0", background: "rgba(239,68,68,0.35)" }} />
-            <div style={{ position: "absolute", left: `${zP(400)}%`, top: -6, bottom: -6, width: 2, background: "#ef4444", zIndex: 2 }} />
-            <div style={{ position: "absolute", left: `${pctPos}%`, top: "50%", transform: "translate(-50%, -50%)", width: 18, height: 18, borderRadius: 9, background: "#fff", border: `3px solid ${zoneColor}`, zIndex: 3, boxShadow: `0 0 10px ${zoneColor}60` }} />
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 9, color: "#5a5e72", fontWeight: 600 }}>
-            <span style={{ color: "#10b981" }}>138%</span>
-            <span>250%</span>
-            <span>300%</span>
-            <span>350%</span>
-            <span style={{ color: "#ef4444", fontWeight: 800 }}>400%</span>
-            <span>500%+</span>
-          </div>
-          <div style={{ textAlign: "center", marginTop: 8, fontSize: 12, color: "#8b8fa3" }}>
-            {isEs ? "Tu posición" : "Your position"}: <strong style={{ color: zoneColor, fontSize: 14 }}>{fplPct}%</strong> — <span style={{ color: zoneColor, fontWeight: 600 }}>{zoneName}</span>
-          </div>
-        </div>
-
-        {/* AI EXPLANATION */}
-        <div style={{ borderLeft: `4px solid ${zoneBorder}`, borderRadius: 8, background: "rgba(255,255,255,0.02)", padding: 16 }}>
-          {aiLoading && (
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
-              <div style={{ width: 32, height: 32, border: "3px solid rgba(16,185,129,0.2)", borderTopColor: "#10b981", borderRadius: "50%", animation: "aispin 0.8s linear infinite", margin: "0 auto 10px" }} />
-              <div style={{ color: "#10b981", fontWeight: 700, fontSize: 13 }}>
-                🧠 {isEs ? "Analizando tu situación financiera..." : "Analyzing your financial situation..."}
-              </div>
-              <div style={{ color: "#5a5e72", fontSize: 11, marginTop: 4 }}>
-                {isEs ? "Preparando recomendaciones personalizadas" : "Preparing personalized recommendations"}
-              </div>
-              <style>{`@keyframes aispin { to { transform: rotate(360deg) } }`}</style>
+      {/* Technical details toggle */}
+      <div style={{ marginTop: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        <button
+          onClick={() => setTechOpen(!techOpen)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "none",
+            cursor: "pointer", fontFamily: "inherit",
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#5a5e72" }}>
+            📊 {isEs ? "Ver datos técnicos detallados" : "View detailed technical data"}
+          </span>
+          <span style={{ fontSize: 10, color: "#5a5e72", transition: "transform .2s", transform: techOpen ? "rotate(180deg)" : "none" }}>▼</span>
+        </button>
+        <div style={{ maxHeight: techOpen ? 2000 : 0, overflow: "hidden", transition: "max-height .4s ease" }}>
+          <div style={{ padding: "12px 14px", fontSize: 12, lineHeight: 1.7, color: "#6b7280" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+              <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>FPL%</div><div style={{ fontSize: 18, fontWeight: 800, color: zoneColor, marginTop: 2 }}>{fplPct}%</div></div>
+              <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{isEs ? "Límite 400%" : "400% Limit"}</div><div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>${threshold400.toLocaleString()}</div></div>
+              <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{zone === "red" ? (isEs ? "Exceso" : "Excess") : (isEs ? "Margen" : "Buffer")}</div><div style={{ fontSize: 18, fontWeight: 800, color: zone === "red" ? "#ef4444" : "#fbbf24", marginTop: 2 }}>${(zone === "red" ? excess : buffer).toLocaleString()}</div></div>
             </div>
-          )}
-
-          {aiError && (
-            <div style={{ textAlign: "center", padding: "16px 0" }}>
-              <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>
-                {isEs ? "No se pudo generar el análisis" : "Could not generate analysis"}
-              </div>
-              <button onClick={() => { setAiError(false); aiCalled.current = false; }} style={{
-                padding: "8px 20px", borderRadius: 8, border: "none", background: "#10b981",
-                color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-              }}>{isEs ? "Reintentar" : "Retry"}</button>
+            <div style={{ marginBottom: 8, fontSize: 11 }}>
+              <strong style={{ color: "#8b8fa3" }}>MAGI {isEs ? "reducción opciones" : "reduction options"}:</strong>
             </div>
-          )}
-
-          {aiText && (
-            <div style={{ wordBreak: "break-word" }}>
-              {renderAI(aiText)}
+            <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.6 }}>
+              • HSA ({isFamily ? (isEs ? "familia" : "family") : "individual"}): ${hsaLimit.toLocaleString()}/{isEs ? "año" : "yr"}<br />
+              • IRA: ${(maxAge >= 50 ? 8000 : 7000).toLocaleString()}/{isEs ? "año" : "yr"}<br />
+              • 401(k): $23,500/{isEs ? "año" : "yr"}<br />
+              • {isEs ? "Prima completa est." : "Est. full premium"}: ~${fullPremium}/{isEs ? "mes" : "mo"}
             </div>
-          )}
-        </div>
-
-        {/* Technical details toggle */}
-        <div style={{ marginTop: 14, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
-          <button
-            onClick={() => setTechOpen(!techOpen)}
-            style={{
-              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "none",
-              cursor: "pointer", fontFamily: "inherit",
-            }}
-          >
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#5a5e72" }}>
-              📊 {isEs ? "Ver datos técnicos detallados" : "View detailed technical data"}
-            </span>
-            <span style={{ fontSize: 10, color: "#5a5e72", transition: "transform .2s", transform: techOpen ? "rotate(180deg)" : "none" }}>▼</span>
-          </button>
-          <div style={{ maxHeight: techOpen ? 2000 : 0, overflow: "hidden", transition: "max-height .4s ease" }}>
-            <div style={{ padding: "12px 14px", fontSize: 12, lineHeight: 1.7, color: "#6b7280" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-                <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>FPL%</div><div style={{ fontSize: 18, fontWeight: 800, color: zoneColor, marginTop: 2 }}>{fplPct}%</div></div>
-                <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{isEs ? "Límite 400%" : "400% Limit"}</div><div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>${threshold400.toLocaleString()}</div></div>
-                <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{zone === "red" ? (isEs ? "Exceso" : "Excess") : (isEs ? "Margen" : "Buffer")}</div><div style={{ fontSize: 18, fontWeight: 800, color: zone === "red" ? "#ef4444" : "#fbbf24", marginTop: 2 }}>${(zone === "red" ? excess : buffer).toLocaleString()}</div></div>
-              </div>
-              <div style={{ marginBottom: 8, fontSize: 11 }}>
-                <strong style={{ color: "#8b8fa3" }}>MAGI {isEs ? "reducción opciones" : "reduction options"}:</strong>
-              </div>
-              <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.6 }}>
-                • HSA ({isFamily ? (isEs ? "familia" : "family") : "individual"}): ${hsaLimit.toLocaleString()}/{isEs ? "año" : "yr"}<br />
-                • IRA: ${(maxAge >= 50 ? 8000 : 7000).toLocaleString()}/{isEs ? "año" : "yr"}<br />
-                • 401(k): $23,500/{isEs ? "año" : "yr"}<br />
-                • {isEs ? "Prima completa est." : "Est. full premium"}: ~${fullPremium}/{isEs ? "mes" : "mo"}
-              </div>
-              <div style={{ marginTop: 10, fontSize: 10, color: "#3a3d4a" }}>
-                {isEs ? "Fuente" : "Source"}: IRS.gov, Healthcare.gov, KFF.org
-              </div>
+            <div style={{ marginTop: 10, fontSize: 10, color: "#3a3d4a" }}>
+              {isEs ? "Fuente" : "Source"}: IRS.gov, Healthcare.gov, KFF.org
             </div>
           </div>
-        </div>
-
-        {/* Disclaimer */}
-        <div style={{ marginTop: 10, fontSize: 10, color: "#3a3d4a", lineHeight: 1.5, textAlign: "center" }}>
-          ⚠️ {isEs
-            ? "Explicación generada por IA con fines educativos. Consulta con un profesional para decisiones fiscales."
-            : "AI-generated explanation for educational purposes. Consult a professional for tax decisions."}
         </div>
       </div>
     </div>
@@ -761,8 +557,8 @@ export default function QuoterPage() {
         {step === 5 && results && (
           <div>
             <style>{`@keyframes hsa-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } 50% { box-shadow: 0 0 12px 2px rgba(16,185,129,0.15); } }`}</style>
-            {/* Subsidy Cliff Alert */}
-            <SubsidyCliffAlert fplPct={fpl} income={Number(income)} houseSize={house.length} lang={lang} maxAge={Math.max(...house.map(h => h.age))} plans={filtered || results.plans} />
+            {/* FPL Indicator Bar */}
+            <FPLIndicator fplPct={fpl} income={Number(income)} houseSize={house.length} lang={lang} maxAge={Math.max(...house.map(h => h.age))} />
 
             {results.aptc > 0 && (
               <div style={S.subBanner}>
@@ -815,8 +611,8 @@ export default function QuoterPage() {
                       }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: "#10b981" }}>
                           {fpl >= 350
-                            ? (lang === "es" ? "🏦 HSA Elegible — Tu asesor de IA arriba te explica cómo esto te puede ahorrar dinero ☝️" : "🏦 HSA Eligible — Your AI advisor above explains how this can save you money ☝️")
-                            : (lang === "es" ? "🏦 HSA Elegible — Cuenta de ahorros médicos libre de impuestos" : "🏦 HSA Eligible — Tax-free medical savings account")}
+                            ? (lang === "es" ? "🏦 HSA Elegible — Haz clic en el plan para ver cómo ahorrar dinero" : "🏦 HSA Eligible — Click the plan to see how to save money")
+                            : (lang === "es" ? "🏦 HSA Elegible" : "🏦 HSA Eligible")}
                         </div>
                       </div>
                     ) : (
@@ -844,17 +640,16 @@ export default function QuoterPage() {
                         <div style={{
                           marginTop: 12, background: "rgba(16,185,129,0.08)", borderRadius: 8,
                           padding: "10px 14px", border: "1px solid rgba(16,185,129,0.15)",
-                          display: "flex", alignItems: "center", gap: 8,
                         }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: "#10b981", lineHeight: 1.5 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#10b981" }}>
                             {fpl >= 350
-                              ? (lang === "es" ? "🏦 HSA Elegible — Tu asesor de IA arriba te explica cómo esto te puede ahorrar dinero ☝️" : "🏦 HSA Eligible — Your AI advisor above explains how this can save you money ☝️")
-                              : (lang === "es" ? "🏦 HSA Elegible — Cuenta de ahorros médicos libre de impuestos" : "🏦 HSA Eligible — Tax-free medical savings account")}
+                              ? (lang === "es" ? "🏦 HSA Elegible — Tu asesor de IA abajo te explica cómo ahorrar dinero ↓" : "🏦 HSA Eligible — Your AI advisor below explains how to save money ↓")
+                              : (lang === "es" ? "🏦 HSA Elegible" : "🏦 HSA Eligible")}
                           </span>
                         </div>
                       )}
 
-                      {/* AI Plan Advisor */}
+                      {/* AI Health Advisor */}
                       <AIPlanAdvisor
                         plan={plan}
                         household={house}
@@ -863,6 +658,11 @@ export default function QuoterPage() {
                         aptc={results?.aptc || 0}
                         lang={lang}
                         t={t}
+                        householdSize={house.length}
+                        fplThreshold400={(15650 + (house.length - 1) * 5500) * 4}
+                        isOverCliff={fpl > 400}
+                        isNearCliff={fpl >= 350 && fpl <= 400}
+                        excessOverCliff={fpl > 400 ? Number(income) - (15650 + (house.length - 1) * 5500) * 4 : 0}
                       />
                       <button style={{ ...S.btn, ...S.pri, width: "100%", marginTop: 14, fontSize: 14 }} onClick={(e) => { e.stopPropagation(); selectPlan(plan); }}>
                         {t.wantPlan}
@@ -954,8 +754,8 @@ export default function QuoterPage() {
                 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#10b981", lineHeight: 1.5 }}>
                     {fpl >= 350
-                      ? (lang === "es" ? "🏦 HSA Elegible — Tu asesor de IA en la página de planes te explica cómo esto te puede ahorrar dinero" : "🏦 HSA Eligible — Your AI advisor on the plans page explains how this can save you money")
-                      : (lang === "es" ? "🏦 HSA Elegible — Cuenta de ahorros médicos libre de impuestos" : "🏦 HSA Eligible — Tax-free medical savings account")}
+                      ? (lang === "es" ? "🏦 HSA Elegible — Haz clic en el plan en la lista para ver cómo ahorrar dinero" : "🏦 HSA Eligible — Click the plan in the list to see how to save money")
+                      : (lang === "es" ? "🏦 HSA Elegible" : "🏦 HSA Eligible")}
                   </span>
                 </div>
               )}

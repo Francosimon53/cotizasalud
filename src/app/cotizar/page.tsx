@@ -591,6 +591,7 @@ export default function QuoterPage() {
         {/* Step 5: Plans */}
         {step === 5 && results && (
           <div>
+            <style>{`@keyframes hsa-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } 50% { box-shadow: 0 0 12px 2px rgba(16,185,129,0.15); } }`}</style>
             {/* Subsidy Cliff Alert */}
             <SubsidyCliffAlert fplPct={fpl} income={Number(income)} houseSize={house.length} lang={lang} />
 
@@ -635,7 +636,33 @@ export default function QuoterPage() {
                     <div style={S.stat}><div style={S.statL}>{t.deductible}</div><div style={{ ...S.statV, fontSize: 14 }}>${plan.deductible.toLocaleString()}</div></div>
                     <div style={S.stat}><div style={S.statL}>{t.oopMax}</div><div style={{ ...S.statV, fontSize: 14 }}>${plan.oopMax.toLocaleString()}</div></div>
                     <div style={S.stat}><div style={S.statL}>{t.quality}</div><Stars n={plan.rating} /></div>
-                    <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: plan.hsa ? "#10b981" : "#2a2d3a" }}>{plan.hsa ? "✓" : "—"}</div></div>
+                    {(() => {
+                      const hsaHighlight = plan.hsa && fpl >= 350;
+                      const hsaUrgent = plan.hsa && fpl > 400;
+                      if (hsaHighlight) {
+                        return (
+                          <div style={{
+                            ...S.stat,
+                            background: hsaUrgent ? "rgba(251,191,36,0.12)" : "rgba(16,185,129,0.12)",
+                            border: `1px solid ${hsaUrgent ? "rgba(251,191,36,0.3)" : "rgba(16,185,129,0.25)"}`,
+                            borderRadius: 8, padding: "8px 10px", gridColumn: "1 / -1",
+                            animation: "hsa-glow 2s ease-in-out infinite",
+                          }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: hsaUrgent ? "#fbbf24" : "#10b981", display: "flex", alignItems: "center", gap: 6 }}>
+                              {hsaUrgent ? "🏦" : "✓"} HSA
+                            </div>
+                            <div style={{ fontSize: 11, color: hsaUrgent ? "#fcd34d" : "#34d399", fontWeight: 600, marginTop: 2 }}>
+                              {hsaUrgent
+                                ? (lang === "es" ? "Podría devolverte el subsidio" : "Could restore your subsidy")
+                                : (lang === "es" ? "Puede reducir tu ingreso" : "Can lower your income")}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: plan.hsa ? "#10b981" : "#2a2d3a" }}>{plan.hsa ? "✓" : "—"}</div></div>
+                      );
+                    })()}
                   </div>
                   {exp && (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #e5e7eb" }}>

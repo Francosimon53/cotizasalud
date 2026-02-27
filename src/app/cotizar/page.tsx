@@ -267,6 +267,7 @@ export default function QuoterPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [urlParams, setUrlParams] = useState<ReturnType<typeof parseSmartLink>>({ name: "", zip: "", phone: "", email: "", source: "direct", agentSlug: "", utm_source: "", utm_medium: "", utm_campaign: "", lang: "" });
   const [agentBrand, setAgentBrand] = useState<AgentBrand | null>(null);
+  const [hsaOpen, setHsaOpen] = useState(false);
 
   const t: Record<string, string> = i18n[lang];
 
@@ -742,12 +743,111 @@ export default function QuoterPage() {
                 <div style={{ ...S.stat, background: "rgba(239,68,68,0.08)", padding: 14 }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yHigh.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
               </div>
 
-              {/* HSA */}
-              {plan.hsa && (
-                <div style={{ background: "rgba(59,130,246,0.08)", borderRadius: 8, padding: 12, marginTop: 16, fontSize: 13, color: "#60a5fa", border: "1px solid #bfdbfe" }}>
-                  ✅ {t.hsaEligible || "This plan is HSA-eligible — you can save pre-tax for medical expenses"}
-                </div>
-              )}
+              {/* HSA Expandable Card */}
+              {plan.hsa && (() => {
+                const isEs = lang === "es";
+                return (
+                  <div style={{ marginTop: 16, borderRadius: 10, border: "1px solid rgba(16,185,129,0.2)", background: "#12141c", overflow: "hidden" }}>
+                    {/* Collapsed header — always visible */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setHsaOpen(!hsaOpen); }}
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "12px 14px", background: "rgba(16,185,129,0.08)", border: "none",
+                        cursor: "pointer", fontFamily: "inherit", gap: 8,
+                      }}
+                    >
+                      <span style={{ fontSize: 13, color: "#10b981", fontWeight: 600 }}>
+                        ✅ {isEs ? "Este plan es elegible para HSA — ahorra antes de impuestos" : "This plan is HSA-eligible — save pre-tax for medical expenses"}
+                      </span>
+                      <span style={{
+                        fontSize: 11, color: "#5a5e72", fontWeight: 600, flexShrink: 0,
+                        transition: "transform .2s", transform: hsaOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      }}>▼</span>
+                    </button>
+
+                    {/* Expanded body */}
+                    <div style={{
+                      maxHeight: hsaOpen ? 600 : 0, overflow: "hidden",
+                      transition: "max-height .35s ease",
+                    }}>
+                      <div style={{ padding: "16px 14px", fontSize: 13, lineHeight: 1.7, color: "#8b8fa3" }}>
+                        {/* Title */}
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#10b981", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 20 }}>🏦</span>
+                          {isEs ? "¿Qué es una HSA? (Health Savings Account)" : "What is an HSA? (Health Savings Account)"}
+                        </div>
+
+                        <div style={{ marginBottom: 14 }}>
+                          {isEs
+                            ? "Una HSA es como una cuenta de ahorros especial SOLO para gastos médicos. La ventaja es que el dinero que depositas NO paga impuestos."
+                            : "An HSA is like a special savings account ONLY for medical expenses. The advantage is that the money you deposit is NOT taxed."}
+                        </div>
+
+                        {/* Tax savings */}
+                        <div style={{ fontWeight: 700, color: "#f0f1f5", marginBottom: 6, fontSize: 13 }}>
+                          💰 {isEs ? "¿Cuánto puedes ahorrar en impuestos?" : "How much can you save in taxes?"}
+                        </div>
+                        <div style={{ paddingLeft: 8, marginBottom: 14 }}>
+                          {[
+                            isEs ? "Individual: hasta $4,300/año (2026)" : "Individual: up to $4,300/year (2026)",
+                            isEs ? "Familia: hasta $8,550/año (2026)" : "Family: up to $8,550/year (2026)",
+                            isEs ? "Si tienes 55+: $1,000 adicional" : "Age 55+: additional $1,000 catch-up",
+                          ].map((item, idx) => (
+                            <div key={idx} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3 }}>
+                              <span style={{ color: "#10b981", fontSize: 8, marginTop: 6, flexShrink: 0 }}>●</span>
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* How it works */}
+                        <div style={{ fontWeight: 700, color: "#f0f1f5", marginBottom: 6, fontSize: 13 }}>
+                          🏦 {isEs ? "¿Cómo funciona?" : "How does it work?"}
+                        </div>
+                        <div style={{ paddingLeft: 8, marginBottom: 14 }}>
+                          {(isEs ? [
+                            "Abres una cuenta HSA en tu banco (muchos son gratis)",
+                            "Depositas dinero antes de impuestos",
+                            "Usas ese dinero para pagar doctor, medicinas, lentes, dentista",
+                            "Lo que no uses se acumula — no lo pierdes nunca",
+                          ] : [
+                            "Open an HSA at your bank (many are free)",
+                            "Deposit money pre-tax",
+                            "Use that money to pay for doctor, prescriptions, glasses, dentist",
+                            "Unused funds roll over — you never lose them",
+                          ]).map((item, idx) => (
+                            <div key={idx} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 3 }}>
+                              <span style={{ color: "#10b981", fontWeight: 700, fontSize: 12, minWidth: 18, flexShrink: 0 }}>{idx + 1}.</span>
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Agent bonus tip */}
+                        <div style={{
+                          background: "rgba(16,185,129,0.08)", borderRadius: 8, padding: 12,
+                          border: "1px solid rgba(16,185,129,0.15)", marginBottom: 4,
+                        }}>
+                          <div style={{ fontWeight: 700, color: "#10b981", marginBottom: 6, fontSize: 13 }}>
+                            ⚡ {isEs ? "Beneficio extra para agentes:" : "Bonus tip for agents:"}
+                          </div>
+                          <div style={{ marginBottom: 8 }}>
+                            {isEs
+                              ? "Contribuir a una HSA REDUCE tu ingreso gravable (MAGI). Si tu cliente está cerca del límite de subsidio (400% FPL), una HSA puede ayudarle a mantenerse elegible para el subsidio APTC."
+                              : "Contributing to an HSA REDUCES your taxable income (MAGI). If your client is near the subsidy cliff (400% FPL), an HSA can help them stay eligible for the APTC subsidy."}
+                          </div>
+                          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: "8px 10px", fontSize: 12, color: "#f0f1f5", lineHeight: 1.6 }}>
+                            {isEs
+                              ? "Ejemplo: Si ganas $64,000 (sobre el límite), contribuir $4,300 a una HSA baja tu MAGI a $59,700 — y vuelves a calificar para subsidio."
+                              : "Example: If you earn $64,000 (over the limit), contributing $4,300 to an HSA lowers your MAGI to $59,700 — and you qualify for subsidy again."}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Summary for lead */}
               <div style={{ background: "#0e1018", borderRadius: 10, padding: 16, marginTop: 20, border: "1px solid #e5e7eb" }}>

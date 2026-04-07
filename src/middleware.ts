@@ -19,8 +19,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // If already logged in, redirect away from login page
-  if (pathname === "/agentes/login" && user) {
+  // If already logged in, redirect away from login/registro
+  if ((pathname === "/agentes/login" || pathname === "/agentes/registro") && user) {
     const dashUrl = request.nextUrl.clone();
     dashUrl.pathname = "/agentes/dashboard";
     return NextResponse.redirect(dashUrl);
@@ -30,5 +30,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/agentes/dashboard/:path*", "/agentes/login"],
+  matcher: ["/agentes/dashboard/:path*", "/agentes/login", "/agentes/registro"],
 };

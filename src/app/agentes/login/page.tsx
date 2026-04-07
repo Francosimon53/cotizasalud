@@ -9,7 +9,9 @@ export default function AgentLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,6 +32,25 @@ export default function AgentLoginPage() {
     }
 
     router.push("/agentes/dashboard");
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) { setError("Ingresa tu correo electrónico"); return; }
+    setError("");
+    setLoading(true);
+
+    const supabase = createBrowserAuthClient();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://www.enrollsalud.com/agentes/login",
+    });
+
+    if (resetError) {
+      setError("Error al enviar el correo. Intenta de nuevo.");
+    } else {
+      setSuccess("Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja.");
+    }
+    setLoading(false);
   };
 
   return (
@@ -60,7 +81,7 @@ export default function AgentLoginPage() {
         </div>
 
         {/* Card */}
-        <form onSubmit={handleSubmit} style={{
+        <form onSubmit={resetMode ? handleReset : handleSubmit} style={{
           background: "#12141c",
           borderRadius: 16,
           padding: 32,
@@ -68,22 +89,25 @@ export default function AgentLoginPage() {
           boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
         }}>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "#f0f1f5", marginBottom: 4 }}>
-            Iniciar Sesión
+            {resetMode ? "Restablecer Contraseña" : "Iniciar Sesión"}
           </h1>
           <p style={{ fontSize: 13, color: "#5a5e72", marginBottom: 24 }}>
-            Accede a tu panel de agente
+            {resetMode ? "Te enviaremos un correo para restablecer tu contraseña" : "Accede a tu panel de agente"}
           </p>
 
           {error && (
             <div role="alert" style={{
               background: "rgba(239,68,68,0.1)",
               border: "1px solid rgba(239,68,68,0.3)",
-              borderRadius: 10,
-              padding: "10px 14px",
-              marginBottom: 18,
-              fontSize: 13,
-              color: "#ef4444",
+              borderRadius: 10, padding: "10px 14px", marginBottom: 18, fontSize: 13, color: "#ef4444",
             }}>{error}</div>
+          )}
+          {success && (
+            <div style={{
+              background: "rgba(16,185,129,0.1)",
+              border: "1px solid rgba(16,185,129,0.3)",
+              borderRadius: 10, padding: "10px 14px", marginBottom: 18, fontSize: 13, color: "#10b981",
+            }}>{success}</div>
           )}
 
           <div style={{ marginBottom: 16 }}>
@@ -91,66 +115,60 @@ export default function AgentLoginPage() {
               display: "block", fontSize: 12, fontWeight: 700, color: "#8b8fa3",
               textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6,
             }}>Correo electrónico</label>
-            <input
-              id="login-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="agente@ejemplo.com"
-              autoFocus
-              style={{
-                width: "100%", padding: "12px 14px", borderRadius: 8,
-                border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15,
-                outline: "none", boxSizing: "border-box", fontFamily: "inherit",
-                background: "#0e1018", color: "#f0f1f5",
-              }}
-            />
+            <input id="login-email" type="email" required value={email}
+              onChange={(e) => setEmail(e.target.value)} placeholder="agente@ejemplo.com" autoFocus
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#0e1018", color: "#f0f1f5" }} />
           </div>
 
-          <div style={{ marginBottom: 24 }}>
-            <label htmlFor="login-password" style={{
-              display: "block", fontSize: 12, fontWeight: 700, color: "#8b8fa3",
-              textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6,
-            }}>Contraseña</label>
-            <input
-              id="login-password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={{
-                width: "100%", padding: "12px 14px", borderRadius: 8,
-                border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15,
-                outline: "none", boxSizing: "border-box", fontFamily: "inherit",
-                background: "#0e1018", color: "#f0f1f5",
-              }}
-            />
-          </div>
+          {!resetMode && (
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="login-password" style={{
+                display: "block", fontSize: 12, fontWeight: 700, color: "#8b8fa3",
+                textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6,
+              }}>Contraseña</label>
+              <input id="login-password" type="password" required value={password}
+                onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#0e1018", color: "#f0f1f5" }} />
+            </div>
+          )}
 
-          <button
-            type="submit"
-            disabled={loading}
+          {!resetMode && (
+            <div style={{ textAlign: "right", marginBottom: 20 }}>
+              <button type="button" onClick={() => { setResetMode(true); setError(""); setSuccess(""); }}
+                style={{ background: "none", border: "none", color: "#5a5e72", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading}
             style={{
-              width: "100%", padding: "14px 28px", borderRadius: 10,
-              border: "none", fontSize: 16, fontWeight: 800,
-              cursor: loading ? "not-allowed" : "pointer",
-              fontFamily: "inherit",
+              width: "100%", padding: "14px 28px", borderRadius: 10, border: "none", fontSize: 16, fontWeight: 800,
+              cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit",
               background: loading ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #10b981, #06b6d4)",
-              color: loading ? "#5a5e72" : "#000",
-              transition: "all .2s",
-            }}
-          >
-            {loading ? "Ingresando..." : "Iniciar Sesión"}
+              color: loading ? "#5a5e72" : "#000", transition: "all .2s",
+            }}>
+            {loading ? "..." : resetMode ? "Enviar Correo" : "Iniciar Sesión"}
           </button>
+
+          {resetMode && (
+            <button type="button" onClick={() => { setResetMode(false); setError(""); setSuccess(""); }}
+              style={{ width: "100%", padding: "12px", marginTop: 10, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#8b8fa3", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              Volver a Iniciar Sesión
+            </button>
+          )}
         </form>
 
-        {/* Back link */}
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <a href="/agentes" style={{
-            fontSize: 13, color: "#5a5e72", textDecoration: "none",
-          }}>
+        {/* Register + Back links */}
+        {!resetMode && (
+          <div style={{ textAlign: "center", marginTop: 20 }}>
+            <a href="/agentes/registro" style={{ fontSize: 14, color: "#10b981", textDecoration: "none", fontWeight: 700 }}>
+              Crear Cuenta de Agente →
+            </a>
+          </div>
+        )}
+        <div style={{ textAlign: "center", marginTop: 12 }}>
+          <a href="/agentes" style={{ fontSize: 13, color: "#5a5e72", textDecoration: "none" }}>
             ← Volver a EnrollSalud
           </a>
         </div>

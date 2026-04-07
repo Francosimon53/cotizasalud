@@ -941,7 +941,7 @@ export default function AgentesPage() {
           <a href="#testimonials">Testimonios</a>
           <a href="#roi">ROI</a>
           <Link href="/agentes/login" style={{ color: "#10b981", fontWeight: 700 }}>Iniciar Sesión</Link>
-          <Link href="/cotizar" className="ag-nav-cta">Empezar Gratis &rarr;</Link>
+          <Link href="/agentes/registro" className="ag-nav-cta">Crear Cuenta &rarr;</Link>
         </div>
       </nav>
 

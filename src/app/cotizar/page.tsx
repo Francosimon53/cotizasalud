@@ -1140,6 +1140,12 @@ export default function QuoterPage() {
         <div style={{ marginBottom: 4 }}>{t.poweredBy}</div>
         <div>{t.disclaimer}</div>
         {agentBrand?.npn && <div style={{ marginTop: 4 }}>Agent NPN: {agentBrand.npn}</div>}
+        <div style={{ marginTop: 8, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <a href="/privacy" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Privacidad" : "Privacy"}</a>
+          <a href="/terms" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Términos" : "Terms"}</a>
+          <a href="/compliance" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Cumplimiento" : "Compliance"}</a>
+          <a href="/ai-disclaimer" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Aviso IA" : "AI Disclaimer"}</a>
+        </div>
       </div>
     </div>
   );

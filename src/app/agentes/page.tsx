@@ -940,6 +940,7 @@ export default function AgentesPage() {
           <a href="#features">Funciones</a>
           <a href="#testimonials">Testimonios</a>
           <a href="#roi">ROI</a>
+          <Link href="/agentes/login" style={{ color: "#10b981", fontWeight: 700 }}>Iniciar Sesión</Link>
           <Link href="/cotizar" className="ag-nav-cta">Empezar Gratis &rarr;</Link>
         </div>
       </nav>
@@ -1183,6 +1184,8 @@ export default function AgentesPage() {
         <div className="ag-footer-links">
           <a href="/privacy">Privacidad</a>
           <a href="/terms">Términos</a>
+          <a href="/compliance">Cumplimiento</a>
+          <a href="/agentes/login">Portal Agentes</a>
           <a href="mailto:info@enrollsalud.com">Contacto</a>
         </div>
       </footer>

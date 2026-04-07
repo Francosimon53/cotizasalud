@@ -1,0 +1,35 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { createServerAuthClient } from "@/lib/supabase-auth";
+import { createServiceClient } from "@/lib/supabase";
+import DashboardHeader from "../DashboardHeader";
+import ProfileForm from "./ProfileForm";
+import "../../agentes.css";
+
+export default async function ProfilePage() {
+  const cookieStore = await cookies();
+  const supabase = createServerAuthClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/agentes/login");
+
+  const db = createServiceClient();
+  const { data: agent } = await db
+    .from("agents")
+    .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (!agent) redirect("/agentes/login");
+
+  return (
+    <div style={{
+      fontFamily: "'Satoshi', -apple-system, sans-serif",
+      minHeight: "100vh", background: "#08090d", color: "#f0f1f5",
+    }}>
+      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} />
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 20px 60px" }}>
+        <ProfileForm agent={agent} />
+      </div>
+    </div>
+  );
+}

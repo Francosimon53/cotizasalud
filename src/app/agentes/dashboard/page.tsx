@@ -19,6 +19,11 @@ export default async function DashboardPage() {
   const { data: agent } = await db.from("agents").select("*").eq("auth_user_id", user.id).single();
   if (!agent) redirect("/agentes/login");
 
+  // Redirect to profile if incomplete
+  if (!agent.npn || !agent.email || !agent.phone || !agent.agency_name) {
+    redirect("/agentes/dashboard/profile");
+  }
+
   const { data: leads } = await db
     .from("leads")
     .select("*")

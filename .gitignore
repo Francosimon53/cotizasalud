@@ -16,3 +16,10 @@ out/
 # misc
 .DS_Store
 *.tsbuildinfo
+
+# claude worktrees
+.claude/worktrees/
+.claire/
+
+# supabase temp
+supabase/.temp/

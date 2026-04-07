@@ -247,7 +247,7 @@ export default function HomePage() {
         <p>
           EnrollSalud · Datos del API del Mercado CMS<br />
           Solo estimados. Precios finales al inscribirse. Operado por agentes de seguros licenciados.<br />
-          © 2026 EnrollSalud. Todos los derechos reservados. · <Link href="/privacy">Privacidad</Link> · <Link href="/terms">Términos</Link> · <Link href="/compliance">Cumplimiento</Link>
+          © 2026 EnrollSalud. Todos los derechos reservados. · <Link href="/privacy">Privacidad</Link> · <Link href="/terms">Términos</Link> · <Link href="/compliance">Cumplimiento</Link> · <Link href="/ai-disclaimer">Aviso IA</Link> · <Link href="/agentes/login">Portal Agentes</Link> · <a href="mailto:info@enrollsalud.com">Contacto</a>
         </p>
       </footer>
     </>

@@ -140,6 +140,15 @@ export default async function DashboardPage() {
         </div>
 
         <DashboardClient leads={allLeads} />
+
+        {/* Footer */}
+        <div style={{ textAlign: "center", padding: "32px 0 0", display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+          <a href="/privacy" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Privacidad</a>
+          <a href="/terms" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Términos</a>
+          <a href="/compliance" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Cumplimiento</a>
+          <a href="/ai-disclaimer" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Aviso IA</a>
+          <a href="mailto:info@enrollsalud.com" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Contacto</a>
+        </div>
       </div>
     </div>
   );

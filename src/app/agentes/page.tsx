@@ -931,10 +931,10 @@ export default function AgentesPage() {
 
       {/* NAVIGATION */}
       <nav ref={navRef} className="ag-nav" id="ag-nav">
-        <a href="#" className="ag-nav-logo">
+        <Link href="/" className="ag-nav-logo">
           <div className="ag-nav-logo-icon">ES</div>
           <span className="ag-nav-logo-text">EnrollSalud</span>
-        </a>
+        </Link>
         <div className="ag-nav-links">
           <a href="#ai-advisor">AI Advisor</a>
           <a href="#features">Funciones</a>
@@ -1185,6 +1185,7 @@ export default function AgentesPage() {
           <a href="/privacy">Privacidad</a>
           <a href="/terms">Términos</a>
           <a href="/compliance">Cumplimiento</a>
+          <a href="/ai-disclaimer">Aviso IA</a>
           <a href="/agentes/login">Portal Agentes</a>
           <a href="mailto:info@enrollsalud.com">Contacto</a>
         </div>

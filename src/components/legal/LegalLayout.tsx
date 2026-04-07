@@ -106,12 +106,18 @@ export default function LegalLayout({ children, titleEn, titleEs, lastUpdated = 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
             <p>&copy; {new Date().getFullYear()} EnrollSalud. All rights reserved.</p>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               {LEGAL_NAV.map((item) => (
                 <a key={item.href} href={item.href} className="hover:text-teal-600 transition-colors">
                   {lang === "en" ? item.labelEn : item.labelEs}
                 </a>
               ))}
+              <a href="/agentes/login" className="hover:text-teal-600 transition-colors">
+                {lang === "en" ? "Agent Portal" : "Portal Agentes"}
+              </a>
+              <a href="mailto:info@enrollsalud.com" className="hover:text-teal-600 transition-colors">
+                {lang === "en" ? "Contact" : "Contacto"}
+              </a>
             </div>
           </div>
         </div>

@@ -133,7 +133,7 @@ export default function CMSConsentForm({
   const [hasSig, setHasSig] = useState(false);
   const [checkConsent, setCheckConsent] = useState(false);
   const [checkEligibility, setCheckEligibility] = useState(false);
-  const [duration, setDuration] = useState(txt.durationOptions[0]);
+  const duration = txt.durationOptions[0]; // Fixed 12 months
   const [showError, setShowError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -377,29 +377,12 @@ export default function CMSConsentForm({
         {txt.privacyNote}
       </div>
 
-      {/* Duration */}
+      {/* Duration — fixed 12 months */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#8b8fa3", marginBottom: 6 }}>
-          {txt.durationLabel}
+        <div style={{ fontSize: 12.5, color: "#8b8fa3", lineHeight: 1.6 }}>
+          {txt.durationLabel} <strong style={{ color: "#10b981" }}>{duration}</strong>.
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {txt.durationOptions.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => setDuration(opt)}
-              style={{
-                padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-                border: duration === opt ? "1.5px solid #059669" : "1px solid #d1d5db",
-                background: duration === opt ? "rgba(16,185,129,0.1)" : "#12141c",
-                color: duration === opt ? "#10b981" : "#5a5e72",
-                cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-        <div style={{ fontSize: 11.5, color: "#5a5e72", marginTop: 6 }}>
+        <div style={{ fontSize: 11.5, color: "#5a5e72", marginTop: 4 }}>
           {txt.revokeNote(txt.revokeMethod)}
         </div>
       </div>

@@ -1,5 +1,5 @@
 {
-  "name": "cotizasalud",
+  "name": "enrollsalud",
   "version": "2.0.0",
   "private": true,
   "scripts": {
@@ -8,10 +8,15 @@
     "start": "next start"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.98.0",
+    "@tailwindcss/postcss": "^4.2.1",
+    "@vercel/analytics": "^2.0.1",
     "next": "^16.1.6",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "resend": "^6.10.0",
+    "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -38,4 +38,8 @@ export interface AgentBrand {
   name: string;
   npn: string;
   brand_name?: string;
+  brand_color?: string;
+  email?: string;
+  phone?: string;
+  logo_url?: string;
 }

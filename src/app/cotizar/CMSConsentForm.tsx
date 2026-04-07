@@ -135,8 +135,9 @@ export default function CMSConsentForm({
   const [checkEligibility, setCheckEligibility] = useState(false);
   const [duration, setDuration] = useState(txt.durationOptions[0]);
   const [showError, setShowError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const agentDisplay = agentName || agencyName || (lang === "es" ? "CotizaSalud (plataforma)" : "CotizaSalud (platform)");
+  const agentDisplay = agentName || agencyName || (lang === "es" ? "EnrollSalud (plataforma)" : "EnrollSalud (platform)");
   const today = new Date();
   const dateStr = today.toLocaleDateString(lang === "es" ? "es-US" : "en-US", {
     year: "numeric", month: "long", day: "numeric",
@@ -205,6 +206,8 @@ export default function CMSConsentForm({
       setShowError(true);
       return;
     }
+    if (submitting) return;
+    setSubmitting(true);
     const sigData = canvasRef.current?.toDataURL("image/png") || "";
     onConsent({
       consumerName,
@@ -440,22 +443,26 @@ export default function CMSConsentForm({
       </div>
 
       {/* Checkboxes */}
-      <label style={checkRow} onClick={() => setCheckConsent(!checkConsent)}>
+      <label style={checkRow}>
         <input
           type="checkbox"
           checked={checkConsent}
           onChange={() => setCheckConsent(!checkConsent)}
+          aria-label={txt.checkConsent}
+          aria-required="true"
           style={{ width: 20, height: 20, accentColor: "#10b981", cursor: "pointer", flexShrink: 0, marginTop: 1 }}
         />
         <span style={{ fontSize: 13, color: "#f0f1f5", lineHeight: 1.5 }}>
           {txt.checkConsent}
         </span>
       </label>
-      <label style={checkRow} onClick={() => setCheckEligibility(!checkEligibility)}>
+      <label style={checkRow}>
         <input
           type="checkbox"
           checked={checkEligibility}
           onChange={() => setCheckEligibility(!checkEligibility)}
+          aria-label={txt.checkEligibility}
+          aria-required="true"
           style={{ width: 20, height: 20, accentColor: "#10b981", cursor: "pointer", flexShrink: 0, marginTop: 1 }}
         />
         <span style={{ fontSize: 13, color: "#f0f1f5", lineHeight: 1.5 }}>
@@ -481,6 +488,8 @@ export default function CMSConsentForm({
         }}>
           <canvas
             ref={canvasRef}
+            role="img"
+            aria-label={txt.signHere}
             style={{ width: "100%", height: 100, display: "block", cursor: "crosshair" }}
             onMouseDown={startDraw}
             onMouseMove={draw}
@@ -492,7 +501,7 @@ export default function CMSConsentForm({
           />
         </div>
         {showError && !hasSig && (
-          <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{txt.sigRequired}</div>
+          <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{txt.sigRequired}</div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
           <div style={{ fontSize: 11, color: "#5a5e72" }}>{txt.dateLine}: {dateStr}</div>
@@ -510,14 +519,14 @@ export default function CMSConsentForm({
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!isValid}
+          disabled={!isValid || submitting}
           style={{
             ...btn, flex: 2,
-            background: isValid ? "#10b981" : "rgba(255,255,255,0.1)",
-            color: isValid ? "#fff" : "#5a5e72",
+            background: isValid && !submitting ? "#10b981" : "rgba(255,255,255,0.1)",
+            color: isValid && !submitting ? "#fff" : "#5a5e72",
           }}
         >
-          {txt.submit}
+          {submitting ? "..." : txt.submit}
         </button>
       </div>
     </div>

@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import "./agentes.css";
 
-const CSS = `
+const _CSS_REMOVED = `
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -926,13 +927,13 @@ export default function AgentesPage() {
         href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Satoshi:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet"
       />
-      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      {/* CSS now imported via agentes.css */}
 
       {/* NAVIGATION */}
       <nav ref={navRef} className="ag-nav" id="ag-nav">
         <a href="#" className="ag-nav-logo">
-          <div className="ag-nav-logo-icon">CS</div>
-          <span className="ag-nav-logo-text">CotizaSalud</span>
+          <div className="ag-nav-logo-icon">ES</div>
+          <span className="ag-nav-logo-text">EnrollSalud</span>
         </a>
         <div className="ag-nav-links">
           <a href="#ai-advisor">AI Advisor</a>
@@ -964,7 +965,7 @@ export default function AgentesPage() {
 
         <div className="ag-hero-actions ag-reveal">
           <Link href="/cotizar" className="ag-btn-primary">
-            Probar CotizaSalud
+            Probar EnrollSalud
             <ArrowIcon />
           </Link>
           <a href="#ai-advisor" className="ag-btn-secondary">
@@ -1059,7 +1060,7 @@ export default function AgentesPage() {
           <div className="ag-bento-card wide ag-reveal">
             <div className="ag-bento-icon green">📋</div>
             <h3>Cotizador con Subsidio APTC</h3>
-            <p>Ingresa código postal, composición familiar e ingreso. CotizaSalud calcula el subsidio estimado y muestra planes reales del Marketplace ACA con precios after-subsidy en tiempo real.</p>
+            <p>Ingresa código postal, composición familiar e ingreso. EnrollSalud calcula el subsidio estimado y muestra planes reales del Marketplace ACA con precios after-subsidy en tiempo real.</p>
           </div>
           <div className="ag-bento-card ag-reveal">
             <div className="ag-bento-icon cyan">✍️</div>
@@ -1146,7 +1147,7 @@ export default function AgentesPage() {
           <div className="ag-roi-card ag-reveal">
             <div className="ag-roi-number">45</div>
             <h4>Días de OEP 2027</h4>
-            <p>El OEP 2027 se acorta a solo 45 días (Nov 1 – Dec 15). CotizaSalud te prepara para cerrar más en menos tiempo.</p>
+            <p>El OEP 2027 se acorta a solo 45 días (Nov 1 – Dec 15). EnrollSalud te prepara para cerrar más en menos tiempo.</p>
           </div>
           <div className="ag-roi-card ag-reveal">
             <div className="ag-roi-number">5.6x</div>
@@ -1176,13 +1177,13 @@ export default function AgentesPage() {
       {/* FOOTER */}
       <footer className="ag-footer">
         <div className="ag-footer-left">
-          <div className="ag-footer-logo-icon">CS</div>
-          <span className="ag-footer-text">© 2026 CotizaSalud. Todos los derechos reservados.</span>
+          <div className="ag-footer-logo-icon">ES</div>
+          <span className="ag-footer-text">© 2026 EnrollSalud. Todos los derechos reservados.</span>
         </div>
         <div className="ag-footer-links">
-          <a href="#">Privacidad</a>
-          <a href="#">Términos</a>
-          <a href="#">Contacto</a>
+          <a href="/privacy">Privacidad</a>
+          <a href="/terms">Términos</a>
+          <a href="mailto:info@enrollsalud.com">Contacto</a>
         </div>
       </footer>
     </div>

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-  console.log("API KEY exists:", !!process.env.ANTHROPIC_API_KEY);
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (rateLimit(ip, { max: 5, windowMs: 60_000 }).limited) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "API key not configured" }, { status: 500 });
@@ -34,9 +38,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (!lastRes!.ok) {
-      const err = await lastRes!.text();
-      console.log("Anthropic API error:", lastRes!.status, err);
-      return NextResponse.json({ error: err }, { status: lastRes!.status });
+      const errText = await lastRes!.text();
+      console.error("Anthropic API error:", lastRes!.status, errText);
+      return NextResponse.json({ error: "AI service temporarily unavailable" }, { status: 502 });
     }
 
     const data = await lastRes!.json();

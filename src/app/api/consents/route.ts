@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
         auth_account_maintenance: body.authMaintenance || false,
         auth_respond_inquiries: body.authInquiries || false,
         eligibility_verified: body.eligibilityVerified || false,
-        agent_name: body.agentName || 'CotizaSalud',
+        agent_name: body.agentName || 'EnrollSalud',
         agent_npn: body.agentNpn || null,
         ip_address: request.headers.get('x-forwarded-for') || null,
         user_agent: request.headers.get('user-agent') || null,

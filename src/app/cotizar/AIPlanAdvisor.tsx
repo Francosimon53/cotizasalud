@@ -14,9 +14,13 @@ interface AIPlanAdvisorProps {
   isOverCliff: boolean;
   isNearCliff: boolean;
   excessOverCliff: number;
+  selectedDrug?: { rxcui: string; name: string } | null;
+  drugCoverageStatus?: "covered" | "not_covered" | "unknown" | "checking" | null;
+  selectedDoctor?: { npi: string; name: string; specialty: string } | null;
+  doctorNetworkStatus?: "in_network" | "not_found" | "checking" | null;
 }
 
-export default function AIPlanAdvisor({ plan, household, income, fplPct, aptc, lang, t, householdSize, fplThreshold400, isOverCliff, isNearCliff, excessOverCliff }: AIPlanAdvisorProps) {
+export default function AIPlanAdvisor({ plan, household, income, fplPct, aptc, lang, t, householdSize, fplThreshold400, isOverCliff, isNearCliff, excessOverCliff, selectedDrug, drugCoverageStatus, selectedDoctor, doctorNetworkStatus }: AIPlanAdvisorProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [explanation, setExplanation] = useState("");
@@ -88,8 +92,14 @@ ESTO ES CRÍTICO:
 - Da un ejemplo concreto: "Si eliges este plan y depositas $X en tu cuenta de ahorros médicos, tu ingreso para el gobierno baja de $Y a $Z. Eso te devuelve el descuento y tu prima podría bajar a $0/mes. Te ahorras $W al año."
 - Si están bien por debajo del límite: explica que tienen el descuento del gobierno y cuánto están ahorrando
 
-## Lo Que Te Recomiendo
-UNA recomendación clara que combine la mejor opción de plan CON la mejor estrategia financiera. Si aplica, incluye los pasos exactos.
+${selectedDrug || selectedDoctor ? `## Tu Medicamento y Doctor
+Si el usuario proporcionó un medicamento y/o doctor, incluye esta sección:
+- Di claramente si el medicamento está cubierto o no por este plan
+- Di claramente si su doctor está en la red de este plan
+- Si alguno NO está cubierto, explica qué opciones tiene
+- Mantén esta sección corta: 2-3 oraciones máximo
+` : ""}## Lo Que Te Recomiendo
+UNA recomendación clara que combine la mejor opción de plan CON la mejor estrategia financiera.${selectedDrug || selectedDoctor ? " Si el medicamento no está cubierto o el doctor no está en la red, incluye eso como factor en tu recomendación." : ""} Si aplica, incluye los pasos exactos.
 
 REGLAS:
 - NUNCA uses MAGI, FPL, APTC, ACA, IRA como siglas solas. Siempre explica en lenguaje simple.
@@ -123,8 +133,14 @@ THIS IS CRITICAL:
 - Give a concrete example: "If you choose this plan and deposit $X into your medical savings account, your income for the government drops from $Y to $Z. That gets your discount back and your premium could drop to $0/mo. You save $W per year."
 - If they're well under the cliff: explain they have the government discount and how much they're saving
 
-## What I Recommend
-ONE clear recommendation that combines the best plan choice WITH the best financial strategy. If applicable, include exact steps.
+${selectedDrug || selectedDoctor ? `## Your Medication & Doctor
+If the user provided a medication and/or doctor, include this section:
+- Clearly state whether the medication is covered or not by this plan
+- Clearly state whether their doctor is in this plan's network
+- If either is NOT covered, explain what options they have
+- Keep this section short: 2-3 sentences max
+` : ""}## What I Recommend
+ONE clear recommendation that combines the best plan choice WITH the best financial strategy.${selectedDrug || selectedDoctor ? " If the medication is not covered or the doctor is not in-network, include that as a factor in your recommendation." : ""} If applicable, include exact steps.
 
 RULES:
 - NEVER use MAGI, FPL, APTC, ACA, IRA as standalone acronyms. Always explain in plain language.
@@ -202,6 +218,7 @@ ${show2025 ? `
 - Diferencia: +$${monthlyDiff}/mes (+$${annualDiff.toLocaleString()}/año)
 - Razón: El Congreso no renovó la ley que extendía la ayuda del gobierno a más personas.` : ""}
 
+${selectedDrug ? `\n**MI MEDICAMENTO:**\n- Medicamento: ${selectedDrug.name} (RxCUI: ${selectedDrug.rxcui})\n- Cobertura en este plan: ${drugCoverageStatus === "covered" ? "✅ CUBIERTO por este plan" : drugCoverageStatus === "not_covered" ? "❌ NO cubierto por este plan" : "❓ Datos no disponibles — recomendar verificar con la aseguradora"}\n- ${drugCoverageStatus === "covered" ? "Menciona esto como un punto positivo del plan." : drugCoverageStatus === "not_covered" ? "ADVIERTE que este medicamento NO está cubierto y que debería considerar otro plan o verificar alternativas genéricas." : "Recomienda verificar directamente con la aseguradora."}\n` : ""}${selectedDoctor ? `\n**MI DOCTOR:**\n- Doctor: ${selectedDoctor.name}${selectedDoctor.specialty ? ` (${selectedDoctor.specialty})` : ""}\n- Red de este plan: ${doctorNetworkStatus === "in_network" ? "✅ ESTÁ en la red de este plan" : doctorNetworkStatus === "not_found" ? "⚠️ NO se encontró en la red de este plan" : "Verificando..."}\n- ${doctorNetworkStatus === "in_network" ? "Menciona que su doctor está cubierto como punto positivo." : "ADVIERTE que su doctor podría no estar en la red y que debería verificar antes de inscribirse, o considerar otro plan donde sí esté."}\n` : ""}
 Explícame todo lo que necesito saber sobre este plan y mi situación financiera en UNA sola explicación.`
       : `Explain this health insurance plan AND my financial situation in a clear, personalized way.
 
@@ -243,6 +260,7 @@ ${show2025 ? `
 - Difference: +$${monthlyDiff}/mo (+$${annualDiff.toLocaleString()}/yr)
 - Reason: Congress did not renew the law that extended government help to more people.` : ""}
 
+${selectedDrug ? `\n**MY MEDICATION:**\n- Medication: ${selectedDrug.name} (RxCUI: ${selectedDrug.rxcui})\n- Coverage under this plan: ${drugCoverageStatus === "covered" ? "✅ COVERED by this plan" : drugCoverageStatus === "not_covered" ? "❌ NOT covered by this plan" : "❓ Data not available — recommend verifying with the insurer"}\n- ${drugCoverageStatus === "covered" ? "Mention this as a positive point about the plan." : drugCoverageStatus === "not_covered" ? "WARN that this medication is NOT covered and they should consider another plan or check for generic alternatives." : "Recommend verifying directly with the insurer."}\n` : ""}${selectedDoctor ? `\n**MY DOCTOR:**\n- Doctor: ${selectedDoctor.name}${selectedDoctor.specialty ? ` (${selectedDoctor.specialty})` : ""}\n- Network status for this plan: ${doctorNetworkStatus === "in_network" ? "✅ IS in this plan's network" : doctorNetworkStatus === "not_found" ? "⚠️ NOT found in this plan's network" : "Checking..."}\n- ${doctorNetworkStatus === "in_network" ? "Mention that their doctor is covered as a positive." : "WARN that their doctor may not be in-network and they should verify before enrolling, or consider another plan where the doctor is covered."}\n` : ""}
 Explain everything I need to know about this plan and my financial situation in ONE explanation.`;
 
     try {

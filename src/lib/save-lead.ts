@@ -15,6 +15,9 @@ export async function saveLead(data: {
   contactPhone: string
   contactEmail?: string
   referrer?: string
+  utmSource?: string
+  utmMedium?: string
+  utmCampaign?: string
 }): Promise<{ success: boolean; leadId?: string; error?: string }> {
   try {
     const res = await fetch('/api/leads', {

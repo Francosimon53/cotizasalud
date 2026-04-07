@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import { saveLead, saveConsent, savePlanSelection } from "@/lib/save-lead";
-import { i18n, type Lang, type Translations } from "@/lib/i18n";
+import { i18n, type Lang } from "@/lib/i18n";
 import { lookupCounties, getFPL, getFPLpct } from "@/lib/data";
 import { generateQuote } from "@/lib/plans";
 import type { County, HouseholdMember, Plan, QuoteResults, AgentBrand } from "@/lib/types";
-import AIPlanAdvisor from "./AIPlanAdvisor";
 import CMSConsentForm, { type ConsentRecord } from "./CMSConsentForm";
+
+const AIPlanAdvisor = dynamic(() => import("./AIPlanAdvisor"), {
+  loading: () => <div style={{ padding: 16, textAlign: "center", fontSize: 12, color: "#5a5e72" }}>Loading advisor...</div>,
+});
 
 // ==================== URL PARSER ====================
 function parseSmartLink() {
-  if (typeof window === "undefined") return { name: "", zip: "", phone: "", email: "", source: "direct", agentSlug: "", utm_source: "", utm_medium: "", utm_campaign: "", lang: "" };
+  if (typeof window === "undefined") return { name: "", zip: "", phone: "", email: "", agentSlug: "", lang: "", utm_source: "", utm_medium: "", utm_campaign: "" };
   const p = new URLSearchParams(window.location.search);
   const path = window.location.pathname;
   const slugMatch = path.match(/\/q\/([a-zA-Z0-9_-]+)/);
@@ -20,12 +24,11 @@ function parseSmartLink() {
     zip: p.get("z") || p.get("zip") || "",
     phone: p.get("p") || p.get("phone") || "",
     email: p.get("e") || p.get("email") || "",
-    source: p.get("src") || p.get("source") || "direct",
     agentSlug: slugMatch?.[1] || p.get("agent") || "",
+    lang: p.get("lang") || "",
     utm_source: p.get("utm_source") || "",
     utm_medium: p.get("utm_medium") || "",
     utm_campaign: p.get("utm_campaign") || "",
-    lang: p.get("lang") || "",
   };
 }
 
@@ -226,17 +229,34 @@ export default function QuoterPage() {
   const [consentRecord, setConsentRecord] = useState<ConsentRecord | null>(null);
   const [results, setResults] = useState<QuoteResults | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isMockData, setIsMockData] = useState(false);
+  const [zipLoading, setZipLoading] = useState(false);
+  const [drugSearchError, setDrugSearchError] = useState(false);
+  const [doctorSearchError, setDoctorSearchError] = useState(false);
   const [sortKey, setSortKey] = useState("afterSubsidy");
   const [metalFilter, setMetalFilter] = useState("all");
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [urlParams, setUrlParams] = useState<ReturnType<typeof parseSmartLink>>({ name: "", zip: "", phone: "", email: "", source: "direct", agentSlug: "", utm_source: "", utm_medium: "", utm_campaign: "", lang: "" });
+  const [urlParams, setUrlParams] = useState<ReturnType<typeof parseSmartLink>>({ name: "", zip: "", phone: "", email: "", agentSlug: "", lang: "", utm_source: "", utm_medium: "", utm_campaign: "" });
   const [agentBrand, setAgentBrand] = useState<AgentBrand | null>(null);
 
+  // Drug & doctor search
+  const [drugQuery, setDrugQuery] = useState("");
+  const [drugResults, setDrugResults] = useState<{ rxcui: string; name: string; strength: string; route: string }[]>([]);
+  const [selectedDrug, setSelectedDrug] = useState<{ rxcui: string; name: string } | null>(null);
+  const [drugOpen, setDrugOpen] = useState(false);
+  const [doctorQuery, setDoctorQuery] = useState("");
+  const [doctorResults, setDoctorResults] = useState<{ npi: string; name: string; specialty: string; address: string }[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState<{ npi: string; name: string; specialty: string } | null>(null);
+  const [doctorOpen, setDoctorOpen] = useState(false);
+  const [drugCoverage, setDrugCoverage] = useState<Record<string, "covered" | "not_covered" | "checking" | "unknown">>({});
+  const [doctorNetwork, setDoctorNetwork] = useState<Record<string, "in_network" | "not_found" | "checking">>({});
+  const drugTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const doctorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const t: Record<string, string> = i18n[lang];
 
-  // Smart link init
+  // Smart link init + agent profile fetch
   useEffect(() => {
     const params = parseSmartLink();
     setUrlParams(params);
@@ -246,19 +266,60 @@ export default function QuoterPage() {
     if (params.email) setLeadEmail(decodeURIComponent(params.email));
     if (params.zip && /^\d{5}$/.test(params.zip)) setZip(params.zip);
     if (params.agentSlug) {
-      setAgentBrand({ slug: params.agentSlug, name: params.agentSlug, npn: "XXXXXX" });
+      // Set temporary brand while fetching
+      setAgentBrand({ slug: params.agentSlug, name: params.agentSlug, npn: "" });
+      // Fetch real agent profile from DB
+      fetch(`/api/agents?slug=${encodeURIComponent(params.agentSlug)}`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((agent) => {
+          if (agent) {
+            setAgentBrand({
+              slug: agent.slug,
+              name: agent.name,
+              npn: agent.npn || "",
+              brand_name: agent.brand_name || "",
+              brand_color: agent.brand_color || "#10b981",
+              email: agent.email || "",
+              phone: agent.phone || "",
+              logo_url: agent.logo_url || "",
+            });
+          }
+        })
+        .catch(() => {}); // Keep fallback slug-based brand
     }
   }, []);
 
-  // ZIP lookup
+  // ZIP lookup — CMS API with client-side cache
+  const countyCache = useRef<Map<string, County[]>>(new Map());
   useEffect(() => {
-    if (zip.length === 5) {
-      const found = lookupCounties(zip);
-      setCounties(found);
-      if (found.length === 1) setCounty(found[0]);
-    } else {
-      setCounties([]); setCounty(null);
+    if (zip.length !== 5) { setCounties([]); setCounty(null); setZipLoading(false); return; }
+    const cached = countyCache.current.get(zip);
+    if (cached) {
+      setCounties(cached);
+      if (cached.length === 1) setCounty(cached[0]);
+      return;
     }
+    let cancelled = false;
+    setZipLoading(true);
+    (async () => {
+      let result: County[] = [];
+      try {
+        const res = await fetch(`/api/cms/counties?zip=${zip}`);
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data = await res.json();
+        if (data.counties?.length > 0) result = data.counties;
+      } catch (err) {
+        console.error("CMS county lookup failed, using fallback:", err);
+      }
+      if (result.length === 0) result = lookupCounties(zip);
+      countyCache.current.set(zip, result);
+      if (!cancelled) {
+        setCounties(result);
+        if (result.length === 1) setCounty(result[0]);
+        setZipLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [zip]);
 
   // Auto-skip location if ZIP pre-filled
@@ -269,17 +330,47 @@ export default function QuoterPage() {
   const addPerson = () => house.length < 8 && setHouse([...house, { age: 25, gender: "Female", tobacco: false }]);
   const removePerson = (i: number) => house.length > 1 && setHouse(house.filter((_, j) => j !== i));
   const updatePerson = (i: number, k: keyof HouseholdMember, v: any) => {
+    if (k === "age") {
+      const num = typeof v === "string" ? (v === "" ? 0 : parseInt(v) || 0) : v;
+      v = Math.max(0, Math.min(120, num));
+    }
     const h = [...house]; h[i] = { ...h[i], [k]: v }; setHouse(h);
   };
+  const householdValid = house.every((m) => m.age >= 0 && m.age <= 120);
+  const phoneDigits = leadPhone.replace(/\D/g, "");
+  const phoneValid = phoneDigits.length >= 10;
 
-  const doSearch = () => {
+  const doSearch = async () => {
     if (!county) return;
     setLoading(true);
-    setTimeout(() => {
+    setIsMockData(false);
+    try {
+      const res = await fetch("/api/plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          zipcode: zip,
+          countyfips: county.fips,
+          state: county.state,
+          income: Number(income),
+          household: house,
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      if (data.plans?.length > 0) {
+        setResults({ plans: data.plans, aptc: data.aptc, fplPct: data.fplPct });
+      } else {
+        setIsMockData(true);
+        setResults(generateQuote(county, house, Number(income)));
+      }
+    } catch (err) {
+      console.error("CMS API failed, using fallback:", err);
+      setIsMockData(true);
       setResults(generateQuote(county, house, Number(income)));
-      setLoading(false);
-      setStep(5);
-    }, 1400);
+    }
+    setLoading(false);
+    setStep(5);
   };
 
   const submitLead = async () => {
@@ -299,13 +390,15 @@ export default function QuoterPage() {
         contactName: leadName,
         contactPhone: leadPhone,
         contactEmail: leadEmail || undefined,
+        utmSource: urlParams.utm_source || undefined,
+        utmMedium: urlParams.utm_medium || undefined,
+        utmCampaign: urlParams.utm_campaign || undefined,
       });
       if (result.leadId) setLeadId(result.leadId);
     } catch (err) {
       console.error('Failed to save lead:', err);
     }
-    setLoading(false);
-    doSearch(); // Always go straight to plans
+    await doSearch(); // doSearch manages loading state
   };
 
   const handleConsent = async (record: ConsentRecord) => {
@@ -323,7 +416,7 @@ export default function QuoterPage() {
         authMaintenance: false,
         authInquiries: false,
         eligibilityVerified: record.eligibilityReviewed || false,
-        agentName: record.agentName || 'CotizaSalud',
+        agentName: record.agentName || 'EnrollSalud',
         agentNpn: record.agentNPN || undefined,
       });
     } catch (err) {
@@ -355,11 +448,117 @@ export default function QuoterPage() {
   };
 
   const resetAll = () => {
-    setStep(1); setResults(null); setSelectedPlanId(null);
+    setStep(1); setResults(null); setSelectedPlanId(null); setIsMockData(false);
     setConsent(false); setConsentRecord(null); setLeadName(""); setLeadPhone(""); setLeadEmail("");
     setZip(""); setCounty(null); setIncome("");
     setHouse([{ age: 30, gender: "Female", tobacco: false }]);
+    setSelectedDrug(null); setSelectedDoctor(null); setDrugQuery(""); setDoctorQuery("");
+    setDrugCoverage({}); setDoctorNetwork({});
+    setDrugSearchError(false); setDoctorSearchError(false);
   };
+
+  // Debounced drug search
+  const searchDrugs = useCallback((q: string) => {
+    setDrugQuery(q);
+    if (drugTimer.current) clearTimeout(drugTimer.current);
+    if (q.length < 2) { setDrugResults([]); setDrugOpen(false); return; }
+    drugTimer.current = setTimeout(async () => {
+      setDrugSearchError(false);
+      try {
+        const res = await fetch(`/api/drugs/search?q=${encodeURIComponent(q)}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setDrugResults((data || []).slice(0, 8).map((d: any) => ({
+          rxcui: d.rxcui, name: d.name, strength: d.strength || "", route: d.route || "",
+        })));
+        setDrugOpen(true);
+      } catch { setDrugResults([]); setDrugSearchError(true); }
+    }, 300);
+  }, []);
+
+  // Debounced doctor search
+  const searchDoctors = useCallback((q: string) => {
+    setDoctorQuery(q);
+    if (doctorTimer.current) clearTimeout(doctorTimer.current);
+    if (q.length < 2 || !zip) { setDoctorResults([]); setDoctorOpen(false); return; }
+    doctorTimer.current = setTimeout(async () => {
+      setDoctorSearchError(false);
+      try {
+        const res = await fetch(`/api/providers/search?q=${encodeURIComponent(q)}&zipcode=${zip}&type=Individual`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setDoctorResults((data.providers || []).slice(0, 8).map((p: any) => ({
+          npi: p.provider?.npi || "", name: p.provider?.name || "",
+          specialty: (p.provider?.specialties || [])[0] || "",
+          address: p.address ? `${p.address.city}, ${p.address.state}` : "",
+        })));
+        setDoctorOpen(true);
+      } catch { setDoctorResults([]); setDoctorSearchError(true); }
+    }, 300);
+  }, [zip]);
+
+  // Fetch drug coverage when results load
+  const drugRxcui = selectedDrug?.rxcui;
+  const planIdsKey = results?.plans?.map((p) => p.id).join(",") || "";
+  useEffect(() => {
+    if (!drugRxcui || !planIdsKey) return;
+    const planIds = planIdsKey.split(",");
+    // Set all to "checking" in one batch
+    const init: Record<string, "checking"> = {};
+    planIds.forEach((id) => { init[id] = "checking"; });
+    setDrugCoverage(init);
+    // CMS API can handle ~10 plan IDs per request; batch if needed
+    const batchSize = 10;
+    const batches: string[][] = [];
+    for (let i = 0; i < planIds.length; i += batchSize) batches.push(planIds.slice(i, i + batchSize));
+    Promise.all(
+      batches.map((batch) =>
+        fetch(`/api/drugs/coverage?drugs=${drugRxcui}&planids=${batch.join(",")}&year=2026`)
+          .then((r) => r.ok ? r.json() : { coverage: [] })
+          .catch(() => ({ coverage: [] }))
+      )
+    ).then((results) => {
+      const map: Record<string, "covered" | "not_covered" | "unknown"> = {};
+      for (const data of results) {
+        for (const c of data.coverage || []) {
+          map[c.plan_id] = c.coverage === "Covered" ? "covered" : c.coverage === "Not Covered" ? "not_covered" : "unknown";
+        }
+      }
+      // Fill in any plans not in the response
+      planIds.forEach((id) => { if (!map[id]) map[id] = "unknown"; });
+      setDrugCoverage(map);
+    });
+  }, [drugRxcui, planIdsKey]);
+
+  // Check doctor network per plan when results load (batch via /providers/covered)
+  const doctorNpi = selectedDoctor?.npi;
+  useEffect(() => {
+    if (!doctorNpi || !planIdsKey) return;
+    const planIds = planIdsKey.split(",");
+    const init: Record<string, "checking"> = {};
+    planIds.forEach((id) => { init[id] = "checking"; });
+    setDoctorNetwork(init);
+    // Batch in groups of 10 plan IDs
+    const batchSize = 10;
+    const batches: string[][] = [];
+    for (let i = 0; i < planIds.length; i += batchSize) batches.push(planIds.slice(i, i + batchSize));
+    Promise.all(
+      batches.map((batch) =>
+        fetch(`/api/providers/coverage?providerids=${doctorNpi}&planids=${batch.join(",")}&year=2026`)
+          .then((r) => r.ok ? r.json() : { coverage: [] })
+          .catch(() => ({ coverage: [] }))
+      )
+    ).then((results) => {
+      const map: Record<string, "in_network" | "not_found"> = {};
+      for (const data of results) {
+        for (const c of data.coverage || []) {
+          map[c.plan_id] = c.coverage === "Covered" ? "in_network" : "not_found";
+        }
+      }
+      planIds.forEach((id) => { if (!map[id]) map[id] = "not_found"; });
+      setDoctorNetwork(map);
+    });
+  }, [doctorNpi, planIdsKey]);
 
   const fpl = income ? getFPLpct(Number(income), house.length) : 0;
   const isMedicaid = fpl > 0 && fpl < 138;
@@ -379,7 +578,7 @@ export default function QuoterPage() {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {agentBrand && <span style={{ fontSize: 10, color: "rgba(255,255,255,.4)" }}>by {t.title}</span>}
-          <button style={S.langBtn} onClick={() => setLang(lang === "en" ? "es" : "en")}>{t.langSwitch}</button>
+          <button style={S.langBtn} onClick={() => setLang(lang === "en" ? "es" : "en")} aria-label={lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}>{t.langSwitch}</button>
         </div>
       </div>
 
@@ -426,13 +625,15 @@ export default function QuoterPage() {
             <StepLabel num={1} label={t.s1} />
             <Progress step={1} total={4} />
             <div style={{ marginBottom: 18 }}>
-              <label style={S.label}>{t.zip}</label>
-              <input style={S.input} type="text" maxLength={5} value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} placeholder={t.zipPh} autoFocus />
+              <label htmlFor="zip-input" style={S.label}>{t.zip}</label>
+              <input id="zip-input" style={S.input} type="text" maxLength={5} value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} placeholder={t.zipPh} aria-required="true" autoFocus />
+              {zipLoading && <div style={{ fontSize: 12, color: "#5a5e72", marginTop: 4 }}>{lang === "es" ? "Buscando condado..." : "Looking up county..."}</div>}
+              {zip.length === 5 && !zipLoading && counties.length === 0 && <div role="alert" style={{ fontSize: 12, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "No se encontraron condados para este ZIP" : "No counties found for this ZIP code"}</div>}
             </div>
             {counties.length > 1 && (
               <div style={{ marginBottom: 18 }}>
-                <label style={S.label}>{t.county}</label>
-                <select style={S.select} value={county?.fips || ""} onChange={(e) => setCounty(counties.find((c) => c.fips === e.target.value) || null)}>
+                <label htmlFor="county-select" style={S.label}>{t.county}</label>
+                <select id="county-select" style={S.select} value={county?.fips || ""} onChange={(e) => setCounty(counties.find((c) => c.fips === e.target.value) || null)} aria-required="true">
                   <option value="">{t.pickCounty}</option>
                   {counties.map((c) => <option key={c.fips} value={c.fips}>{c.name}, {c.state}</option>)}
                 </select>
@@ -452,12 +653,12 @@ export default function QuoterPage() {
               <div key={i} style={S.memberCard}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                   <span style={{ fontSize: 13, fontWeight: 800, color: "#10b981" }}>{t.person} {i + 1}</span>
-                  {i > 0 && <button style={{ ...S.btn, padding: "3px 10px", fontSize: 11, color: "#ef4444", background: "transparent" }} onClick={() => removePerson(i)}>{t.removePerson}</button>}
+                  {i > 0 && <button style={{ ...S.btn, padding: "3px 10px", fontSize: 11, color: "#ef4444", background: "transparent" }} onClick={() => removePerson(i)} aria-label={`${t.removePerson} ${i + 1}`}>{t.removePerson}</button>}
                 </div>
                 <div style={S.g3}>
-                  <div><label style={S.label}>{t.age}</label><input style={S.input} type="number" min={0} max={120} value={m.age} onChange={(e) => updatePerson(i, "age", parseInt(e.target.value) || 0)} /></div>
-                  <div><label style={S.label}>{t.gender}</label><select style={S.select} value={m.gender} onChange={(e) => updatePerson(i, "gender", e.target.value)}><option value="Female">{t.female}</option><option value="Male">{t.male}</option></select></div>
-                  <div><label style={S.label}>{t.tobacco}</label><select style={S.select} value={m.tobacco ? "y" : "n"} onChange={(e) => updatePerson(i, "tobacco", e.target.value === "y")}><option value="n">{t.no}</option><option value="y">{t.yes}</option></select></div>
+                  <div><label htmlFor={`age-${i}`} style={S.label}>{t.age}</label><input id={`age-${i}`} style={S.input} type="number" min={0} max={120} value={m.age} onChange={(e) => updatePerson(i, "age", e.target.value)} aria-required="true" /></div>
+                  <div><label htmlFor={`gender-${i}`} style={S.label}>{t.gender}</label><select id={`gender-${i}`} style={S.select} value={m.gender} onChange={(e) => updatePerson(i, "gender", e.target.value)}><option value="Female">{t.female}</option><option value="Male">{t.male}</option></select></div>
+                  <div><label htmlFor={`tobacco-${i}`} style={S.label}>{t.tobacco}</label><select id={`tobacco-${i}`} style={S.select} value={m.tobacco ? "y" : "n"} onChange={(e) => updatePerson(i, "tobacco", e.target.value === "y")}><option value="n">{t.no}</option><option value="y">{t.yes}</option></select></div>
                 </div>
               </div>
             ))}
@@ -475,10 +676,10 @@ export default function QuoterPage() {
             <StepLabel num={3} label={t.s3} />
             <Progress step={3} total={4} />
             <div style={{ marginBottom: 18 }}>
-              <label style={S.label}>{t.income}</label>
+              <label htmlFor="income-input" style={S.label}>{t.income}</label>
               <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#5a5e72", fontWeight: 700 }}>$</span>
-                <input style={{ ...S.input, paddingLeft: 26 }} type="text" value={income ? Number(income).toLocaleString() : ""} onChange={(e) => setIncome(e.target.value.replace(/\D/g, ""))} placeholder={t.incomePh} />
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#5a5e72", fontWeight: 700 }} aria-hidden="true">$</span>
+                <input id="income-input" style={{ ...S.input, paddingLeft: 26 }} type="text" value={income ? Number(income).toLocaleString() : ""} onChange={(e) => setIncome(e.target.value.replace(/\D/g, ""))} placeholder={t.incomePh} aria-required="true" />
               </div>
             </div>
             {income && (
@@ -487,7 +688,12 @@ export default function QuoterPage() {
                 <span style={{ color: "#5a5e72", marginLeft: 6 }}>(${getFPL(house.length).toLocaleString()} / {house.length}p)</span>
               </div>
             )}
-            {isMedicaid && <div style={S.alert}>⚠️ {t.medicaidMsg}</div>}
+            {isMedicaid && <div role="alert" style={S.alert}>⚠️ {t.medicaidMsg}</div>}
+            {income && +income > 500000 && (
+              <div style={{ ...S.alert, background: "rgba(59,130,246,0.08)", borderColor: "rgba(59,130,246,0.3)", color: "#60a5fa" }}>
+                {lang === "es" ? "Nota: Ingreso alto. Verifica que este es tu ingreso MAGI anual correcto." : "Note: High income entered. Please verify this is your correct annual MAGI income."}
+              </div>
+            )}
             <div style={S.row}>
               <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(2)}>{t.back}</button>
               <button style={{ ...S.btn, ...(income && +income > 0 ? S.pri : S.dis), flex: 2 }} disabled={!income || +income <= 0} onClick={() => setStep(4)}>{t.next}</button>
@@ -503,12 +709,16 @@ export default function QuoterPage() {
             <div style={{ fontSize: 18, fontWeight: 800, color: "#10b981", marginBottom: 4 }}>{t.leadTitle}</div>
             <div style={{ fontSize: 13, color: "#5a5e72", marginBottom: 20, lineHeight: 1.5 }}>{t.leadSub}</div>
             <div style={{ marginBottom: 14 }}>
-              <label style={S.label}>{t.fullName}</label>
-              <input style={S.input} value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder={t.namePh} autoFocus={!leadName} />
+              <label htmlFor="lead-name" style={S.label}>{t.fullName}</label>
+              <input id="lead-name" style={S.input} value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder={t.namePh} aria-required="true" autoFocus={!leadName} />
             </div>
             <div style={{ ...S.g2, marginBottom: 14 }}>
-              <div><label style={S.label}>{t.phone}</label><input style={S.input} type="tel" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder={t.phonePh} /></div>
-              <div><label style={S.label}>{t.email}</label><input style={S.input} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} /></div>
+              <div>
+                <label htmlFor="lead-phone" style={S.label}>{t.phone}</label>
+                <input id="lead-phone" style={S.input} type="tel" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder={t.phonePh} aria-required="true" />
+                {leadPhone && !phoneValid && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Mínimo 10 dígitos" : "Minimum 10 digits"}</div>}
+              </div>
+              <div><label htmlFor="lead-email" style={S.label}>{t.email}</label><input id="lead-email" style={S.input} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} /></div>
             </div>
             <div style={{ marginBottom: 18 }}>
               <label style={S.label}>{t.prefLang}</label>
@@ -520,13 +730,74 @@ export default function QuoterPage() {
                 ))}
               </div>
             </div>
+            {/* Optional: Drug search */}
+            <div style={{ marginBottom: 14, position: "relative" }}>
+              <label htmlFor="drug-search" style={S.label}>{t.drugLabel}</label>
+              {selectedDrug ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10 }}>
+                  <span style={{ fontSize: 13, color: "#10b981", fontWeight: 600, flex: 1 }}>💊 {selectedDrug.name}</span>
+                  <button style={{ background: "none", border: "none", color: "#5a5e72", cursor: "pointer", fontSize: 16, padding: "0 4px" }} onClick={() => { setSelectedDrug(null); setDrugQuery(""); setDrugCoverage({}); }} aria-label={lang === "es" ? "Quitar medicamento" : "Remove medication"}>✕</button>
+                </div>
+              ) : (
+                <>
+                  <input id="drug-search" style={S.input} value={drugQuery} onChange={(e) => searchDrugs(e.target.value)} placeholder={t.drugPh} onFocus={() => drugResults.length > 0 && setDrugOpen(true)} onBlur={() => setTimeout(() => setDrugOpen(false), 200)} />
+                  {drugSearchError && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Error en la busqueda" : "Search failed"}</div>}
+                  {drugOpen && drugResults.length > 0 && (
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#1a1c26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, maxHeight: 220, overflowY: "auto", marginTop: 4 }}>
+                      {drugResults.map((d) => (
+                        <div key={d.rxcui} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#f0f1f5" }} onMouseDown={() => { setSelectedDrug({ rxcui: d.rxcui, name: d.name }); setDrugQuery(""); setDrugOpen(false); setDrugResults([]); }}>
+                          <div style={{ fontWeight: 600 }}>{d.name}</div>
+                          {d.strength && <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{d.strength} · {d.route}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {drugQuery.length >= 2 && drugOpen && drugResults.length === 0 && (
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#1a1c26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", marginTop: 4, fontSize: 12, color: "#5a5e72" }}>{t.noResults}</div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Optional: Doctor search */}
+            <div style={{ marginBottom: 18, position: "relative" }}>
+              <label htmlFor="doctor-search" style={S.label}>{t.doctorLabel}</label>
+              {selectedDoctor ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 13, color: "#10b981", fontWeight: 600 }}>🩺 {selectedDoctor.name}</span>
+                    {selectedDoctor.specialty && <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{selectedDoctor.specialty}</div>}
+                  </div>
+                  <button style={{ background: "none", border: "none", color: "#5a5e72", cursor: "pointer", fontSize: 16, padding: "0 4px" }} onClick={() => { setSelectedDoctor(null); setDoctorQuery(""); }} aria-label={lang === "es" ? "Quitar doctor" : "Remove doctor"}>✕</button>
+                </div>
+              ) : (
+                <>
+                  <input id="doctor-search" style={S.input} value={doctorQuery} onChange={(e) => searchDoctors(e.target.value)} placeholder={t.doctorPh} onFocus={() => doctorResults.length > 0 && setDoctorOpen(true)} onBlur={() => setTimeout(() => setDoctorOpen(false), 200)} />
+                  {doctorSearchError && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Error en la busqueda" : "Search failed"}</div>}
+                  {doctorOpen && doctorResults.length > 0 && (
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#1a1c26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, maxHeight: 220, overflowY: "auto", marginTop: 4 }}>
+                      {doctorResults.map((d) => (
+                        <div key={d.npi} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#f0f1f5" }} onMouseDown={() => { setSelectedDoctor({ npi: d.npi, name: d.name, specialty: d.specialty }); setDoctorQuery(""); setDoctorOpen(false); setDoctorResults([]); }}>
+                          <div style={{ fontWeight: 600 }}>{d.name}</div>
+                          <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{d.specialty}{d.address ? ` · ${d.address}` : ""}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {doctorQuery.length >= 2 && doctorOpen && doctorResults.length === 0 && (
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#1a1c26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", marginTop: 4, fontSize: 12, color: "#5a5e72" }}>{t.noResults}</div>
+                  )}
+                </>
+              )}
+            </div>
+
             <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, cursor: "pointer", fontSize: 13, color: "#8b8fa3", lineHeight: 1.5 }}>
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#10b981", cursor: "pointer" }} />
               {t.consent}
             </label>
             <div style={S.row}>
               <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(3)}>{t.back}</button>
-              <button style={{ ...S.btn, ...(leadName && leadPhone && consent ? S.pri : S.dis), flex: 2 }} disabled={!leadName || !leadPhone || !consent || loading} onClick={submitLead}>
+              <button style={{ ...S.btn, ...(leadName && phoneValid && consent ? S.pri : S.dis), flex: 2 }} disabled={!leadName || !phoneValid || !consent || loading} onClick={submitLead}>
                 {loading ? t.saving : t.seeMyPlans}
               </button>
             </div>
@@ -557,6 +828,16 @@ export default function QuoterPage() {
         {step === 5 && results && (
           <div>
             <style>{`@keyframes hsa-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } 50% { box-shadow: 0 0 12px 2px rgba(16,185,129,0.15); } }`}</style>
+            {isMockData && (
+              <div role="alert" style={{ background: "rgba(239,68,68,0.1)", border: "1.5px solid rgba(239,68,68,0.4)", borderRadius: 10, padding: 16, marginBottom: 18, fontSize: 13, color: "#ef4444", lineHeight: 1.5, textAlign: "center" }}>
+                <strong>{lang === "es" ? "⚠️ Planes Estimados" : "⚠️ Estimated Plans"}</strong>
+                <div style={{ marginTop: 4, fontSize: 12 }}>
+                  {lang === "es"
+                    ? "No se pudieron cargar los planes reales del Marketplace. Los datos mostrados son aproximados y solo para referencia."
+                    : "Real Marketplace plans could not be loaded. The data shown is approximate and for reference only."}
+                </div>
+              </div>
+            )}
             {/* FPL Indicator Bar */}
             <FPLIndicator fplPct={fpl} income={Number(income)} houseSize={house.length} lang={lang} maxAge={Math.max(...house.map(h => h.age))} />
 
@@ -584,7 +865,7 @@ export default function QuoterPage() {
             {filtered?.map((plan) => {
               const exp = expandedPlan === plan.id;
               return (
-                <div key={plan.id} style={exp ? S.planExp : S.planCard} onClick={() => setExpandedPlan(exp ? null : plan.id)}>
+                <div key={plan.id} role="button" tabIndex={0} aria-expanded={exp} style={exp ? S.planExp : S.planCard} onClick={() => setExpandedPlan(exp ? null : plan.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedPlan(exp ? null : plan.id); } }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <div>
                       <Badge metal={plan.metal} t={t} />
@@ -619,6 +900,43 @@ export default function QuoterPage() {
                       <div style={S.stat}><div style={S.statL}>HSA</div><div style={{ ...S.statV, fontSize: 14, color: "#2a2d3a" }}>—</div></div>
                     )}
                   </div>
+                  {/* Drug & Doctor badges */}
+                  {(selectedDrug || selectedDoctor) && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                      {selectedDrug && (() => {
+                        const status = drugCoverage[plan.id];
+                        const isCovered = status === "covered";
+                        const isChecking = status === "checking";
+                        const isNotCovered = status === "not_covered";
+                        const color = isCovered ? "#10b981" : isNotCovered ? "#ef4444" : "#5a5e72";
+                        const bg = isCovered ? "rgba(16,185,129,0.1)" : isNotCovered ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.05)";
+                        const border = isCovered ? "rgba(16,185,129,0.25)" : isNotCovered ? "rgba(239,68,68,0.25)" : "rgba(255,255,255,0.1)";
+                        const label = isChecking ? t.drugChecking : isCovered ? t.drugCovers : isNotCovered ? t.drugNoCovers : t.drugCovers;
+                        const icon = isChecking ? "⏳" : isCovered ? "✅" : isNotCovered ? "❌" : "❓";
+                        return (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, color, background: bg, border: `1px solid ${border}` }}>
+                            {icon} {label}
+                          </span>
+                        );
+                      })()}
+                      {selectedDoctor && (() => {
+                        const status = doctorNetwork[plan.id];
+                        const isIn = status === "in_network";
+                        const isChecking = status === "checking";
+                        const isNotFound = status === "not_found";
+                        const color = isIn ? "#10b981" : isChecking ? "#5a5e72" : "#f59e0b";
+                        const bg = isIn ? "rgba(16,185,129,0.1)" : isChecking ? "rgba(255,255,255,0.05)" : "rgba(245,158,11,0.1)";
+                        const bdColor = isIn ? "rgba(16,185,129,0.25)" : isChecking ? "rgba(255,255,255,0.1)" : "rgba(245,158,11,0.25)";
+                        const icon = isChecking ? "⏳" : isIn ? "✅" : "⚠️";
+                        const label = isChecking ? t.doctorChecking : isIn ? t.doctorAccepts : t.doctorVerify;
+                        return (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, color, background: bg, border: `1px solid ${bdColor}` }}>
+                            {icon} {label}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  )}
                   {exp && (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #e5e7eb" }}>
                       <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>Copays</div>
@@ -663,6 +981,10 @@ export default function QuoterPage() {
                         isOverCliff={fpl > 400}
                         isNearCliff={fpl >= 350 && fpl <= 400}
                         excessOverCliff={fpl > 400 ? Number(income) - (15650 + (house.length - 1) * 5500) * 4 : 0}
+                        selectedDrug={selectedDrug}
+                        drugCoverageStatus={selectedDrug ? (drugCoverage[plan.id] || null) : null}
+                        selectedDoctor={selectedDoctor}
+                        doctorNetworkStatus={selectedDoctor ? (doctorNetwork[plan.id] || null) : null}
                       />
                       <button style={{ ...S.btn, ...S.pri, width: "100%", marginTop: 14, fontSize: 14 }} onClick={(e) => { e.stopPropagation(); selectPlan(plan); }}>
                         {t.wantPlan}
@@ -817,7 +1139,7 @@ export default function QuoterPage() {
       <div style={S.footer}>
         <div style={{ marginBottom: 4 }}>{t.poweredBy}</div>
         <div>{t.disclaimer}</div>
-        {agentBrand && <div style={{ marginTop: 4 }}>Agent NPN: {agentBrand.npn}</div>}
+        {agentBrand?.npn && <div style={{ marginTop: 4 }}>Agent NPN: {agentBrand.npn}</div>}
       </div>
     </div>
   );

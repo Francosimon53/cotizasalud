@@ -11,7 +11,7 @@ const COUNTY_DB: Record<string, Array<{fips:string;name:string;state:string}>> =
 };
 export function lookupCounties(zip: string) {
   if (COUNTY_DB[zip]) return COUNTY_DB[zip];
-  if (/^\d{5}$/.test(zip)) return [{ fips: "00000", name: "Your County", state: "FL" }];
+  if (/^\d{5}$/.test(zip)) return [];
   return [];
 }
 export const getFPL = (n: number) => 15650 + (n - 1) * 5500;

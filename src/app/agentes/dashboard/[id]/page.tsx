@@ -14,7 +14,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   const db = createServiceClient();
   const { data: agent } = await db.from("agents").select("slug").eq("auth_user_id", user.id).single();
-  if (!agent) redirect("/agentes/login");
+  if (!agent) redirect("/agentes/dashboard");
 
   const { data: lead } = await db.from("leads").select("*").eq("id", id).eq("agent_slug", agent.slug).single();
   if (!lead) redirect("/agentes/dashboard");

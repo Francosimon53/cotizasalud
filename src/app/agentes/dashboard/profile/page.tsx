@@ -13,13 +13,30 @@ export default async function ProfilePage() {
   if (!user) redirect("/agentes/login");
 
   const db = createServiceClient();
-  const { data: agent } = await db
+  let { data: agent } = await db
     .from("agents")
     .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url")
     .eq("auth_user_id", user.id)
     .single();
 
-  if (!agent) redirect("/agentes/login");
+  // Auto-create agent record if missing
+  if (!agent) {
+    const slug = user.email?.split("@")[0]?.replace(/[^a-z0-9-]/gi, "-").toLowerCase() || `agent-${Date.now()}`;
+    await db.from("agents").insert({
+      auth_user_id: user.id,
+      name: user.email?.split("@")[0] || "Nuevo Agente",
+      slug,
+      email: user.email,
+      is_active: true,
+      subscription_plan: "trial",
+      subscription_status: "active",
+    });
+    const { data: newAgent } = await db.from("agents")
+      .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url")
+      .eq("auth_user_id", user.id).single();
+    agent = newAgent;
+    if (!agent) redirect("/agentes/login");
+  }
 
   return (
     <div style={{

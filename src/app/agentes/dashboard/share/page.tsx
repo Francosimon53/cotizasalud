@@ -14,7 +14,7 @@ export default async function SharePage() {
 
   const db = createServiceClient();
   const { data: agent } = await db.from("agents").select("slug, name, agency_name").eq("auth_user_id", user.id).single();
-  if (!agent) redirect("/agentes/login");
+  if (!agent) redirect("/agentes/dashboard");
 
   return (
     <div style={{

@@ -16,8 +16,26 @@ export default async function DashboardPage() {
   if (!user) redirect("/agentes/login");
 
   const db = createServiceClient();
-  const { data: agent } = await db.from("agents").select("*").eq("auth_user_id", user.id).single();
-  if (!agent) redirect("/agentes/login");
+  let { data: agent } = await db.from("agents").select("*").eq("auth_user_id", user.id).single();
+
+  // Auto-create agent record if authenticated user doesn't have one
+  if (!agent) {
+    const slug = user.email?.split("@")[0]?.replace(/[^a-z0-9-]/gi, "-").toLowerCase() || `agent-${Date.now()}`;
+    const { data: slugExists } = await db.from("agents").select("id").eq("slug", slug).single();
+    const finalSlug = slugExists ? `${slug}-${Math.random().toString(36).slice(2, 6)}` : slug;
+    await db.from("agents").insert({
+      auth_user_id: user.id,
+      name: user.email?.split("@")[0] || "Nuevo Agente",
+      slug: finalSlug,
+      email: user.email,
+      is_active: true,
+      subscription_plan: "trial",
+      subscription_status: "active",
+    });
+    const { data: newAgent } = await db.from("agents").select("*").eq("auth_user_id", user.id).single();
+    agent = newAgent;
+    if (!agent) redirect("/agentes/login"); // Truly broken — bail out
+  }
 
   // Redirect to profile if incomplete
   if (!agent.npn || !agent.email || !agent.phone || !agent.agency_name) {

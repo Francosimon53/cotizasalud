@@ -234,7 +234,8 @@ export default function QuoterPage() {
   const [county, setCounty] = useState<County | null>(null);
   const [house, setHouse] = useState<HouseholdMember[]>([{ age: 30, gender: "Female", tobacco: false }]);
   const [income, setIncome] = useState("");
-  const [leadName, setLeadName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [leadId, setLeadId] = useState<string | null>(null);
@@ -275,7 +276,11 @@ export default function QuoterPage() {
     const params = parseSmartLink();
     setUrlParams(params);
     if (params.lang === "en" || params.lang === "es") setLang(params.lang);
-    if (params.name) setLeadName(decodeURIComponent(params.name));
+    if (params.name) {
+      const parts = decodeURIComponent(params.name).split(" ");
+      setFirstName(parts[0] || "");
+      setLastName(parts.slice(1).join(" ") || "");
+    }
     if (params.phone) setLeadPhone(params.phone);
     if (params.email) setLeadEmail(decodeURIComponent(params.email));
     if (params.zip && /^\d{5}$/.test(params.zip)) setZip(params.zip);
@@ -352,9 +357,12 @@ export default function QuoterPage() {
     }
     const h = [...house]; h[i] = { ...h[i], [k]: v }; setHouse(h);
   };
+  const leadName = `${firstName} ${lastName}`.trim();
   const householdValid = house.every((m) => m.age >= 0 && m.age <= 120);
   const phoneDigits = leadPhone.replace(/\D/g, "");
   const phoneValid = phoneDigits.length >= 10;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail);
+  const contactFormValid = firstName.trim() && lastName.trim() && phoneValid && emailValid;
 
   const doSearch = async () => {
     if (!county) return;
@@ -433,7 +441,9 @@ export default function QuoterPage() {
             note: "Cliente proporcionó datos de contacto",
             contactName: leadName,
             contactPhone: leadPhone,
-            contactEmail: leadEmail || undefined,
+            contactEmail: leadEmail,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
           }),
         });
         // Send notification email
@@ -524,7 +534,7 @@ export default function QuoterPage() {
       }
     }
     // If no contact info yet, go to lead capture form first
-    if (!leadName || !phoneValid) {
+    if (!contactFormValid) {
       setTimeout(() => setStep(4), 300);
     } else {
       setTimeout(() => setStep(45), 300);
@@ -539,7 +549,7 @@ export default function QuoterPage() {
 
   const resetAll = () => {
     setStep(1); setResults(null); setSelectedPlanId(null); setIsMockData(false);
-    setConsent(false); setConsentRecord(null); setLeadName(""); setLeadPhone(""); setLeadEmail("");
+    setConsent(false); setConsentRecord(null); setFirstName(""); setLastName(""); setLeadPhone(""); setLeadEmail("");
     setZip(""); setCounty(null); setIncome("");
     setHouse([{ age: 30, gender: "Female", tobacco: false }]);
     setSelectedDrug(null); setSelectedDoctor(null); setDrugQuery(""); setDoctorQuery("");
@@ -800,18 +810,31 @@ export default function QuoterPage() {
             <Progress step={4} total={4} />
             <div style={{ fontSize: 18, fontWeight: 800, color: "#10b981", marginBottom: 4 }}>{t.leadTitle}</div>
             <div style={{ fontSize: 13, color: "#5a5e72", marginBottom: 20, lineHeight: 1.5 }}>{t.leadSub}</div>
-            <div style={{ marginBottom: 14 }}>
-              <label htmlFor="lead-name" style={S.label}>{t.fullName}</label>
-              <input id="lead-name" style={S.input} value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder={t.namePh} aria-required="true" autoFocus={!leadName} />
+            <div style={{ ...S.g2, marginBottom: 14 }}>
+              <div>
+                <label htmlFor="lead-first" style={S.label}>{lang === "es" ? "Nombre" : "First Name"} <span style={{ color: "#ef4444" }}>*</span></label>
+                <input id="lead-first" style={S.input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={lang === "es" ? "María" : "Maria"} aria-required="true" autoFocus={!firstName} />
+                {!firstName.trim() && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+              </div>
+              <div>
+                <label htmlFor="lead-last" style={S.label}>{lang === "es" ? "Apellido" : "Last Name"} <span style={{ color: "#ef4444" }}>*</span></label>
+                <input id="lead-last" style={S.input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={lang === "es" ? "García" : "Garcia"} aria-required="true" />
+                {!lastName.trim() && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+              </div>
             </div>
             <div style={{ ...S.g2, marginBottom: 14 }}>
               <div>
-                <label htmlFor="lead-phone" style={S.label}>{t.phone}</label>
+                <label htmlFor="lead-phone" style={S.label}>{t.phone} <span style={{ color: "#ef4444" }}>*</span></label>
                 <input id="lead-phone" style={S.input} type="tel" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder={t.phonePh} aria-required="true" />
                 {leadPhone && !phoneValid && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Mínimo 10 dígitos" : "Minimum 10 digits"}</div>}
-                {!leadPhone && <div style={{ fontSize: 11, color: "#8b8fa3", marginTop: 4 }}>{lang === "es" ? "* Requerido" : "* Required"}</div>}
+                {!leadPhone && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
-              <div><label htmlFor="lead-email" style={S.label}>{t.email}</label><input id="lead-email" style={S.input} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} /></div>
+              <div>
+                <label htmlFor="lead-email" style={S.label}>{t.email} <span style={{ color: "#ef4444" }}>*</span></label>
+                <input id="lead-email" style={S.input} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} aria-required="true" />
+                {leadEmail && !emailValid && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Correo no válido" : "Invalid email"}</div>}
+                {!leadEmail && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+              </div>
             </div>
             <div style={{ marginBottom: 18 }}>
               <label style={S.label}>{t.prefLang}</label>
@@ -889,9 +912,9 @@ export default function QuoterPage() {
               {t.consent}
             </label>
             <div style={S.row}>
-              <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(3)}>{t.back}</button>
-              <button style={{ ...S.btn, ...(leadName && phoneValid && consent ? S.pri : S.dis), flex: 2 }} disabled={!leadName || !phoneValid || !consent || loading} onClick={submitLead}>
-                {loading ? t.saving : t.seeMyPlans}
+              <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(results ? 5 : 3)}>{t.back}</button>
+              <button style={{ ...S.btn, ...(contactFormValid && consent ? S.pri : S.dis), flex: 2 }} disabled={!contactFormValid || !consent || loading} onClick={submitLead}>
+                {loading ? t.saving : (lang === "es" ? "Continuar →" : "Continue →")}
               </button>
             </div>
           </div>

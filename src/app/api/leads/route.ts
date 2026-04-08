@@ -13,7 +13,7 @@ const STATUS_TIMESTAMP: Record<string, string> = {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { leadId, status, note, lostReason, nextFollowupDate, contactName, contactPhone, contactEmail } = body
+    const { leadId, status, note, lostReason, nextFollowupDate, contactName, contactPhone, contactEmail, firstName, lastName } = body
 
     if (!leadId || !status || !VALID_STATUSES.includes(status)) {
       return NextResponse.json({ error: 'Invalid leadId or status' }, { status: 400 })
@@ -42,6 +42,8 @@ export async function PATCH(request: NextRequest) {
     if (contactName) update.contact_name = contactName
     if (contactPhone) update.contact_phone = contactPhone
     if (contactEmail) update.contact_email = contactEmail
+    if (firstName) update.first_name = firstName
+    if (lastName) update.last_name = lastName
 
     const { error } = await supabase.from('leads').update(update).eq('id', leadId)
     if (error) {

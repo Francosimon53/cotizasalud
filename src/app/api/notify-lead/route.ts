@@ -58,6 +58,18 @@ export async function POST(req: NextRequest) {
               <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Household</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">${householdSize} member${householdSize > 1 ? "s" : ""}</td></tr>
               <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Income</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">$${Number(annualIncome).toLocaleString()}/yr (${fplPercentage}% FPL)</td></tr>
             </table>
+            ${(() => {
+              const cleanPhone = String(contactPhone).replace(/\D/g, "");
+              const waPhone = cleanPhone.length === 10 ? `1${cleanPhone}` : cleanPhone;
+              const waMsg = encodeURIComponent(`Hola ${contactName}, soy ${agentName} tu agente de seguros de salud. Recibí tu interés en un plan del Marketplace. ¿Tienes unos minutos para hablar sobre tu cobertura?`);
+              return `
+            <div style="margin: 20px 0 0; text-align: center;">
+              <a href="https://wa.me/${waPhone}?text=${waMsg}" style="display: inline-block; padding: 14px 28px; background: #25D366; color: #fff; font-size: 16px; font-weight: 800; border-radius: 10px; text-decoration: none;">
+                💬 Enviar WhatsApp al Cliente
+              </a>
+              <p style="margin: 8px 0 0; font-size: 12px; color: #9ca3af;">Toca el botón para abrir WhatsApp con mensaje pre-escrito</p>
+            </div>`;
+            })()}
             ${leadId ? `<p style="margin: 16px 0 0; font-size: 12px; color: #9ca3af;">Lead ID: ${leadId}</p>` : ""}
           </div>
         </div>

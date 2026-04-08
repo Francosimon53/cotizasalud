@@ -733,6 +733,7 @@ export default function QuoterPage() {
                 <label htmlFor="lead-phone" style={S.label}>{t.phone}</label>
                 <input id="lead-phone" style={S.input} type="tel" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder={t.phonePh} aria-required="true" />
                 {leadPhone && !phoneValid && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Mínimo 10 dígitos" : "Minimum 10 digits"}</div>}
+                {!leadPhone && <div style={{ fontSize: 11, color: "#8b8fa3", marginTop: 4 }}>{lang === "es" ? "* Requerido" : "* Required"}</div>}
               </div>
               <div><label htmlFor="lead-email" style={S.label}>{t.email}</label><input id="lead-email" style={S.input} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} /></div>
             </div>

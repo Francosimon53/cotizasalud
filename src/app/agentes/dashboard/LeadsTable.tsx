@@ -199,9 +199,24 @@ export default function LeadsTable({ leads: initialLeads }: { leads: Lead[] }) {
                         )}
                       </td>
                       <td style={tdStyle}>
-                        <a href={`tel:${lead.contact_phone}`} onClick={(e) => e.stopPropagation()} style={{ color: "#10b981", textDecoration: "none" }}>
-                          {lead.contact_phone}
-                        </a>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <a href={`tel:${lead.contact_phone}`} onClick={(e) => e.stopPropagation()} style={{ color: "#10b981", textDecoration: "none" }}>
+                            {lead.contact_phone}
+                          </a>
+                          <a
+                            href={`https://wa.me/${lead.contact_phone.replace(/\D/g, "").length === 10 ? "1" : ""}${lead.contact_phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${lead.contact_name}, soy tu agente de seguros de salud. Recibí tu interés en un plan del Marketplace. ¿Tienes unos minutos para hablar sobre tu cobertura?`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                              width: 28, height: 28, borderRadius: 6,
+                              background: "#25D366", color: "#fff", fontSize: 14,
+                              textDecoration: "none", flexShrink: 0,
+                            }}
+                            title="WhatsApp"
+                          >💬</a>
+                        </div>
                       </td>
                       <td style={{ ...tdStyle, color: "#8b8fa3", whiteSpace: "nowrap" }}>{lead.county}, {lead.state}</td>
                       <td style={{ ...tdStyle, color: "#8b8fa3", whiteSpace: "nowrap" }}>${Number(lead.annual_income).toLocaleString()}</td>

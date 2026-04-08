@@ -24,6 +24,7 @@ interface Lead {
 }
 
 const STATUSES = [
+  { value: "browsing", label: "Visitante", color: "#6b7280", bg: "rgba(107,114,128,0.1)", border: "rgba(107,114,128,0.3)" },
   { value: "new", label: "Nuevo", color: "#3b82f6", bg: "rgba(59,130,246,0.1)", border: "rgba(59,130,246,0.3)" },
   { value: "contacted", label: "Contactado", color: "#f59e0b", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
   { value: "quoted", label: "Cotizado", color: "#f97316", bg: "rgba(249,115,22,0.1)", border: "rgba(249,115,22,0.3)" },

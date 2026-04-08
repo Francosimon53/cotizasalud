@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
-const VALID_STATUSES = ['new', 'contacted', 'quoted', 'enrolled', 'lost']
+const VALID_STATUSES = ['browsing', 'new', 'contacted', 'quoted', 'enrolled', 'lost']
 const LOST_REASONS = ['too_expensive', 'another_plan', 'got_medicaid', 'no_response', 'other']
 const STATUS_TIMESTAMP: Record<string, string> = {
   contacted: 'contacted_at',
@@ -13,12 +13,14 @@ const STATUS_TIMESTAMP: Record<string, string> = {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { leadId, status, note, lostReason, nextFollowupDate } = body
+    const { leadId, status, note, lostReason, nextFollowupDate, contactName, contactPhone, contactEmail } = body
 
     if (!leadId || !status || !VALID_STATUSES.includes(status)) {
       return NextResponse.json({ error: 'Invalid leadId or status' }, { status: 400 })
     }
-    if (!note || !note.trim()) {
+    // Note required for agent-side status changes, not for browsing→new upgrade
+    const isContactUpgrade = (status === 'new' && contactName && contactPhone)
+    if (!isContactUpgrade && (!note || !note.trim())) {
       return NextResponse.json({ error: 'Note is required' }, { status: 400 })
     }
     if (status === 'lost' && (!lostReason || !LOST_REASONS.includes(lostReason))) {
@@ -37,6 +39,9 @@ export async function PATCH(request: NextRequest) {
     if (tsCol) update[tsCol] = new Date().toISOString()
     if (status === 'lost') update.lost_reason = lostReason
     if (nextFollowupDate) update.next_followup_date = nextFollowupDate
+    if (contactName) update.contact_name = contactName
+    if (contactPhone) update.contact_phone = contactPhone
+    if (contactEmail) update.contact_email = contactEmail
 
     const { error } = await supabase.from('leads').update(update).eq('id', leadId)
     if (error) {
@@ -50,7 +55,7 @@ export async function PATCH(request: NextRequest) {
       action: 'status_change',
       from_status: fromStatus,
       to_status: status,
-      note: note.trim(),
+      note: (note?.trim()) || (isContactUpgrade ? `Contacto: ${contactName} — ${contactPhone}` : ""),
       lost_reason: status === 'lost' ? lostReason : null,
     })
 

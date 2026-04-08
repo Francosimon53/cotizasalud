@@ -52,6 +52,7 @@ export default async function DashboardPage() {
 
   // Pipeline
   const pipeline = {
+    browsing: allLeads.filter((l) => l.status === "browsing").length,
     new: allLeads.filter((l) => l.status === "new").length,
     contacted: allLeads.filter((l) => l.status === "contacted").length,
     quoted: allLeads.filter((l) => l.status === "quoted").length,
@@ -138,8 +139,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* Pipeline Row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 10, marginBottom: 20 }}>
           {[
+            { label: "Visitantes", value: pipeline.browsing, color: "#6b7280" },
             { label: "Nuevos", value: pipeline.new, color: "#3b82f6" },
             { label: "Contactados", value: pipeline.contacted, color: "#f59e0b" },
             { label: "Cotizados", value: pipeline.quoted, color: "#f97316" },

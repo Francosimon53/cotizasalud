@@ -360,6 +360,36 @@ export default function QuoterPage() {
     if (!county) return;
     setLoading(true);
     setIsMockData(false);
+
+    // Create early "browsing" lead (no contact info yet)
+    if (!leadId) {
+      try {
+        const browseRes = await fetch("/api/leads/browse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agentSlug: urlParams.agentSlug || undefined,
+            zipcode: zip,
+            county: county?.name || "",
+            state: county?.state || "FL",
+            householdSize: house.length,
+            annualIncome: Number(income),
+            fplPercentage: getFPLpct(Number(income), house.length),
+            ages: house.map((h) => h.age).join(","),
+            usesTobacco: house.some((h) => h.tobacco),
+            language: lang,
+            utmSource: urlParams.utm_source || undefined,
+            utmMedium: urlParams.utm_medium || undefined,
+            utmCampaign: urlParams.utm_campaign || undefined,
+          }),
+        });
+        const browseData = await browseRes.json();
+        if (browseData.leadId) setLeadId(browseData.leadId);
+      } catch (err) {
+        console.error("Browse lead creation failed:", err);
+      }
+    }
+
     try {
       const res = await fetch("/api/plans", {
         method: "POST",
@@ -392,29 +422,67 @@ export default function QuoterPage() {
   const submitLead = async () => {
     setLoading(true);
     try {
-      const result = await saveLead({
-        agentSlug: urlParams.agentSlug || undefined,
-        zipcode: zip,
-        county: county?.name || '',
-        state: county?.state || 'FL',
-        householdSize: house.length,
-        annualIncome: Number(income),
-        fplPercentage: getFPLpct(Number(income), house.length),
-        ages: house.map((h: any) => h.age).join(','),
-        usesTobacco: house.some((h: any) => h.tobacco),
-        language: lang,
-        contactName: leadName,
-        contactPhone: leadPhone,
-        contactEmail: leadEmail || undefined,
-        utmSource: urlParams.utm_source || undefined,
-        utmMedium: urlParams.utm_medium || undefined,
-        utmCampaign: urlParams.utm_campaign || undefined,
-      });
-      if (result.leadId) setLeadId(result.leadId);
+      if (leadId) {
+        // UPDATE existing browsing lead with contact info
+        await fetch("/api/leads", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            leadId,
+            status: "new",
+            note: "Cliente proporcionó datos de contacto",
+            contactName: leadName,
+            contactPhone: leadPhone,
+            contactEmail: leadEmail || undefined,
+          }),
+        });
+        // Send notification email
+        const origin = window.location.origin;
+        fetch(`${origin}/api/notify-lead`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            leadId,
+            agentSlug: urlParams.agentSlug || undefined,
+            contactName: leadName,
+            contactPhone: leadPhone,
+            contactEmail: leadEmail || undefined,
+            zipcode: zip,
+            county: county?.name || "",
+            state: county?.state || "FL",
+            householdSize: house.length,
+            annualIncome: Number(income),
+            fplPercentage: getFPLpct(Number(income), house.length),
+          }),
+        }).catch(() => {});
+      } else {
+        // Fallback: create new lead if no browsing lead exists
+        const result = await saveLead({
+          agentSlug: urlParams.agentSlug || undefined,
+          zipcode: zip,
+          county: county?.name || '',
+          state: county?.state || 'FL',
+          householdSize: house.length,
+          annualIncome: Number(income),
+          fplPercentage: getFPLpct(Number(income), house.length),
+          ages: house.map((h: any) => h.age).join(','),
+          usesTobacco: house.some((h: any) => h.tobacco),
+          language: lang,
+          contactName: leadName,
+          contactPhone: leadPhone,
+          contactEmail: leadEmail || undefined,
+          utmSource: urlParams.utm_source || undefined,
+          utmMedium: urlParams.utm_medium || undefined,
+          utmCampaign: urlParams.utm_campaign || undefined,
+        });
+        if (result.leadId) setLeadId(result.leadId);
+      }
     } catch (err) {
       console.error('Failed to save lead:', err);
     }
-    await doSearch(); // doSearch manages loading state
+    setLoading(false);
+    setConsent(true);
+    setStep(45); // Go to CMS consent form
   };
 
   const handleConsent = async (record: ConsentRecord) => {
@@ -443,6 +511,7 @@ export default function QuoterPage() {
 
   const selectPlan = async (plan: Plan) => {
     setSelectedPlanId(plan.id);
+    // Track plan view on browsing lead
     if (leadId) {
       try {
         await savePlanSelection(leadId, {
@@ -454,7 +523,12 @@ export default function QuoterPage() {
         console.error('Failed to save plan selection:', err);
       }
     }
-    setTimeout(() => setStep(45), 300);
+    // If no contact info yet, go to lead capture form first
+    if (!leadName || !phoneValid) {
+      setTimeout(() => setStep(4), 300);
+    } else {
+      setTimeout(() => setStep(45), 300);
+    }
   };
 
   const confirmPlan = () => {
@@ -712,7 +786,9 @@ export default function QuoterPage() {
             )}
             <div style={S.row}>
               <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(2)}>{t.back}</button>
-              <button style={{ ...S.btn, ...(income && +income > 0 ? S.pri : S.dis), flex: 2 }} disabled={!income || +income <= 0} onClick={() => setStep(4)}>{t.next}</button>
+              <button style={{ ...S.btn, ...(income && +income > 0 ? S.pri : S.dis), flex: 2 }} disabled={!income || +income <= 0 || loading} onClick={doSearch}>
+                {loading ? (lang === "es" ? "Buscando planes..." : "Finding plans...") : (lang === "es" ? "Ver Mis Planes →" : "See My Plans →")}
+              </button>
             </div>
           </div>
         )}

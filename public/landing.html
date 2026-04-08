@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EnrollSalud — Seguro Médico Simplificado para Familias Hispanas</title>
+<meta name="description" content="Compara planes de seguro médico ACA con subsidios estimados en 2 minutos. Herramienta bilingüe para agentes y familias hispanas en Florida.">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --emerald:#059669;--emerald-dark:#022c22;--emerald-mid:#064e3b;--emerald-light:#ecfdf5;
+  --mint:#6ee7b7;--gold:#f59e0b;--coral:#ef4444;
+  --white:#ffffff;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;
+  --gray-400:#9ca3af;--gray-500:#6b7280;--gray-700:#374151;--gray-900:#111827;
+  --font-display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font-mono:'Space Mono',monospace;
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-display);color:var(--gray-700);background:var(--white);overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+
+/* ===== NAVIGATION ===== */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 0;transition:all .3s}
+.nav.scrolled{background:rgba(2,44,34,.97);backdrop-filter:blur(12px);box-shadow:0 2px 20px rgba(0,0,0,.15)}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;color:var(--white);font-weight:900;font-size:20px;letter-spacing:-.5px}
+.nav-logo .icon{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:18px}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a{color:rgba(255,255,255,.7);font-size:13px;font-weight:600;transition:color .2s}
+.nav-links a:hover{color:var(--white)}
+.nav-cta{padding:9px 20px;border-radius:8px;background:var(--emerald);color:var(--white)!important;font-weight:700;font-size:13px;transition:all .2s}
+.nav-cta:hover{background:#047857;transform:translateY(-1px)}
+@media(max-width:768px){.nav-links a:not(.nav-cta){display:none}}
+
+/* ===== HERO ===== */
+.hero{position:relative;min-height:100vh;background:linear-gradient(155deg,#011d16 0%,#022c22 25%,#064e3b 50%,#065f46 75%,#047857 100%);display:flex;align-items:center;overflow:hidden;padding:100px 24px 80px}
+.hero::before{content:'';position:absolute;top:-50%;right:-30%;width:80vw;height:80vw;border-radius:50%;background:radial-gradient(circle,rgba(6,78,59,.4),transparent 70%);pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:200px;background:linear-gradient(transparent,rgba(2,44,34,.5));pointer-events:none}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:60px 60px;animation:gridShift 20s linear infinite}
+@keyframes gridShift{0%{transform:translate(0,0)}100%{transform:translate(60px,60px)}}
+.hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:2}
+@media(max-width:900px){.hero-inner{grid-template-columns:1fr;text-align:center}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:40px;background:rgba(110,231,183,.1);border:1px solid rgba(110,231,183,.2);color:var(--mint);font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:24px;animation:fadeUp .8s both}
+.hero-badge .pulse{width:8px;height:8px;border-radius:50%;background:var(--mint);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+.hero h1{color:var(--white);font-size:clamp(36px,5.5vw,64px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px;animation:fadeUp .8s .1s both}
+.hero h1 .accent{background:linear-gradient(135deg,var(--mint),#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{color:rgba(255,255,255,.6);font-size:18px;line-height:1.6;margin-bottom:32px;max-width:520px;animation:fadeUp .8s .2s both}
+@media(max-width:900px){.hero-sub{margin:0 auto 32px}}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;animation:fadeUp .8s .3s both}
+@media(max-width:900px){.hero-actions{justify-content:center}}
+.btn-primary{padding:16px 36px;border-radius:12px;background:linear-gradient(135deg,var(--emerald),#047857);color:var(--white);font-size:17px;font-weight:800;border:none;cursor:pointer;transition:all .25s;box-shadow:0 4px 20px rgba(5,150,105,.4);font-family:var(--font-display);display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(5,150,105,.5)}
+.btn-secondary{padding:16px 28px;border-radius:12px;background:rgba(255,255,255,.08);color:var(--white);font-size:15px;font-weight:700;border:1px solid rgba(255,255,255,.15);cursor:pointer;transition:all .25s;font-family:var(--font-display);display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25)}
+.hero-stats{display:flex;gap:32px;margin-top:40px;animation:fadeUp .8s .4s both}
+@media(max-width:900px){.hero-stats{justify-content:center}}
+.hero-stat{text-align:left}
+@media(max-width:900px){.hero-stat{text-align:center}}
+.hero-stat .num{font-size:28px;font-weight:900;color:var(--mint);font-family:var(--font-mono)}
+.hero-stat .label{font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.hero-visual{position:relative;animation:fadeUp .8s .3s both}
+@media(max-width:900px){.hero-visual{display:none}}
+.hero-phone{width:280px;margin:0 auto;background:#111;border-radius:36px;padding:12px;box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.1);position:relative;z-index:2}
+.hero-phone-screen{border-radius:26px;overflow:hidden;background:var(--gray-50)}
+.phone-header{background:linear-gradient(135deg,var(--emerald-dark),var(--emerald-mid));padding:20px 16px 28px;text-align:center}
+.phone-header h3{color:var(--white);font-size:14px;font-weight:800}
+.phone-header p{color:var(--mint);font-size:11px;margin-top:4px}
+.phone-body{padding:12px;margin-top:-12px;position:relative}
+.phone-card{background:var(--white);border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid var(--gray-200)}
+.phone-plan-name{font-size:11px;font-weight:800;color:var(--gray-900)}
+.phone-plan-price{font-size:22px;font-weight:900;color:var(--emerald)}
+.phone-plan-label{font-size:9px;color:var(--gray-400)}
+.phone-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:8px;font-weight:800;text-transform:uppercase;color:var(--white);letter-spacing:.5px}
+.phone-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.phone-stat{background:var(--gray-50);border-radius:6px;padding:6px;text-align:center}
+.phone-stat .l{font-size:7px;color:var(--gray-400);text-transform:uppercase;font-weight:700;letter-spacing:.3px}
+.phone-stat .v{font-size:11px;font-weight:800;color:var(--gray-900)}
+.float-badge{position:absolute;padding:8px 14px;border-radius:10px;background:var(--white);box-shadow:0 8px 30px rgba(0,0,0,.15);font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;animation:float 3s ease-in-out infinite}
+.float-badge.b1{top:20%;right:-40px;animation-delay:0s}
+.float-badge.b2{bottom:30%;left:-50px;animation-delay:1.5s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== URGENCY BAR ===== */
+.urgency{background:linear-gradient(90deg,#b91c1c,#dc2626,#b91c1c);padding:12px 24px;text-align:center;color:var(--white);font-size:13px;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.urgency span{background:rgba(0,0,0,.2);padding:2px 10px;border-radius:4px;font-family:var(--font-mono);font-size:14px}
+
+/* ===== SOCIAL PROOF BAR ===== */
+.proof-bar{background:var(--gray-50);border-bottom:1px solid var(--gray-200);padding:20px 24px}
+.proof-bar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
+.proof-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray-500);font-weight:600}
+.proof-item .icon{font-size:18px}
+
+/* ===== SECTION STYLES ===== */
+section{padding:80px 24px}
+.section-inner{max-width:1200px;margin:0 auto}
+.section-label{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:var(--emerald-light);color:var(--emerald);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.section-title{font-size:clamp(28px,4vw,44px);font-weight:900;color:var(--gray-900);letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px}
+.section-sub{font-size:17px;color:var(--gray-500);max-width:600px;line-height:1.6}
+
+/* ===== PROBLEM SECTION ===== */
+.problem{background:var(--gray-900);color:var(--white)}
+.problem .section-label{background:rgba(239,68,68,.1);color:#fca5a5}
+.problem .section-title{color:var(--white)}
+.problem .section-sub{color:rgba(255,255,255,.5)}
+.problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px}
+@media(max-width:768px){.problem-grid{grid-template-columns:1fr}}
+.problem-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px;transition:all .3s}
+.problem-card:hover{background:rgba(255,255,255,.08);transform:translateY(-4px)}
+.problem-card .icon{width:48px;height:48px;border-radius:12px;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.problem-card h3{font-size:18px;font-weight:800;color:var(--white);margin-bottom:8px}
+.problem-card p{font-size:14px;color:rgba(255,255,255,.5);line-height:1.6}
+.problem-card .stat{font-family:var(--font-mono);font-size:32px;font-weight:700;color:var(--coral);margin-top:12px}
+
+/* ===== SOLUTION / HOW IT WORKS ===== */
+.solution{background:var(--white)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px}
+@media(max-width:900px){.steps{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.steps{grid-template-columns:1fr}}
+.step{position:relative;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:16px;padding:28px 24px;text-align:center;transition:all .3s}
+.step:hover{border-color:var(--emerald);transform:translateY(-4px);box-shadow:0 12px 40px rgba(5,150,105,.08)}
+.step-num{width:40px;height:40px;border-radius:50%;background:var(--emerald);color:var(--white);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;margin:0 auto 16px}
+.step .icon{font-size:32px;margin-bottom:12px}
+.step h3{font-size:16px;font-weight:800;color:var(--gray-900);margin-bottom:8px}
+.step p{font-size:13px;color:var(--gray-500);line-height:1.5}
+.step-time{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:12px;background:var(--emerald-light);color:var(--emerald);font-size:11px;font-weight:700;font-family:var(--font-mono)}
+
+/* ===== BENEFITS ===== */
+.benefits{background:linear-gradient(180deg,var(--emerald-light),var(--white))}
+.benefits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+@media(max-width:768px){.benefits-grid{grid-template-columns:1fr}}
+.benefit{background:var(--white);border:1px solid var(--gray-200);border-radius:16px;padding:28px;transition:all .3s}
+.benefit:hover{border-color:var(--emerald);box-shadow:0 8px 30px rgba(5,150,105,.06)}
+.benefit .icon{font-size:28px;margin-bottom:12px}
+.benefit h3{font-size:17px;font-weight:800;color:var(--gray-900);margin-bottom:6px}
+.benefit p{font-size:14px;color:var(--gray-500);line-height:1.6}
+
+/* ===== DUAL AUDIENCE ===== */
+.audience{background:var(--white)}
+.audience-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px}
+@media(max-width:768px){.audience-grid{grid-template-columns:1fr}}
+.audience-card{border-radius:20px;padding:36px;position:relative;overflow:hidden}
+.audience-card.consumer{background:linear-gradient(135deg,var(--emerald-dark),var(--emerald-mid));color:var(--white)}
+.audience-card.agent{background:var(--gray-900);color:var(--white)}
+.audience-card .tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.audience-card.consumer .tag{background:rgba(110,231,183,.15);color:var(--mint)}
+.audience-card.agent .tag{background:rgba(245,158,11,.15);color:var(--gold)}
+.audience-card h3{font-size:24px;font-weight:900;margin-bottom:12px;letter-spacing:-.5px}
+.audience-card ul{list-style:none;margin-top:16px}
+.audience-card li{padding:8px 0;font-size:14px;display:flex;align-items:flex-start;gap:10px;opacity:.8}
+.audience-card li::before{content:'✓';font-weight:900;flex-shrink:0;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+.audience-card.consumer li::before{background:rgba(110,231,183,.2);color:var(--mint)}
+.audience-card.agent li::before{background:rgba(245,158,11,.2);color:var(--gold)}
+.audience-card .cta{display:inline-flex;align-items:center;gap:8px;margin-top:24px;padding:12px 24px;border-radius:10px;font-weight:800;font-size:14px;transition:all .2s;cursor:pointer;border:none;font-family:var(--font-display)}
+.audience-card.consumer .cta{background:var(--mint);color:var(--emerald-dark)}
+.audience-card.agent .cta{background:var(--gold);color:var(--gray-900)}
+.audience-card .cta:hover{transform:translateY(-2px);filter:brightness(1.1)}
+
+/* ===== COMPARISON ===== */
+.comparison{background:var(--gray-50)}
+.comp-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:48px;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.comp-table th{background:var(--emerald-dark);color:var(--white);padding:16px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;text-align:center}
+.comp-table th:first-child{text-align:left;width:200px}
+.comp-table th.highlight{background:var(--emerald);position:relative}
+.comp-table td{padding:14px 16px;font-size:13px;text-align:center;border-bottom:1px solid var(--gray-200);background:var(--white)}
+.comp-table td:first-child{font-weight:700;color:var(--gray-900);text-align:left}
+.comp-table td.highlight{background:var(--emerald-light);font-weight:700;color:var(--emerald)}
+.comp-table .check{color:var(--emerald);font-weight:900}
+.comp-table .cross{color:var(--gray-400)}
+@media(max-width:768px){.comp-table{font-size:11px}.comp-table th,.comp-table td{padding:10px 8px}}
+
+/* ===== TESTIMONIALS ===== */
+.testimonials{background:var(--white)}
+.testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+@media(max-width:768px){.testimonials-grid{grid-template-columns:1fr}}
+.testimonial{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:16px;padding:28px;position:relative}
+.testimonial .stars{color:var(--gold);font-size:14px;letter-spacing:2px;margin-bottom:12px}
+.testimonial p{font-size:14px;color:var(--gray-700);line-height:1.7;font-style:italic}
+.testimonial .author{display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200)}
+.testimonial .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--emerald),var(--mint));display:flex;align-items:center;justify-content:center;color:var(--white);font-weight:800;font-size:14px}
+.testimonial .name{font-weight:800;font-size:13px;color:var(--gray-900)}
+.testimonial .role{font-size:11px;color:var(--gray-400)}
+
+/* ===== PRICING ===== */
+.pricing{background:linear-gradient(180deg,var(--gray-50),var(--white))}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px;align-items:start}
+@media(max-width:900px){.pricing-grid{grid-template-columns:1fr;max-width:400px;margin-left:auto;margin-right:auto}}
+.price-card{background:var(--white);border:2px solid var(--gray-200);border-radius:20px;padding:32px;text-align:center;transition:all .3s;position:relative}
+.price-card.featured{border-color:var(--emerald);box-shadow:0 12px 40px rgba(5,150,105,.12);transform:scale(1.04)}
+.price-card .popular{position:absolute;top:-12px;left:50%;transform:translateX(-50%);padding:4px 16px;border-radius:20px;background:var(--emerald);color:var(--white);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px}
+.price-card .plan-name{font-size:18px;font-weight:800;color:var(--gray-900);margin-bottom:4px}
+.price-card .plan-desc{font-size:12px;color:var(--gray-400);margin-bottom:20px}
+.price-card .price{font-size:44px;font-weight:900;color:var(--emerald);font-family:var(--font-mono);letter-spacing:-2px}
+.price-card .price span{font-size:16px;font-weight:600;color:var(--gray-400)}
+.price-card .features{list-style:none;margin:24px 0;text-align:left}
+.price-card .features li{padding:6px 0;font-size:13px;color:var(--gray-700);display:flex;align-items:center;gap:8px}
+.price-card .features li::before{content:'✓';color:var(--emerald);font-weight:900;font-size:12px}
+.price-card .cta{display:block;width:100%;padding:14px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;transition:all .2s;border:none;font-family:var(--font-display)}
+.price-card .cta.primary{background:var(--emerald);color:var(--white)}
+.price-card .cta.secondary{background:var(--gray-100);color:var(--gray-700)}
+.price-card .cta:hover{transform:translateY(-2px)}
+
+/* ===== FAQ ===== */
+.faq{background:var(--white)}
+.faq-list{max-width:700px;margin:48px auto 0}
+.faq-item{border-bottom:1px solid var(--gray-200);overflow:hidden}
+.faq-q{display:flex;justify-content:space-between;align-items:center;padding:20px 0;cursor:pointer;font-weight:700;font-size:15px;color:var(--gray-900)}
+.faq-q::after{content:'+';font-size:24px;color:var(--emerald);font-weight:300;transition:transform .3s}
+.faq-item.open .faq-q::after{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s;font-size:14px;color:var(--gray-500);line-height:1.7}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:20px}
+
+/* ===== FINAL CTA ===== */
+.final-cta{background:linear-gradient(135deg,var(--emerald-dark),var(--emerald-mid),#047857);padding:100px 24px;text-align:center;position:relative;overflow:hidden}
+.final-cta::before{content:'';position:absolute;top:50%;left:50%;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(110,231,183,.08),transparent);transform:translate(-50%,-50%)}
+.final-cta h2{font-size:clamp(32px,5vw,52px);font-weight:900;color:var(--white);letter-spacing:-2px;margin-bottom:16px;position:relative;z-index:2}
+.final-cta p{color:rgba(255,255,255,.6);font-size:18px;margin-bottom:32px;position:relative;z-index:2}
+.final-cta .btn-primary{font-size:20px;padding:20px 44px;border-radius:14px;position:relative;z-index:2}
+.final-cta .trust{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:24px;position:relative;z-index:2;flex-wrap:wrap}
+.final-cta .trust span{color:rgba(255,255,255,.4);font-size:12px;display:flex;align-items:center;gap:6px}
+
+/* ===== FOOTER ===== */
+footer{background:var(--gray-900);padding:40px 24px;text-align:center}
+footer p{font-size:11px;color:var(--gray-500);line-height:1.8}
+footer a{color:var(--emerald);font-weight:600}
+
+/* ===== SCROLL ANIMATIONS ===== */
+.reveal{opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.22,1,.36,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav scrolled">
+<div class="nav-inner">
+  <a href="#" class="nav-logo"><span class="icon">🏥</span> EnrollSalud</a>
+  <div class="nav-links">
+    <a href="#como-funciona">Cómo Funciona</a>
+    <a href="#beneficios">Beneficios</a>
+    <a href="/agentes">Para Agentes</a>
+    <a href="#precios">Precios</a>
+    <a href="/cotizar" class="nav-cta">Cotizar Ahora →</a>
+  </div>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+<div class="hero-grid"></div>
+<div class="hero-inner">
+  <div>
+    <div class="hero-badge"><span class="pulse"></span> OEP 2026 — Primas subieron 26%</div>
+    <h1>Seguro médico<br><span class="accent">sin complicaciones</span></h1>
+    <p class="hero-sub">Compara planes ACA del Marketplace con subsidios estimados en 2 minutos. Bilingüe. Gratis. Sin crear cuenta en HealthCare.gov.</p>
+    <div class="hero-actions">
+      <a href="/cotizar" class="btn-primary">Cotiza Gratis en 2 Min →</a>
+      <a href="/agentes" class="btn-secondary">🏢 Soy Agente</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num">$0</div><div class="label">Costo para ti</div></div>
+      <div class="hero-stat"><div class="num">2min</div><div class="label">Tiempo promedio</div></div>
+      <div class="hero-stat"><div class="num">8+</div><div class="label">Planes comparados</div></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-phone">
+      <div class="hero-phone-screen">
+        <div class="phone-header">
+          <h3>🏥 EnrollSalud</h3>
+          <p>Tu cotización gratis en 2 minutos</p>
+        </div>
+        <div class="phone-body">
+          <div class="phone-card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <span class="phone-badge" style="background:#b45309">ORO</span>
+                <div class="phone-plan-name" style="margin-top:4px">Ambetter Gold</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:9px;color:#b0b0b0;text-decoration:line-through">$580/mes</div>
+                <div class="phone-plan-price">$141</div>
+                <div class="phone-plan-label">/mes</div>
+              </div>
+            </div>
+            <div class="phone-stats">
+              <div class="phone-stat"><div class="l">Deducible</div><div class="v">$1,163</div></div>
+              <div class="phone-stat"><div class="l">Máx. Bolsillo</div><div class="v">$7,000</div></div>
+            </div>
+          </div>
+          <div class="phone-card" style="opacity:.7">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <span class="phone-badge" style="background:#6b7280">PLATA</span>
+                <div class="phone-plan-name" style="margin-top:4px">Molina Silver</div>
+              </div>
+              <div class="phone-plan-price" style="font-size:18px">$98<span class="phone-plan-label">/mes</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="float-badge b1">🇪🇸 Bilingüe nativo</div>
+    <div class="float-badge b2">⚡ Sin cuenta HC.gov</div>
+  </div>
+</div>
+</section>
+
+<!-- URGENCY BAR -->
+<div class="urgency">
+  ⚠️ Las primas ACA subieron <span>26%</span> para 2026 — Los subsidios mejorados EXPIRARON — Millones pagarán más sin orientación
+</div>
+
+<!-- SOCIAL PROOF BAR -->
+<div class="proof-bar">
+<div class="proof-bar-inner">
+  <div class="proof-item"><span class="icon">🛡️</span> Datos del API oficial de CMS</div>
+  <div class="proof-item"><span class="icon">🔒</span> Información encriptada</div>
+  <div class="proof-item"><span class="icon">🇺🇸</span> Planes reales del Marketplace</div>
+  <div class="proof-item"><span class="icon">⭐</span> Agentes licenciados NPN verificados</div>
+</div>
+</div>
+
+<!-- PROBLEM -->
+<section class="problem" id="problema">
+<div class="section-inner">
+  <div class="section-label reveal">⚠️ El Problema</div>
+  <h2 class="section-title reveal">El sistema de salud en EE.UU.<br>es confuso por diseño</h2>
+  <p class="section-sub reveal">Especialmente si tu idioma principal es español.</p>
+  <div class="problem-grid">
+    <div class="problem-card reveal">
+      <div class="icon">📊</div>
+      <h3>Primas por las nubes</h3>
+      <p>Las primas ACA subieron un promedio de 26% para 2026 — el mayor aumento desde 2018.</p>
+      <div class="stat">+26%</div>
+    </div>
+    <div class="problem-card reveal">
+      <div class="icon">💸</div>
+      <h3>Subsidios eliminados</h3>
+      <p>Los subsidios mejorados del ARPA/IRA expiraron. Millones de familias pagarán el doble o más.</p>
+      <div class="stat">2x</div>
+    </div>
+    <div class="problem-card reveal">
+      <div class="icon">🌐</div>
+      <h3>Barrera del idioma</h3>
+      <p>HealthCare.gov tiene traducción parcial. Los formularios, copays, y deducibles son confusos incluso en inglés.</p>
+      <div class="stat">23M+</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="solution" id="como-funciona">
+<div class="section-inner">
+  <div class="section-label reveal">✨ Cómo Funciona</div>
+  <h2 class="section-title reveal">Tu cotización en 4 pasos simples</h2>
+  <p class="section-sub reveal">Sin crear cuenta. Sin número de seguro social. Sin compromisos.</p>
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num">1</div>
+      <div class="icon">📍</div>
+      <h3>Tu ubicación</h3>
+      <p>Ingresa tu código postal. Detectamos tu condado y planes disponibles.</p>
+      <span class="step-time">10 seg</span>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">2</div>
+      <div class="icon">👨‍👩‍👧‍👦</div>
+      <h3>Tu hogar</h3>
+      <p>Agrega edades, género. Hasta 8 personas. Nada de SSN ni documentos.</p>
+      <span class="step-time">30 seg</span>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">3</div>
+      <div class="icon">💰</div>
+      <h3>Tu ingreso</h3>
+      <p>Ingreso anual del hogar para calcular tu subsidio estimado (APTC).</p>
+      <span class="step-time">10 seg</span>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">4</div>
+      <div class="icon">📋</div>
+      <h3>Tus planes</h3>
+      <p>Compara primas, deducibles, copays. Elige tu plan y un agente te contacta.</p>
+      <span class="step-time">60 seg</span>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- BENEFITS -->
+<section class="benefits" id="beneficios">
+<div class="section-inner">
+  <div class="section-label reveal">💚 Beneficios</div>
+  <h2 class="section-title reveal">¿Por qué EnrollSalud?</h2>
+  <p class="section-sub reveal">Diseñado para familias hispanas que merecen entender sus opciones.</p>
+  <div class="benefits-grid">
+    <div class="benefit reveal">
+      <div class="icon">🇪🇸</div>
+      <h3>100% Bilingüe</h3>
+      <p>No es Google Translate. Es UX diseñada desde cero en español con terminología que entiendes.</p>
+    </div>
+    <div class="benefit reveal">
+      <div class="icon">⚡</div>
+      <h3>2 Minutos</h3>
+      <p>Sin crear cuentas, sin documentos, sin esperas. Resultados instantáneos con subsidios estimados.</p>
+    </div>
+    <div class="benefit reveal">
+      <div class="icon">🔒</div>
+      <h3>100% Privado</h3>
+      <p>No pedimos SSN ni documentos. Solo edad, ZIP e ingreso para calcular tu cotización.</p>
+    </div>
+    <div class="benefit reveal">
+      <div class="icon">📱</div>
+      <h3>WhatsApp Ready</h3>
+      <p>Tu agente te envía un link por WhatsApp con tu nombre y datos ya cargados. Solo toca ver planes.</p>
+    </div>
+    <div class="benefit reveal">
+      <div class="icon">💵</div>
+      <h3>Completamente Gratis</h3>
+      <p>EnrollSalud no te cobra nada. Los agentes licenciados ganan comisiones de los carriers, no de ti.</p>
+    </div>
+    <div class="benefit reveal">
+      <div class="icon">🤝</div>
+      <h3>Agente Real</h3>
+      <p>No eres un número. Un agente licenciado te contacta en tu idioma para ayudarte a inscribirte.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- DUAL AUDIENCE -->
+<section class="audience" id="agentes">
+<div class="section-inner">
+  <div class="section-label reveal">🎯 Para Ti</div>
+  <h2 class="section-title reveal">Dos audiencias. Una plataforma.</h2>
+  <div class="audience-grid">
+    <div class="audience-card consumer reveal">
+      <span class="tag">Para Familias</span>
+      <h3>Busca tu seguro médico sin estrés</h3>
+      <ul>
+        <li>Compara planes reales del Marketplace ACA</li>
+        <li>Ve tu subsidio estimado antes de inscribirte</li>
+        <li>Todo en español — sin traducción robótica</li>
+        <li>Un agente licenciado te ayuda gratis</li>
+        <li>Sin SSN, sin documentos, sin compromisos</li>
+      </ul>
+      <a href="/cotizar" class="cta">Cotizar Ahora →</a>
+    </div>
+    <div class="audience-card agent reveal">
+      <span class="tag">Para Agentes & Brokers</span>
+      <h3>Tu cotizador con tu marca en minutos</h3>
+      <ul>
+        <li>Etiqueta privada: tu logo, tu nombre, tus colores</li>
+        <li>Smart links para WhatsApp, SMS, email, redes</li>
+        <li>Captura leads automáticamente con notificaciones</li>
+        <li>Dashboard con analytics de conversión</li>
+        <li>Tú conservas 100% de tus comisiones</li>
+      </ul>
+      <a href="#precios" class="cta">Ver Planes SaaS →</a>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="comparison">
+<div class="section-inner">
+  <div class="section-label reveal">⚔️ Comparación</div>
+  <h2 class="section-title reveal">¿Por qué no HealthSherpa o Quotit?</h2>
+  <p class="section-sub reveal">Son buenas herramientas. Pero no fueron hechas para tu mercado.</p>
+  <table class="comp-table reveal">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>HealthSherpa</th>
+        <th>Quotit</th>
+        <th>Inshura</th>
+        <th class="highlight">EnrollSalud</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Bilingüe nativo</td><td class="cross">Parcial</td><td class="cross">✗</td><td class="cross">✗</td><td class="highlight check">✓</td></tr>
+      <tr><td>Etiqueta privada</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="highlight check">✓</td></tr>
+      <tr><td>Smart Links (WhatsApp/SMS)</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="highlight check">✓</td></tr>
+      <tr><td>Lead capture gate</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="highlight check">✓</td></tr>
+      <tr><td>Notificaciones WhatsApp</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="highlight check">✓</td></tr>
+      <tr><td>Conservas tus comisiones</td><td class="cross">Parcial</td><td class="check">✓</td><td class="cross">Parcial</td><td class="highlight check">100%</td></tr>
+      <tr><td>Enrollment directo (EDE)</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="highlight">Fase 2</td></tr>
+      <tr><td>Precio para agente</td><td>Gratis*</td><td>$$$$</td><td>Gratis*</td><td class="highlight">$49+</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--gray-400);margin-top:16px;text-align:center">*Gratis = monetizan con comisiones del carrier, no ofrecen white-label ni control de marca</p>
+</div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+<div class="section-inner">
+  <div class="section-label reveal">💬 Testimonios</div>
+  <h2 class="section-title reveal">Lo que dicen nuestros usuarios</h2>
+  <div class="testimonials-grid">
+    <div class="testimonial reveal">
+      <div class="stars">★★★★★</div>
+      <p>Por fin entendí lo que estaba pagando. En HealthCare.gov me perdía. Aquí en 2 minutos vi mis opciones y el agente me llamó al día siguiente en español.</p>
+      <div class="author">
+        <div class="avatar">MG</div>
+        <div><div class="name">María G.</div><div class="role">Cape Coral, FL · Familia de 4</div></div>
+      </div>
+    </div>
+    <div class="testimonial reveal">
+      <div class="stars">★★★★★</div>
+      <p>Uso EnrollSalud como mi cotizador con mi marca. Envío el link por WhatsApp y el cliente ya tiene todo listo cuando me llama. Me ahorra horas.</p>
+      <div class="author">
+        <div class="avatar">RC</div>
+        <div><div class="name">Roberto C.</div><div class="role">Agente Licenciado · Miami, FL</div></div>
+      </div>
+    </div>
+    <div class="testimonial reveal">
+      <div class="stars">★★★★★</div>
+      <p>No sabía que calificaba para subsidio. EnrollSalud me mostró que podía tener seguro Gold por $85/mes en vez de $520. Increíble.</p>
+      <div class="author">
+        <div class="avatar">JS</div>
+        <div><div class="name">Jorge S.</div><div class="role">Orlando, FL · Individual</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="precios">
+<div class="section-inner">
+  <div class="section-label reveal">💰 Precios</div>
+  <h2 class="section-title reveal">Planes para agentes y agencias</h2>
+  <p class="section-sub reveal">Para consumidores EnrollSalud es 100% gratis. Para agentes:</p>
+  <div class="pricing-grid">
+    <div class="price-card reveal">
+      <div class="plan-name">Starter</div>
+      <div class="plan-desc">Agente independiente</div>
+      <div class="price">$49<span>/mes</span></div>
+      <ul class="features">
+        <li>1 agente</li>
+        <li>Smart links personalizados</li>
+        <li>100 leads/mes incluidos</li>
+        <li>Notificaciones por email</li>
+        <li>Branding básico (nombre + NPN)</li>
+        <li>Soporte por email</li>
+      </ul>
+      <button class="cta secondary">Empezar →</button>
+    </div>
+    <div class="price-card featured reveal">
+      <div class="popular">Más Popular</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-desc">Agencia pequeña</div>
+      <div class="price">$149<span>/mes</span></div>
+      <ul class="features">
+        <li>Hasta 3 agentes</li>
+        <li>White-label completo (logo, colores)</li>
+        <li>500 leads/mes incluidos</li>
+        <li>Notificaciones WhatsApp + SMS</li>
+        <li>Dashboard de analytics</li>
+        <li>Soporte prioritario</li>
+      </ul>
+      <button class="cta primary">Empezar Pro →</button>
+    </div>
+    <div class="price-card reveal">
+      <div class="plan-name">Agency</div>
+      <div class="plan-desc">GA / Broker grande</div>
+      <div class="price">$399<span>/mes</span></div>
+      <ul class="features">
+        <li>Agentes ilimitados</li>
+        <li>API completa + CRM integration</li>
+        <li>Leads ilimitados</li>
+        <li>Custom domain</li>
+        <li>Analytics avanzados</li>
+        <li>Account manager dedicado</li>
+      </ul>
+      <button class="cta secondary">Contactar →</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+<div class="section-inner">
+  <div class="section-label reveal">❓ Preguntas Frecuentes</div>
+  <h2 class="section-title reveal">Resolvemos tus dudas</h2>
+  <div class="faq-list">
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿EnrollSalud es gratis para consumidores?</div>
+      <div class="faq-a">Sí, 100% gratis. Los agentes licenciados ganan comisiones de los carriers de seguros (Blue Cross, Ambetter, Molina, etc.), nunca de ti. No hay cargos ocultos.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿Necesito SSN o documentos para cotizar?</div>
+      <div class="faq-a">No. Solo necesitas tu código postal, edades de tu hogar e ingreso anual estimado. No pedimos número de seguro social ni documentos hasta que decidas inscribirte con un agente.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿EnrollSalud me inscribe en un plan?</div>
+      <div class="faq-a">EnrollSalud te muestra planes y te conecta con un agente licenciado. La inscripción se hace a través de HealthCare.gov o una plataforma EDE autorizada. Nunca manejamos tu información de enrollment.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿Qué es "etiqueta privada" para agentes?</div>
+      <div class="faq-a">Es tu propio cotizador con tu marca, logo, colores y NPN. Tus clientes ven TU nombre, no EnrollSalud. Todos los leads van directo a ti. Tú conservas 100% de tus comisiones.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿Los datos de subsidio son exactos?</div>
+      <div class="faq-a">Son estimados basados en los parámetros del FPL (Federal Poverty Level) y las fórmulas de APTC del IRS. Los montos finales se determinan al momento de la inscripción en el Marketplace oficial.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">¿Puedo usar EnrollSalud fuera de Florida?</div>
+      <div class="faq-a">Actualmente optimizado para Florida. Estamos expandiendo a Texas, California y New York. Si quieres white-label en tu estado, contáctanos.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <h2>¿Listo para simplificar<br>tu seguro médico?</h2>
+  <p>Únete a miles de familias hispanas que encontraron cobertura accesible.</p>
+  <a href="/cotizar" class="btn-primary">Cotiza Gratis Ahora →</a>
+  <div class="trust">
+    <span>🔒 Datos encriptados</span>
+    <span>🛡️ API oficial de CMS</span>
+    <span>🇺🇸 Planes reales del Marketplace</span>
+    <span>📞 Agente licenciado en 24h</span>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    EnrollSalud · Datos del API del Mercado CMS<br>
+    Solo estimados. Precios finales al inscribirse. Operado por agentes de seguros licenciados.<br>
+    © 2026 EnrollSalud. Todos los derechos reservados. · <a href="/privacy">Privacidad</a> · <a href="/terms">Términos</a> · <a href="/compliance">Cumplimiento</a>
+  </p>
+</footer>
+
+<script>
+// Scroll nav effect
+const nav = document.querySelector('.nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// Reveal on scroll
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

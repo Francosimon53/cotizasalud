@@ -426,6 +426,36 @@ export default function QuoterPage() {
     }
     setLoading(false);
     setStep(5);
+
+    // Create browsing lead immediately after plans shown
+    if (!browseLeadCreated.current && county) {
+      browseLeadCreated.current = true;
+      try {
+        const browseRes = await fetch("/api/leads/browse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agentSlug: urlParams.agentSlug || "delbert",
+            zipcode: zip,
+            county: county?.name || "",
+            state: county?.state || "FL",
+            householdSize: house.length,
+            annualIncome: Number(income),
+            fplPercentage: getFPLpct(Number(income), house.length),
+            ages: house.map((h) => h.age).join(","),
+            usesTobacco: house.some((h) => h.tobacco),
+            language: lang,
+            utmSource: urlParams.utm_source || undefined,
+            utmMedium: urlParams.utm_medium || undefined,
+            utmCampaign: urlParams.utm_campaign || undefined,
+          }),
+        });
+        const browseData = await browseRes.json();
+        if (browseData.leadId) setLeadId(browseData.leadId);
+      } catch (e) {
+        console.error("Browse lead error:", e);
+      }
+    }
   };
 
   const submitLead = async () => {

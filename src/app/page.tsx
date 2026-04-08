@@ -31,7 +31,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <>
+    <div className="es-landing">
       {/* NAV */}
       <nav className="es-nav scrolled">
         <div className="es-nav-inner">
@@ -250,6 +250,6 @@ export default function HomePage() {
           © 2026 EnrollSalud. Todos los derechos reservados. · <Link href="/privacy">Privacidad</Link> · <Link href="/terms">Términos</Link> · <Link href="/compliance">Cumplimiento</Link> · <Link href="/ai-disclaimer">Aviso IA</Link> · <Link href="/agentes/login">Portal Agentes</Link> · <a href="mailto:info@enrollsalud.com">Contacto</a>
         </p>
       </footer>
-    </>
+    </div>
   );
 }

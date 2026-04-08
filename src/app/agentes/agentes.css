@@ -1,4 +1,4 @@
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+.ag-grain *, .ag-grain *::before, .ag-grain *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
   --bg-primary: #08090d;
@@ -26,12 +26,13 @@
 
 html { scroll-behavior: smooth; }
 
-body {
+.ag-grain {
   font-family: var(--font-body);
   background: var(--bg-primary);
   color: var(--text-primary);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 /* ===== GRAIN OVERLAY ===== */

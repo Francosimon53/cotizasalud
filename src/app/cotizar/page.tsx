@@ -364,39 +364,40 @@ export default function QuoterPage() {
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail);
   const contactFormValid = firstName.trim() && lastName.trim() && phoneValid && emailValid;
 
+  // Create browsing lead when plans are shown (step 5)
+  const browseLeadCreated = useRef(false);
+  useEffect(() => {
+    if (step === 5 && !leadId && !browseLeadCreated.current && county) {
+      browseLeadCreated.current = true;
+      fetch("/api/leads/browse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentSlug: urlParams.agentSlug || undefined,
+          zipcode: zip,
+          county: county?.name || "",
+          state: county?.state || "FL",
+          householdSize: house.length,
+          annualIncome: Number(income),
+          fplPercentage: getFPLpct(Number(income), house.length),
+          ages: house.map((h) => h.age).join(","),
+          usesTobacco: house.some((h) => h.tobacco),
+          language: lang,
+          utmSource: urlParams.utm_source || undefined,
+          utmMedium: urlParams.utm_medium || undefined,
+          utmCampaign: urlParams.utm_campaign || undefined,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => { if (data.leadId) setLeadId(data.leadId); })
+        .catch((err) => console.error("Browse lead creation failed:", err));
+    }
+  }, [step]);
+
   const doSearch = async () => {
     if (!county) return;
     setLoading(true);
     setIsMockData(false);
-
-    // Create early "browsing" lead (no contact info yet)
-    if (!leadId) {
-      try {
-        const browseRes = await fetch("/api/leads/browse", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agentSlug: urlParams.agentSlug || undefined,
-            zipcode: zip,
-            county: county?.name || "",
-            state: county?.state || "FL",
-            householdSize: house.length,
-            annualIncome: Number(income),
-            fplPercentage: getFPLpct(Number(income), house.length),
-            ages: house.map((h) => h.age).join(","),
-            usesTobacco: house.some((h) => h.tobacco),
-            language: lang,
-            utmSource: urlParams.utm_source || undefined,
-            utmMedium: urlParams.utm_medium || undefined,
-            utmCampaign: urlParams.utm_campaign || undefined,
-          }),
-        });
-        const browseData = await browseRes.json();
-        if (browseData.leadId) setLeadId(browseData.leadId);
-      } catch (err) {
-        console.error("Browse lead creation failed:", err);
-      }
-    }
 
     try {
       const res = await fetch("/api/plans", {

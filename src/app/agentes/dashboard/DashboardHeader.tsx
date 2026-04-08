@@ -50,11 +50,17 @@ export default function DashboardHeader({ agentName, agencyName }: { agentName: 
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <button onClick={() => router.push("/agentes/dashboard/profile")} style={navBtn}>
-          Mi Perfil
+        <button onClick={() => router.push("/agentes/dashboard/renewals")} style={navBtn}>
+          Renovaciones
+        </button>
+        <button onClick={() => router.push("/agentes/dashboard/import")} style={navBtn}>
+          Importar
         </button>
         <button onClick={() => router.push("/agentes/dashboard/share")} style={navBtn}>
           Compartir
+        </button>
+        <button onClick={() => router.push("/agentes/dashboard/profile")} style={navBtn}>
+          Perfil
         </button>
         <button
           onClick={handleLogout}

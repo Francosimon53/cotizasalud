@@ -988,6 +988,12 @@ export default function QuoterPage() {
                         drugCoverageStatus={selectedDrug ? (drugCoverage[plan.id] || null) : null}
                         selectedDoctor={selectedDoctor}
                         doctorNetworkStatus={selectedDoctor ? (doctorNetwork[plan.id] || null) : null}
+                        agentSlug={urlParams.agentSlug || undefined}
+                        onReadyToEnroll={(convId, summary) => {
+                          // Pre-select the plan and go to lead capture
+                          setSelectedPlanId(plan.id);
+                          setStep(4);
+                        }}
                       />
                       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
                         <button style={{ ...S.btn, ...S.pri, flex: 2, fontSize: 15, padding: "15px 28px" }} onClick={(e) => { e.stopPropagation(); selectPlan(plan); }}>

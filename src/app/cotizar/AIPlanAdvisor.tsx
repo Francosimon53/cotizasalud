@@ -18,13 +18,17 @@ interface AIPlanAdvisorProps {
   drugCoverageStatus?: "covered" | "not_covered" | "unknown" | "checking" | null;
   selectedDoctor?: { npi: string; name: string; specialty: string } | null;
   doctorNetworkStatus?: "in_network" | "not_found" | "checking" | null;
+  agentSlug?: string;
+  onReadyToEnroll?: (conversationId: string, summary: string) => void;
 }
 
-export default function AIPlanAdvisor({ plan, household, income, fplPct, aptc, lang, t, householdSize, fplThreshold400, isOverCliff, isNearCliff, excessOverCliff, selectedDrug, drugCoverageStatus, selectedDoctor, doctorNetworkStatus }: AIPlanAdvisorProps) {
+export default function AIPlanAdvisor({ plan, household, income, fplPct, aptc, lang, t, householdSize, fplThreshold400, isOverCliff, isNearCliff, excessOverCliff, selectedDrug, drugCoverageStatus, selectedDoctor, doctorNetworkStatus, agentSlug, onReadyToEnroll }: AIPlanAdvisorProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [explanation, setExplanation] = useState("");
   const [error, setError] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const isFamily = householdSize >= 2;
@@ -279,12 +283,68 @@ Explain everything I need to know about this plan and my financial situation in 
       const data = await response.json();
       const text = data.content?.map((c: any) => c.text || "").join("") || "";
       setExplanation(text);
+
+      // Save conversation
+      try {
+        const convRes = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agentSlug: agentSlug || undefined,
+            planHiosId: plan.id,
+            planName: plan.name,
+            messages: [
+              { role: "system", content: systemPrompt, timestamp: new Date().toISOString() },
+              { role: "user", content: userPrompt, timestamp: new Date().toISOString() },
+              { role: "assistant", content: text, timestamp: new Date().toISOString() },
+            ],
+          }),
+        });
+        const convData = await convRes.json();
+        if (convData.id) setConversationId(convData.id);
+      } catch {}
     } catch (err) {
       console.error("AI error:", err);
       setError(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReadyToEnroll = async () => {
+    if (!conversationId || enrolling) return;
+    setEnrolling(true);
+    try {
+      // Generate summary via AI
+      const summaryRes = await fetch("/api/ai-explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 300,
+          system: "Based on this health insurance plan explanation conversation, generate a 3-sentence summary in Spanish of what the client asked about, what concerned them most, and which plan they prefer. Return ONLY the summary, nothing else.",
+          messages: [{ role: "user", content: explanation }],
+        }),
+      });
+      const summaryData = await summaryRes.json();
+      const summary = summaryData.content?.map((c: any) => c.text || "").join("") || "";
+
+      // Update conversation
+      await fetch("/api/conversations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          status: "ready_to_enroll",
+          summary,
+        }),
+      });
+
+      onReadyToEnroll?.(conversationId, summary);
+    } catch (err) {
+      console.error("Ready to enroll error:", err);
+    }
+    setEnrolling(false);
   };
 
   useEffect(() => {
@@ -527,6 +587,28 @@ Explain everything I need to know about this plan and my financial situation in 
           </div>
         )}
       </div>
+
+      {/* Ready to Enroll button */}
+      {explanation && onReadyToEnroll && (
+        <div style={{ padding: "12px 16px", borderTop: "1px solid #e9d5ff" }}>
+          <button
+            onClick={handleReadyToEnroll}
+            disabled={enrolling}
+            style={{
+              width: "100%", padding: "14px 20px", borderRadius: 10,
+              border: "none", fontSize: 15, fontWeight: 900,
+              cursor: enrolling ? "wait" : "pointer", fontFamily: "inherit",
+              background: enrolling ? "rgba(16,185,129,0.2)" : "linear-gradient(135deg, #10b981, #059669)",
+              color: enrolling ? "#6b7280" : "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+          >
+            {enrolling
+              ? (lang === "es" ? "Preparando..." : "Preparing...")
+              : (lang === "es" ? "✅ Estoy listo, quiero este plan" : "✅ I'm ready, I want this plan")}
+          </button>
+        </div>
+      )}
 
       {/* Disclaimer footer */}
       {explanation && (

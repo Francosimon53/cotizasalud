@@ -279,28 +279,30 @@ export default function QuoterPage() {
     if (params.phone) setLeadPhone(params.phone);
     if (params.email) setLeadEmail(decodeURIComponent(params.email));
     if (params.zip && /^\d{5}$/.test(params.zip)) setZip(params.zip);
-    if (params.agentSlug) {
-      // Set temporary brand while fetching
-      setAgentBrand({ slug: params.agentSlug, name: params.agentSlug, npn: "" });
-      // Fetch real agent profile from DB
-      fetch(`/api/agents?slug=${encodeURIComponent(params.agentSlug)}`)
-        .then((r) => r.ok ? r.json() : null)
-        .then((agent) => {
-          if (agent) {
-            setAgentBrand({
-              slug: agent.slug,
-              name: agent.name,
-              npn: agent.npn || "",
-              brand_name: agent.brand_name || "",
-              brand_color: agent.brand_color || "#10b981",
-              email: agent.email || "",
-              phone: agent.phone || "",
-              logo_url: agent.logo_url || "",
-            });
-          }
-        })
-        .catch(() => {}); // Keep fallback slug-based brand
+    // Fetch agent profile — from URL slug or default agent
+    const slugToFetch = params.agentSlug || "";
+    if (slugToFetch) {
+      setAgentBrand({ slug: slugToFetch, name: slugToFetch, npn: "" });
     }
+    // Always try to fetch agent (URL slug or default via API)
+    const fetchSlug = slugToFetch || "default";
+    fetch(`/api/agents?slug=${encodeURIComponent(fetchSlug)}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((agent) => {
+        if (agent) {
+          setAgentBrand({
+            slug: agent.slug,
+            name: agent.name,
+            npn: agent.npn || "",
+            brand_name: agent.brand_name || "",
+            brand_color: agent.brand_color || "#10b981",
+            email: agent.email || "",
+            phone: agent.phone || "",
+            logo_url: agent.logo_url || "",
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // ZIP lookup — CMS API with client-side cache
@@ -1095,12 +1097,22 @@ export default function QuoterPage() {
                 </div>
               </div>
 
+              {/* Agent info */}
+              {agentBrand && (
+                <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)", borderRadius: 10, padding: 14, marginTop: 20, textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f1f5" }}>{agentBrand.name}</div>
+                  {agentBrand.npn && <div style={{ fontSize: 12, color: "#10b981", marginTop: 2 }}>{lang === "es" ? "Agente Licenciado" : "Licensed Agent"} · NPN {agentBrand.npn}</div>}
+                </div>
+              )}
+
               {/* Action Buttons */}
               <button
-                style={{ ...S.btn, ...S.pri, width: "100%", marginTop: 20, fontSize: 16, padding: "16px 28px" }}
+                style={{ ...S.btn, ...S.pri, width: "100%", marginTop: 14, fontSize: 16, padding: "16px 28px" }}
                 onClick={confirmPlan}
               >
-                {t.confirmBtn || "✅ Confirmar — Contactar Agente"}
+                {agentBrand?.name
+                  ? `✅ ${lang === "es" ? "Confirmar — Contactar a" : "Confirm — Contact"} ${agentBrand.name}`
+                  : (t.confirmBtn || "✅ Confirmar — Contactar Agente")}
               </button>
               <button
                 style={{ ...S.btn, ...S.sec, width: "100%", marginTop: 10 }}
@@ -1141,7 +1153,7 @@ export default function QuoterPage() {
       <div style={S.footer}>
         <div style={{ marginBottom: 4 }}>{t.poweredBy}</div>
         <div>{t.disclaimer}</div>
-        {agentBrand?.npn && <div style={{ marginTop: 4 }}>Agent NPN: {agentBrand.npn}</div>}
+        {agentBrand && <div style={{ marginTop: 4 }}>{agentBrand.name}{agentBrand.npn ? ` · NPN ${agentBrand.npn}` : ""}</div>}
         <div style={{ marginTop: 8, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <a href="/privacy" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Privacidad" : "Privacy"}</a>
           <a href="/terms" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Términos" : "Terms"}</a>

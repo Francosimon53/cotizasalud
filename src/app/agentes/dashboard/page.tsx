@@ -94,7 +94,7 @@ export default async function DashboardPage() {
       fontFamily: "'Satoshi', -apple-system, sans-serif",
       minHeight: "100vh", background: "#08090d", color: "#f0f1f5",
     }}>
-      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} />
+      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} isAdmin={["simon-dev", "delbert"].includes(agent.slug)} />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 60px" }}>
         {/* Agent Profile */}

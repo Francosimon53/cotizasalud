@@ -19,6 +19,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Setup requires auth — redirect to login if not authenticated
+  if (pathname === "/agentes/setup" && !user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/agentes/login";
+    return NextResponse.redirect(loginUrl);
+  }
+
   // If already logged in, redirect away from login/registro
   if ((pathname === "/agentes/login" || pathname === "/agentes/registro") && user) {
     const dashUrl = request.nextUrl.clone();
@@ -30,5 +37,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/agentes/dashboard/:path*", "/agentes/login", "/agentes/registro"],
+  matcher: ["/agentes/dashboard/:path*", "/agentes/login", "/agentes/registro", "/agentes/setup"],
 };

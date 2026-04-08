@@ -49,8 +49,8 @@ export default function AgentRegistroPage() {
     // Create agent record via API
     await fetch("/api/auth/register", { method: "POST" });
 
-    // Redirect to profile to complete setup
-    router.push("/agentes/dashboard/profile");
+    // Redirect to setup wizard
+    router.push("/agentes/setup");
   };
 
   const inputStyle: React.CSSProperties = {

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function DashboardHeader({ agentName, agencyName }: { agentName: string; agencyName?: string }) {
+export default function DashboardHeader({ agentName, agencyName, isAdmin }: { agentName: string; agencyName?: string; isAdmin?: boolean }) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -50,6 +50,11 @@ export default function DashboardHeader({ agentName, agencyName }: { agentName: 
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {isAdmin && (
+          <button onClick={() => router.push("/agentes/dashboard/team")} style={{ ...navBtn, color: "#8b5cf6", borderColor: "rgba(139,92,246,0.3)" }}>
+            Equipo
+          </button>
+        )}
         <button onClick={() => router.push("/agentes/dashboard/renewals")} style={navBtn}>
           Renovaciones
         </button>

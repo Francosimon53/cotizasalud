@@ -159,7 +159,7 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        <DashboardClient leads={allLeads} />
+        <DashboardClient leads={allLeads} agentSlug={agent.slug} />
 
         {/* Footer */}
         <div style={{ textAlign: "center", padding: "32px 0 0", display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>

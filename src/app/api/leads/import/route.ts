@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, email, planName, premium, effectiveDate, status, agentSlug } = await request.json();
+    const { name, phone, email, planName, premium, effectiveDate, status, agentSlug, zipcode } = await request.json();
 
     if (!name || !phone) {
       return NextResponse.json({ error: "Name and phone required" }, { status: 400 });
@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
         renewal_date: renewDate,
         status: leadStatus,
         enrolled_at: leadStatus === "enrolled" ? new Date().toISOString() : null,
-        zipcode: "",
+        first_name: name.split(" ")[0] || name,
+        last_name: name.split(" ").slice(1).join(" ") || "",
+        zipcode: zipcode || "",
         county: "",
         state: "FL",
         household_size: 1,

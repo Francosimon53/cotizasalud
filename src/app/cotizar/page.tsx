@@ -232,7 +232,7 @@ export default function QuoterPage() {
   const [zip, setZip] = useState("");
   const [counties, setCounties] = useState<County[]>([]);
   const [county, setCounty] = useState<County | null>(null);
-  const [house, setHouse] = useState<HouseholdMember[]>([{ age: 30, gender: "Female", tobacco: false, hasEmployerCoverage: false, isParentGuardian: false, isPregnant: false }]);
+  const [house, setHouse] = useState<HouseholdMember[]>([{ age: 30, gender: "Female", tobacco: false }]);
   const [income, setIncome] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -246,7 +246,6 @@ export default function QuoterPage() {
   const [loading, setLoading] = useState(false);
   const [isMockData, setIsMockData] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [drugSearchError, setDrugSearchError] = useState(false);
   const [doctorSearchError, setDoctorSearchError] = useState(false);
   const [sortKey, setSortKey] = useState("afterSubsidy");
@@ -349,40 +348,21 @@ export default function QuoterPage() {
     if (urlParams.zip && county && step === 1) setStep(2);
   }, [county, urlParams.zip, step]);
 
-  const addPerson = () => house.length < 8 && setHouse([...house, { age: 25, gender: "Female", tobacco: false, hasEmployerCoverage: false, isParentGuardian: false, isPregnant: false }]);
+  const addPerson = () => house.length < 8 && setHouse([...house, { age: 25, gender: "Female", tobacco: false }]);
   const removePerson = (i: number) => house.length > 1 && setHouse(house.filter((_, j) => j !== i));
   const updatePerson = (i: number, k: keyof HouseholdMember, v: any) => {
     if (k === "age") {
       const num = typeof v === "string" ? (v === "" ? 0 : parseInt(v) || 0) : v;
       v = Math.max(0, Math.min(120, num));
     }
-    const h = [...house]; h[i] = { ...h[i], [k]: v };
-    // If gender changed to Male, clear pregnancy
-    if (k === "gender" && v === "Male") h[i].isPregnant = false;
-    setHouse(h);
+    const h = [...house]; h[i] = { ...h[i], [k]: v }; setHouse(h);
   };
-  const toggleNoneOfThese = (i: number) => {
-    const h = [...house];
-    h[i] = { ...h[i], hasEmployerCoverage: false, isParentGuardian: false, isPregnant: false, tobacco: false };
-    setHouse(h);
-  };
-  const isNoneChecked = (m: HouseholdMember) => !m.hasEmployerCoverage && !m.isParentGuardian && !m.isPregnant && !m.tobacco;
   const leadName = `${firstName} ${lastName}`.trim();
-  const householdValid = house.every((m) => m.age >= 1 && m.age <= 120);
+  const householdValid = house.every((m) => m.age >= 0 && m.age <= 120);
   const phoneDigits = leadPhone.replace(/\D/g, "");
-  const phoneValid = phoneDigits.length === 10;
+  const phoneValid = phoneDigits.length >= 10;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail);
-  const firstNameValid = firstName.trim().length >= 2;
-  const lastNameValid = lastName.trim().length >= 2;
-  const contactFormValid = firstNameValid && lastNameValid && phoneValid && emailValid;
-
-  // Validation border styles
-  const inputOk = (valid: boolean, field: string): React.CSSProperties => {
-    const isTouched = touched[field];
-    if (!isTouched) return S.input;
-    return { ...S.input, borderColor: valid ? "#10b981" : "#ef4444" };
-  };
-  const errMsg = (show: boolean, msg: string) => show ? <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{msg}</div> : null;
+  const contactFormValid = firstName.trim() && lastName.trim() && phoneValid && emailValid;
 
   const browseLeadCreated = useRef(false);
 
@@ -432,9 +412,7 @@ export default function QuoterPage() {
             annualIncome: Number(income),
             fplPercentage: getFPLpct(Number(income), house.length),
             ages: house.map((h) => h.age).join(","),
-            genders: house.map((h) => h.gender).join(","),
             usesTobacco: house.some((h) => h.tobacco),
-            householdMembers: house,
             language: lang,
             utmSource: urlParams.utm_source || undefined,
             utmMedium: urlParams.utm_medium || undefined,
@@ -501,9 +479,7 @@ export default function QuoterPage() {
           annualIncome: Number(income),
           fplPercentage: getFPLpct(Number(income), house.length),
           ages: house.map((h: any) => h.age).join(','),
-          genders: house.map((h: any) => h.gender).join(','),
           usesTobacco: house.some((h: any) => h.tobacco),
-          householdMembers: house,
           language: lang,
           contactName: leadName,
           contactPhone: leadPhone,
@@ -578,7 +554,7 @@ export default function QuoterPage() {
     setStep(1); setResults(null); setSelectedPlanId(null); setIsMockData(false);
     setConsent(false); setConsentRecord(null); setFirstName(""); setLastName(""); setLeadPhone(""); setLeadEmail("");
     setZip(""); setCounty(null); setIncome("");
-    setHouse([{ age: 30, gender: "Female", tobacco: false, hasEmployerCoverage: false, isParentGuardian: false, isPregnant: false }]);
+    setHouse([{ age: 30, gender: "Female", tobacco: false }]);
     setSelectedDrug(null); setSelectedDoctor(null); setDrugQuery(""); setDoctorQuery("");
     setDrugCoverage({}); setDoctorNetwork({});
     setDrugSearchError(false); setDoctorSearchError(false);
@@ -753,9 +729,8 @@ export default function QuoterPage() {
             <Progress step={1} total={4} />
             <div style={{ marginBottom: 18 }}>
               <label htmlFor="zip-input" style={S.label}>{t.zip}</label>
-              <input id="zip-input" style={{ ...S.input, borderColor: county ? "#10b981" : (touched.zip && !county ? "#ef4444" : "rgba(255,255,255,0.1)") }} type="text" maxLength={5} value={zip} onChange={(e) => { setZip(e.target.value.replace(/\D/g, "")); setTouched((p) => ({ ...p, zip: true })); }} placeholder={t.zipPh} aria-required="true" autoFocus />
+              <input id="zip-input" style={S.input} type="text" maxLength={5} value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} placeholder={t.zipPh} aria-required="true" autoFocus />
               {zipLoading && <div style={{ fontSize: 12, color: "#5a5e72", marginTop: 4 }}>{lang === "es" ? "Buscando condado..." : "Looking up county..."}</div>}
-              {zip.length > 0 && zip.length < 5 && touched.zip && <div role="alert" style={{ fontSize: 12, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Ingrese un código postal válido de 5 dígitos" : "Enter a valid 5-digit ZIP code"}</div>}
               {zip.length === 5 && !zipLoading && counties.length === 0 && <div role="alert" style={{ fontSize: 12, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "No se encontraron condados para este ZIP" : "No counties found for this ZIP code"}</div>}
             </div>
             {counties.length > 1 && (
@@ -783,61 +758,17 @@ export default function QuoterPage() {
                   <span style={{ fontSize: 13, fontWeight: 800, color: "#10b981" }}>{t.person} {i + 1}</span>
                   {i > 0 && <button style={{ ...S.btn, padding: "3px 10px", fontSize: 11, color: "#ef4444", background: "transparent" }} onClick={() => removePerson(i)} aria-label={`${t.removePerson} ${i + 1}`}>{t.removePerson}</button>}
                 </div>
-                {/* Age + Gender row */}
-                <div style={S.g2}>
-                  <div>
-                    <label htmlFor={`age-${i}`} style={S.label}>{t.age}</label>
-                    <input id={`age-${i}`} style={{ ...S.input, borderColor: touched[`age-${i}`] ? (m.age >= 1 && m.age <= 120 ? "#10b981" : "#ef4444") : "rgba(255,255,255,0.1)" }} type="number" min={1} max={120} value={m.age} onChange={(e) => { updatePerson(i, "age", e.target.value); setTouched((p) => ({ ...p, [`age-${i}`]: true })); }} aria-required="true" />
-                    {touched[`age-${i}`] && (m.age < 1 || m.age > 120) && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Edad debe ser entre 1 y 120" : "Age must be 1-120"}</div>}
-                  </div>
-                  <div>
-                    <label style={S.label}>{t.gender}</label>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button type="button" style={chip(m.gender === "Female")} onClick={() => updatePerson(i, "gender", "Female")}>{t.female}</button>
-                      <button type="button" style={chip(m.gender === "Male")} onClick={() => updatePerson(i, "gender", "Male")}>{t.male}</button>
-                    </div>
-                  </div>
-                </div>
-                {/* Checkboxes section */}
-                <div style={{ marginTop: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a5e72", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 8 }}>{t.selectApply}</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <button type="button" style={{ ...chip(m.hasEmployerCoverage), textAlign: "left", borderRadius: 10, padding: "10px 14px", fontSize: 12, lineHeight: 1.4 }}
-                      onClick={() => { updatePerson(i, "hasEmployerCoverage", !m.hasEmployerCoverage); }}>
-                      {m.hasEmployerCoverage ? "✓ " : ""}{t.employerCoverage}
-                    </button>
-                    <button type="button" style={{ ...chip(m.isParentGuardian), textAlign: "left", borderRadius: 10, padding: "10px 14px", fontSize: 12, lineHeight: 1.4 }}
-                      onClick={() => { updatePerson(i, "isParentGuardian", !m.isParentGuardian); }}>
-                      {m.isParentGuardian ? "✓ " : ""}{t.parentGuardian}
-                    </button>
-                    {m.gender === "Female" && (
-                      <div>
-                        <button type="button" style={{ ...chip(m.isPregnant), textAlign: "left", borderRadius: 10, padding: "10px 14px", fontSize: 12, lineHeight: 1.4, width: "100%" }}
-                          onClick={() => { updatePerson(i, "isPregnant", !m.isPregnant); }}>
-                          {m.isPregnant ? "✓ " : ""}{t.pregnant}
-                        </button>
-                        <div style={{ fontSize: 10, color: "#5a5e72", marginTop: 3, marginLeft: 14, lineHeight: 1.4 }}>{t.pregnantHelper}</div>
-                      </div>
-                    )}
-                    <div>
-                      <button type="button" style={{ ...chip(m.tobacco), textAlign: "left", borderRadius: 10, padding: "10px 14px", fontSize: 12, lineHeight: 1.4, width: "100%" }}
-                        onClick={() => { updatePerson(i, "tobacco", !m.tobacco); }}>
-                        {m.tobacco ? "✓ " : ""}{t.tobacco?.replace("?", "").replace("¿", "").trim()}
-                      </button>
-                      <div style={{ fontSize: 10, color: "#5a5e72", marginTop: 3, marginLeft: 14, lineHeight: 1.4 }}>{t.tobaccoHelper}</div>
-                    </div>
-                    <button type="button" style={{ ...chip(isNoneChecked(m)), textAlign: "left", borderRadius: 10, padding: "10px 14px", fontSize: 12, lineHeight: 1.4 }}
-                      onClick={() => toggleNoneOfThese(i)}>
-                      {isNoneChecked(m) ? "✓ " : ""}{t.noneOfThese}
-                    </button>
-                  </div>
+                <div style={S.g3}>
+                  <div><label htmlFor={`age-${i}`} style={S.label}>{t.age}</label><input id={`age-${i}`} style={S.input} type="number" min={0} max={120} value={m.age} onChange={(e) => updatePerson(i, "age", e.target.value)} aria-required="true" /></div>
+                  <div><label htmlFor={`gender-${i}`} style={S.label}>{t.gender}</label><select id={`gender-${i}`} style={S.select} value={m.gender} onChange={(e) => updatePerson(i, "gender", e.target.value)}><option value="Female">{t.female}</option><option value="Male">{t.male}</option></select></div>
+                  <div><label htmlFor={`tobacco-${i}`} style={S.label}>{t.tobacco}</label><select id={`tobacco-${i}`} style={S.select} value={m.tobacco ? "y" : "n"} onChange={(e) => updatePerson(i, "tobacco", e.target.value === "y")}><option value="n">{t.no}</option><option value="y">{t.yes}</option></select></div>
                 </div>
               </div>
             ))}
             <button style={{ ...S.btn, ...S.sec, width: "100%", marginBottom: 14, fontSize: 13 }} onClick={addPerson}>{t.addPerson}</button>
             <div style={S.row}>
               <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(1)}>{t.back}</button>
-              <button style={{ ...S.btn, ...(householdValid ? S.pri : S.dis), flex: 2 }} disabled={!householdValid} onClick={() => { if (householdValid) { setStep(3); } else { const t: Record<string, boolean> = {}; house.forEach((_, i) => { t[`age-${i}`] = true; }); setTouched((p) => ({ ...p, ...t })); } }}>{t.next}</button>
+              <button style={{ ...S.btn, ...S.pri, flex: 2 }} onClick={() => setStep(3)}>{t.next}</button>
             </div>
           </div>
         )}
@@ -851,9 +782,8 @@ export default function QuoterPage() {
               <label htmlFor="income-input" style={S.label}>{t.income}</label>
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#5a5e72", fontWeight: 700 }} aria-hidden="true">$</span>
-                <input id="income-input" style={{ ...S.input, paddingLeft: 26, borderColor: touched.income ? (income && +income > 0 ? "#10b981" : "#ef4444") : "rgba(255,255,255,0.1)" }} type="text" value={income ? Number(income).toLocaleString() : ""} onChange={(e) => { setIncome(e.target.value.replace(/\D/g, "")); setTouched((p) => ({ ...p, income: true })); }} placeholder={t.incomePh} aria-required="true" />
+                <input id="income-input" style={{ ...S.input, paddingLeft: 26 }} type="text" value={income ? Number(income).toLocaleString() : ""} onChange={(e) => setIncome(e.target.value.replace(/\D/g, ""))} placeholder={t.incomePh} aria-required="true" />
               </div>
-              {touched.income && (!income || +income <= 0) && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Ingrese su ingreso anual estimado" : "Enter your estimated annual income"}</div>}
             </div>
             {income && (
               <div style={{ background: "rgba(16,185,129,0.08)", borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 13, color: "#10b981" }}>
@@ -886,25 +816,27 @@ export default function QuoterPage() {
             <div style={{ ...S.g2, marginBottom: 14 }}>
               <div>
                 <label htmlFor="lead-first" style={S.label}>{lang === "es" ? "Nombre" : "First Name"} <span style={{ color: "#ef4444" }}>*</span></label>
-                <input id="lead-first" style={inputOk(firstNameValid, "firstName")} value={firstName} onChange={(e) => { setFirstName(e.target.value); setTouched((p) => ({ ...p, firstName: true })); }} placeholder={lang === "es" ? "María" : "Maria"} aria-required="true" autoFocus={!firstName} />
-                {touched.firstName && !firstNameValid && errMsg(true, !firstName.trim() ? (lang === "es" ? "Este campo es obligatorio" : "Required") : (lang === "es" ? "Mínimo 2 caracteres" : "Minimum 2 characters"))}
+                <input id="lead-first" style={S.input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={lang === "es" ? "María" : "Maria"} aria-required="true" autoFocus={!firstName} />
+                {!firstName.trim() && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
               <div>
                 <label htmlFor="lead-last" style={S.label}>{lang === "es" ? "Apellido" : "Last Name"} <span style={{ color: "#ef4444" }}>*</span></label>
-                <input id="lead-last" style={inputOk(lastNameValid, "lastName")} value={lastName} onChange={(e) => { setLastName(e.target.value); setTouched((p) => ({ ...p, lastName: true })); }} placeholder={lang === "es" ? "García" : "Garcia"} aria-required="true" />
-                {touched.lastName && !lastNameValid && errMsg(true, !lastName.trim() ? (lang === "es" ? "Este campo es obligatorio" : "Required") : (lang === "es" ? "Mínimo 2 caracteres" : "Minimum 2 characters"))}
+                <input id="lead-last" style={S.input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={lang === "es" ? "García" : "Garcia"} aria-required="true" />
+                {!lastName.trim() && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
             </div>
             <div style={{ ...S.g2, marginBottom: 14 }}>
               <div>
                 <label htmlFor="lead-phone" style={S.label}>{t.phone} <span style={{ color: "#ef4444" }}>*</span></label>
-                <input id="lead-phone" style={inputOk(phoneValid, "phone")} type="tel" value={leadPhone} onChange={(e) => { setLeadPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setTouched((p) => ({ ...p, phone: true })); }} placeholder={t.phonePh} maxLength={10} aria-required="true" />
-                {touched.phone && !phoneValid && errMsg(true, !leadPhone ? (lang === "es" ? "Este campo es obligatorio" : "Required") : (lang === "es" ? "Debe ser exactamente 10 dígitos" : "Must be exactly 10 digits"))}
+                <input id="lead-phone" style={S.input} type="tel" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder={t.phonePh} aria-required="true" />
+                {leadPhone && !phoneValid && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Mínimo 10 dígitos" : "Minimum 10 digits"}</div>}
+                {!leadPhone && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
               <div>
                 <label htmlFor="lead-email" style={S.label}>{t.email} <span style={{ color: "#ef4444" }}>*</span></label>
-                <input id="lead-email" style={inputOk(emailValid, "email")} type="email" value={leadEmail} onChange={(e) => { setLeadEmail(e.target.value); setTouched((p) => ({ ...p, email: true })); }} placeholder={t.emailPh} aria-required="true" />
-                {touched.email && !emailValid && errMsg(true, !leadEmail ? (lang === "es" ? "Este campo es obligatorio" : "Required") : (lang === "es" ? "Formato inválido" : "Invalid format"))}
+                <input id="lead-email" style={S.input} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} aria-required="true" />
+                {leadEmail && !emailValid && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Correo no válido" : "Invalid email"}</div>}
+                {!leadEmail && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
             </div>
             <div style={{ marginBottom: 18 }}>
@@ -984,7 +916,7 @@ export default function QuoterPage() {
             </label>
             <div style={S.row}>
               <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(results ? 5 : 3)}>{t.back}</button>
-              <button style={{ ...S.btn, ...(contactFormValid && consent ? S.pri : S.dis), flex: 2 }} disabled={!contactFormValid || !consent || loading} onClick={() => { setTouched((p) => ({ ...p, firstName: true, lastName: true, phone: true, email: true })); if (contactFormValid && consent) submitLead(); }}>
+              <button style={{ ...S.btn, ...(contactFormValid && consent ? S.pri : S.dis), flex: 2 }} disabled={!contactFormValid || !consent || loading} onClick={submitLead}>
                 {loading ? t.saving : (lang === "es" ? "Continuar →" : "Continue →")}
               </button>
             </div>
@@ -1271,22 +1203,6 @@ export default function QuoterPage() {
                   <div>📞 {leadPhone}</div>
                   <div>📍 {county?.name}, {county?.state} {zip}</div>
                   <div>👨‍👩‍👧‍👦 {house.length} {t.person?.toLowerCase() || "person"}{house.length > 1 ? "s" : ""}</div>
-                </div>
-                {/* Per-member details */}
-                <div style={{ marginTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
-                  {house.map((m, idx) => {
-                    const flags: string[] = [];
-                    if (m.tobacco) flags.push(lang === "es" ? "Tabaco" : "Tobacco");
-                    if (m.hasEmployerCoverage) flags.push(lang === "es" ? "Cobertura empleador" : "Employer coverage");
-                    if (m.isParentGuardian) flags.push(lang === "es" ? "Padre/tutor" : "Parent/guardian");
-                    if (m.isPregnant) flags.push(lang === "es" ? "Embarazada" : "Pregnant");
-                    return (
-                      <div key={idx} style={{ fontSize: 12, color: "#8b8fa3", marginBottom: 4 }}>
-                        {t.person} {idx + 1}: {m.age} {lang === "es" ? "años" : "yrs"}, {m.gender === "Male" ? t.male : t.female}
-                        {flags.length > 0 && <span style={{ color: "#f59e0b" }}> — {flags.join(", ")}</span>}
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
 

@@ -9,9 +9,7 @@ export async function saveLead(data: {
   fplPercentage: number
   aptcEstimate?: number
   ages: string
-  genders?: string
   usesTobacco: boolean
-  householdMembers?: any[]
   language: string
   contactName: string
   contactPhone: string

@@ -33,17 +33,6 @@ export default function EnrollClient({ lead, agent, conversation }: { lead: any;
     router.push("/agentes/dashboard");
   };
 
-  const memberDetails = lead.household_members && Array.isArray(lead.household_members)
-    ? lead.household_members.map((m: any, i: number) => {
-        const flags: string[] = [];
-        if (m.tobacco) flags.push("Tabaco");
-        if (m.hasEmployerCoverage) flags.push("Cobertura empleador");
-        if (m.isParentGuardian) flags.push("Padre/tutor");
-        if (m.isPregnant) flags.push("Embarazada");
-        return `  Persona ${i + 1}: ${m.age} años, ${m.gender === "Male" ? "M" : "F"}${flags.length ? " — " + flags.join(", ") : ""}`;
-      }).join("\n")
-    : "";
-
   const allData = `Nombre: ${lead.contact_name}
 Teléfono: ${lead.contact_phone}
 Email: ${lead.contact_email || "N/A"}
@@ -51,8 +40,7 @@ ZIP: ${lead.zipcode}
 Condado: ${lead.county}, ${lead.state}
 Hogar: ${lead.household_size} miembros
 Edades: ${lead.ages || "N/A"}
-Géneros: ${lead.genders || "N/A"}
-${memberDetails ? "Detalle:\n" + memberDetails + "\n" : ""}Ingreso: $${Number(lead.annual_income).toLocaleString()}/año
+Ingreso: $${Number(lead.annual_income).toLocaleString()}/año
 FPL: ${lead.fpl_percentage}%
 Plan: ${conversation?.selected_plan_name || lead.selected_plan || "N/A"}
 HIOS ID: ${conversation?.selected_plan_hios_id || "N/A"}`;
@@ -108,28 +96,7 @@ HIOS ID: ${conversation?.selected_plan_hios_id || "N/A"}`;
           <div style={{ fontSize: 13, fontWeight: 800, color: "#e0e1e5", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 12 }}>Hogar</div>
           <CopyField label="Miembros" value={String(lead.household_size)} />
           <CopyField label="Edades" value={lead.ages || ""} />
-          <CopyField label="Géneros" value={lead.genders || "N/A"} />
           <CopyField label="Tabaco" value={lead.uses_tobacco ? "Sí" : "No"} />
-          {lead.household_members && Array.isArray(lead.household_members) && lead.household_members.length > 0 && (
-            <div style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 10 }}>
-              <div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 6 }}>Detalle por Miembro</div>
-              {lead.household_members.map((m: any, idx: number) => {
-                const flags: string[] = [];
-                if (m.tobacco) flags.push("Tabaco");
-                if (m.hasEmployerCoverage) flags.push("Cobertura empleador");
-                if (m.isParentGuardian) flags.push("Padre/tutor");
-                if (m.isPregnant) flags.push("Embarazada");
-                return (
-                  <div key={idx} style={{ fontSize: 13, color: "#f0f1f5", marginBottom: 4, padding: "4px 0" }}>
-                    <span style={{ fontWeight: 700 }}>Persona {idx + 1}:</span>{" "}
-                    {m.age} años, {m.gender === "Male" ? "Masculino" : "Femenino"}
-                    {flags.length > 0 && <span style={{ color: "#f59e0b", fontWeight: 600 }}> — {flags.join(", ")}</span>}
-                    {flags.length === 0 && <span style={{ color: "#5a5e72" }}> — Ninguno</span>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {/* Financial */}

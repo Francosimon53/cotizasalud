@@ -89,6 +89,9 @@ HIOS ID: ${conversation?.selected_plan_hios_id || "N/A"}`;
           <CopyField label="ZIP" value={lead.zipcode} />
           <CopyField label="Condado" value={`${lead.county}, ${lead.state}`} />
           <CopyField label="FIPS" value={lead.county_fips || ""} />
+          {lead.dob && <CopyField label="DOB" value={lead.dob} />}
+          {lead.street_address && <CopyField label="Dirección" value={`${lead.street_address}${lead.apt_number ? " " + lead.apt_number : ""}`} />}
+          {lead.city && <CopyField label="Ciudad/Estado" value={`${lead.city}, ${lead.state_form || lead.state || "FL"}`} />}
         </div>
 
         {/* Household */}
@@ -96,7 +99,11 @@ HIOS ID: ${conversation?.selected_plan_hios_id || "N/A"}`;
           <div style={{ fontSize: 13, fontWeight: 800, color: "#e0e1e5", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 12 }}>Hogar</div>
           <CopyField label="Miembros" value={String(lead.household_size)} />
           <CopyField label="Edades" value={lead.ages || ""} />
+          {lead.household_dobs && <CopyField label="DOBs" value={lead.household_dobs} />}
           <CopyField label="Tabaco" value={lead.uses_tobacco ? "Sí" : "No"} />
+          {lead.current_insurance && <CopyField label="Seguro actual" value={lead.current_insurance === "yes" ? `Sí — ${lead.current_insurance_name || ""}` : lead.current_insurance === "no" ? "No" : "No sabe"} />}
+          {lead.contact_preference && <CopyField label="Contactar vía" value={lead.contact_preference} />}
+          {lead.best_call_time && <CopyField label="Mejor hora" value={lead.best_call_time} />}
         </div>
 
         {/* Financial */}

@@ -7,6 +7,7 @@ export interface HouseholdMember {
   age: number;
   gender: string;
   tobacco: boolean;
+  dob?: string;
 }
 export interface Plan {
   id: string;

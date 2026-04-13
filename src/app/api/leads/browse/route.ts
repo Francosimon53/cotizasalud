@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
         fpl_percentage: body.fplPercentage || 0,
         ages: body.ages || "",
         uses_tobacco: body.usesTobacco || false,
+        household_dobs: body.householdDobs || "",
         language: body.language || "es",
         contact_name: "",
         contact_phone: "",

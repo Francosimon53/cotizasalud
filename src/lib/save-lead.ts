@@ -14,6 +14,16 @@ export async function saveLead(data: {
   contactName: string
   contactPhone: string
   contactEmail?: string
+  dob?: string
+  streetAddress?: string
+  city?: string
+  stateForm?: string
+  aptNumber?: string
+  currentInsurance?: string
+  currentInsuranceName?: string
+  contactPreference?: string
+  bestCallTime?: string
+  householdDobs?: string
   referrer?: string
   utmSource?: string
   utmMedium?: string

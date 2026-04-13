@@ -240,6 +240,14 @@ export default function QuoterPage() {
   const [leadEmail, setLeadEmail] = useState("");
   const [leadId, setLeadId] = useState<string | null>(null);
   const [leadLang, setLeadLang] = useState("es");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [stateForm, setStateForm] = useState("FL");
+  const [aptNumber, setAptNumber] = useState("");
+  const [currentInsurance, setCurrentInsurance] = useState("");
+  const [currentInsuranceName, setCurrentInsuranceName] = useState("");
+  const [contactPreference, setContactPreference] = useState<string[]>([]);
+  const [bestCallTime, setBestCallTime] = useState("");
   const [consent, setConsent] = useState(false);
   const [consentRecord, setConsentRecord] = useState<ConsentRecord | null>(null);
   const [results, setResults] = useState<QuoteResults | null>(null);
@@ -351,20 +359,34 @@ export default function QuoterPage() {
   const addPerson = () => house.length < 8 && setHouse([...house, { age: 25, gender: "Female", tobacco: false }]);
   const removePerson = (i: number) => house.length > 1 && setHouse(house.filter((_, j) => j !== i));
   const updatePerson = (i: number, k: keyof HouseholdMember, v: any) => {
-    if (k === "age") {
+    const h = [...house];
+    if (k === "dob") {
+      h[i] = { ...h[i], dob: v };
+      if (v) {
+        const birth = new Date(v + "T00:00:00");
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        h[i].age = Math.max(0, Math.min(120, age));
+      }
+    } else if (k === "age") {
       const num = typeof v === "string" ? (v === "" ? 0 : parseInt(v) || 0) : v;
-      v = Math.max(0, Math.min(120, num));
+      h[i] = { ...h[i], age: Math.max(0, Math.min(120, num)) };
+    } else {
+      h[i] = { ...h[i], [k]: v };
     }
-    const h = [...house]; h[i] = { ...h[i], [k]: v }; setHouse(h);
+    setHouse(h);
   };
   const leadName = `${firstName} ${lastName}`.trim();
-  const householdValid = house.every((m) => m.age >= 1 && m.age <= 120);
+  const householdValid = house.every((m) => m.dob && m.age >= 0 && m.age <= 120);
   const phoneDigits = leadPhone.replace(/\D/g, "");
   const phoneValid = phoneDigits.length === 10;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail);
   const firstNameValid = firstName.trim().length >= 2;
   const lastNameValid = lastName.trim().length >= 2;
-  const contactFormValid = firstNameValid && lastNameValid && phoneValid && emailValid;
+  const addressValid = streetAddress.trim().length >= 3 && city.trim().length >= 2;
+  const contactFormValid = firstNameValid && lastNameValid && phoneValid && emailValid && addressValid;
 
   const browseLeadCreated = useRef(false);
 
@@ -414,6 +436,7 @@ export default function QuoterPage() {
             annualIncome: Number(income),
             fplPercentage: getFPLpct(Number(income), house.length),
             ages: house.map((h) => h.age).join(","),
+            householdDobs: house.map((h) => h.dob || "").join(","),
             usesTobacco: house.some((h) => h.tobacco),
             language: lang,
             utmSource: urlParams.utm_source || undefined,
@@ -449,6 +472,16 @@ export default function QuoterPage() {
             contactEmail: leadEmail,
             firstName: firstName.trim(),
             lastName: lastName.trim(),
+            dob: house[0]?.dob || "",
+            streetAddress: streetAddress.trim(),
+            city: city.trim(),
+            stateForm,
+            aptNumber: aptNumber.trim(),
+            currentInsurance,
+            currentInsuranceName: currentInsuranceName.trim(),
+            contactPreference: contactPreference.join(","),
+            bestCallTime,
+            householdDobs: house.map((h) => h.dob || "").join(","),
           }),
         });
         // Send notification email
@@ -486,6 +519,16 @@ export default function QuoterPage() {
           contactName: leadName,
           contactPhone: leadPhone,
           contactEmail: leadEmail || undefined,
+          dob: house[0]?.dob || "",
+          streetAddress: streetAddress.trim(),
+          city: city.trim(),
+          stateForm,
+          aptNumber: aptNumber.trim(),
+          currentInsurance,
+          currentInsuranceName: currentInsuranceName.trim(),
+          contactPreference: contactPreference.join(","),
+          bestCallTime,
+          householdDobs: house.map((h) => h.dob || "").join(","),
           utmSource: urlParams.utm_source || undefined,
           utmMedium: urlParams.utm_medium || undefined,
           utmCampaign: urlParams.utm_campaign || undefined,
@@ -555,6 +598,8 @@ export default function QuoterPage() {
   const resetAll = () => {
     setStep(1); setResults(null); setSelectedPlanId(null); setIsMockData(false);
     setConsent(false); setConsentRecord(null); setFirstName(""); setLastName(""); setLeadPhone(""); setLeadEmail("");
+    setStreetAddress(""); setCity(""); setStateForm("FL"); setAptNumber("");
+    setCurrentInsurance(""); setCurrentInsuranceName(""); setContactPreference([]); setBestCallTime("");
     setZip(""); setCounty(null); setIncome("");
     setHouse([{ age: 30, gender: "Female", tobacco: false }]);
     setSelectedDrug(null); setSelectedDoctor(null); setDrugQuery(""); setDoctorQuery("");
@@ -766,7 +811,12 @@ export default function QuoterPage() {
                   {i > 0 && <button style={{ ...S.btn, padding: "3px 10px", fontSize: 11, color: "#ef4444", background: "transparent" }} onClick={() => removePerson(i)} aria-label={`${t.removePerson} ${i + 1}`}>{t.removePerson}</button>}
                 </div>
                 <div style={S.g3}>
-                  <div><label htmlFor={`age-${i}`} style={S.label}>{t.age}</label><input id={`age-${i}`} style={S.input} type="number" min={0} max={120} value={m.age} onChange={(e) => updatePerson(i, "age", e.target.value)} aria-required="true" /></div>
+                  <div>
+                    <label htmlFor={`dob-${i}`} style={S.label}>{t.dob}</label>
+                    <input id={`dob-${i}`} style={S.input} type="date" value={m.dob || ""} max={new Date().toISOString().split("T")[0]} onChange={(e) => updatePerson(i, "dob", e.target.value)} aria-required="true" />
+                    {m.dob && <div style={{ fontSize: 12, color: "#0D9488", marginTop: 4, fontWeight: 600 }}>{m.age} {t.yearsOld}</div>}
+                    {!m.dob && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Requerido" : "Required"}</div>}
+                  </div>
                   <div><label htmlFor={`gender-${i}`} style={S.label}>{t.gender}</label><select id={`gender-${i}`} style={S.select} value={m.gender} onChange={(e) => updatePerson(i, "gender", e.target.value)}><option value="Female">{t.female}</option><option value="Male">{t.male}</option></select></div>
                   <div><label htmlFor={`tobacco-${i}`} style={S.label}>{t.tobacco}</label><select id={`tobacco-${i}`} style={S.select} value={m.tobacco ? "y" : "n"} onChange={(e) => updatePerson(i, "tobacco", e.target.value === "y")}><option value="n">{t.no}</option><option value="y">{t.yes}</option></select></div>
                 </div>
@@ -846,6 +896,73 @@ export default function QuoterPage() {
                 <input id="lead-email" style={{ ...S.input, borderColor: leadEmail && !emailValid ? "#DC2626" : leadEmail && emailValid ? "#059669" : undefined }} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} aria-required="true" />
                 {leadEmail && !emailValid && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Formato inválido" : "Invalid format"}</div>}
                 {!leadEmail && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+              </div>
+            </div>
+            {/* Address fields */}
+            <div style={{ marginBottom: 14 }}>
+              <label htmlFor="lead-street" style={S.label}>{t.streetAddress} <span style={{ color: "#DC2626" }}>*</span></label>
+              <input id="lead-street" style={{ ...S.input, borderColor: streetAddress && streetAddress.trim().length < 3 ? "#DC2626" : streetAddress && streetAddress.trim().length >= 3 ? "#059669" : undefined }} value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} placeholder={t.streetPh} aria-required="true" />
+              {!streetAddress && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+            </div>
+            <div style={{ ...S.g2, marginBottom: 14 }}>
+              <div>
+                <label htmlFor="lead-apt" style={S.label}>{t.aptNumber}</label>
+                <input id="lead-apt" style={S.input} value={aptNumber} onChange={(e) => setAptNumber(e.target.value)} placeholder={t.aptPh} />
+              </div>
+              <div>
+                <label htmlFor="lead-city" style={S.label}>{t.cityLabel} <span style={{ color: "#DC2626" }}>*</span></label>
+                <input id="lead-city" style={{ ...S.input, borderColor: city && city.trim().length < 2 ? "#DC2626" : city && city.trim().length >= 2 ? "#059669" : undefined }} value={city} onChange={(e) => setCity(e.target.value)} placeholder={t.cityPh} aria-required="true" />
+                {!city && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+              </div>
+            </div>
+            <div style={{ ...S.g2, marginBottom: 14 }}>
+              <div>
+                <label htmlFor="lead-state-form" style={S.label}>{t.stateLabel} <span style={{ color: "#DC2626" }}>*</span></label>
+                <select id="lead-state-form" style={S.select} value={stateForm} onChange={(e) => setStateForm(e.target.value)}>
+                  <option value="FL">Florida</option><option value="GA">Georgia</option><option value="TX">Texas</option><option value="CA">California</option><option value="NY">New York</option><option value="NJ">New Jersey</option><option value="PA">Pennsylvania</option><option value="IL">Illinois</option><option value="OH">Ohio</option><option value="NC">North Carolina</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="lead-zip2" style={S.label}>{t.zip}</label>
+                <input id="lead-zip2" style={S.input} value={zip} readOnly disabled />
+              </div>
+            </div>
+            {/* DOB display from step 2 */}
+            {house[0]?.dob && (
+              <div style={{ marginBottom: 14, padding: "10px 14px", background: "#F8FAFC", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 13, color: "#334155" }}>
+                {t.dob}: <strong>{house[0].dob}</strong> ({house[0].age} {t.yearsOld})
+              </div>
+            )}
+            {/* Optional: current insurance */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={S.label}>{t.currentIns}</label>
+              <div style={{ ...S.row, gap: 8 }}>
+                {[{ v: "yes", l: t.yes }, { v: "no", l: t.no }, { v: "unknown", l: t.dontKnow }].map((o) => (
+                  <button key={o.v} type="button" style={chip(currentInsurance === o.v)} onClick={() => setCurrentInsurance(currentInsurance === o.v ? "" : o.v)}>{o.l}</button>
+                ))}
+              </div>
+              {currentInsurance === "yes" && (
+                <div style={{ marginTop: 8 }}>
+                  <input style={S.input} value={currentInsuranceName} onChange={(e) => setCurrentInsuranceName(e.target.value)} placeholder={t.currentInsName} />
+                </div>
+              )}
+            </div>
+            {/* Contact preference */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={S.label}>{t.contactPref}</label>
+              <div style={{ ...S.row, gap: 8, flexWrap: "wrap" }}>
+                {[{ v: "whatsapp", l: t.whatsappLabel }, { v: "call", l: t.callLabel }, { v: "text", l: t.textLabel }, { v: "email", l: t.email }].map((o) => (
+                  <button key={o.v} type="button" style={chip(contactPreference.includes(o.v))} onClick={() => setContactPreference((prev) => prev.includes(o.v) ? prev.filter((x) => x !== o.v) : [...prev, o.v])}>{o.l}</button>
+                ))}
+              </div>
+            </div>
+            {/* Best call time */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={S.label}>{t.bestCallTime}</label>
+              <div style={{ ...S.row, gap: 8, flexWrap: "wrap" }}>
+                {[{ v: "morning", l: t.morning }, { v: "afternoon", l: t.afternoon }, { v: "evening", l: t.evening }, { v: "anytime", l: t.anytime }].map((o) => (
+                  <button key={o.v} type="button" style={chip(bestCallTime === o.v)} onClick={() => setBestCallTime(bestCallTime === o.v ? "" : o.v)}>{o.l}</button>
+                ))}
               </div>
             </div>
             <div style={{ marginBottom: 18 }}>

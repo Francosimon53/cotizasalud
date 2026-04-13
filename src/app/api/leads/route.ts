@@ -44,6 +44,16 @@ export async function PATCH(request: NextRequest) {
     if (contactEmail) update.contact_email = contactEmail
     if (firstName) update.first_name = firstName
     if (lastName) update.last_name = lastName
+    if (body.dob) update.dob = body.dob
+    if (body.streetAddress) update.street_address = body.streetAddress
+    if (body.city) update.city = body.city
+    if (body.stateForm) update.state_form = body.stateForm
+    if (body.aptNumber !== undefined) update.apt_number = body.aptNumber
+    if (body.currentInsurance) update.current_insurance = body.currentInsurance
+    if (body.currentInsuranceName !== undefined) update.current_insurance_name = body.currentInsuranceName
+    if (body.contactPreference) update.contact_preference = body.contactPreference
+    if (body.bestCallTime) update.best_call_time = body.bestCallTime
+    if (body.householdDobs) update.household_dobs = body.householdDobs
 
     const { error } = await supabase.from('leads').update(update).eq('id', leadId)
     if (error) {
@@ -88,6 +98,16 @@ export async function POST(request: NextRequest) {
         aptc_estimate: body.aptcEstimate || 0,
         ages: body.ages,
         uses_tobacco: body.usesTobacco || false,
+        dob: body.dob || '',
+        street_address: body.streetAddress || '',
+        city: body.city || '',
+        state_form: body.stateForm || '',
+        apt_number: body.aptNumber || '',
+        current_insurance: body.currentInsurance || '',
+        current_insurance_name: body.currentInsuranceName || '',
+        contact_preference: body.contactPreference || '',
+        best_call_time: body.bestCallTime || '',
+        household_dobs: body.householdDobs || '',
         language: body.language || 'es',
         contact_name: body.contactName,
         contact_phone: body.contactPhone,

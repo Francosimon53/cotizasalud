@@ -424,6 +424,11 @@ Explain everything I need to know about this plan and my financial situation in 
         }}>{t.aiClose}</button>
       </div>
 
+      {/* CMS Disclaimer */}
+      <div style={{ padding: "8px 16px", fontSize: 10, color: "#94A3B8", lineHeight: 1.5, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+        {t.cmsDisclaimer || "EnrollSalud is not the Health Insurance Marketplace. Plan info from public CMS API."}
+      </div>
+
       {/* Content */}
       <div ref={contentRef} style={{
         padding: 16,

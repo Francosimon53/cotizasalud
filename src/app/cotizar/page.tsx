@@ -10,7 +10,7 @@ import type { County, HouseholdMember, Plan, QuoteResults, AgentBrand } from "@/
 import CMSConsentForm, { type ConsentRecord } from "./CMSConsentForm";
 
 const AIPlanAdvisor = dynamic(() => import("./AIPlanAdvisor"), {
-  loading: () => <div style={{ padding: 16, textAlign: "center", fontSize: 12, color: "#5a5e72" }}>Loading advisor...</div>,
+  loading: () => <div style={{ padding: 16, textAlign: "center", fontSize: 12, color: "#94A3B8" }}>Loading advisor...</div>,
 });
 
 // ==================== URL PARSER ====================
@@ -68,7 +68,7 @@ function Progress({ step, total }: { step: number; total: number }) {
           <div key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i < step ? "#10b981" : "#1a1c26", transition: "all .3s" }} />
         ))}
       </div>
-      <div style={{ fontSize: 11, color: "#8b8fa3", fontWeight: 600, textAlign: "center" }}>
+      <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textAlign: "center" }}>
         Paso {step} de {total}
       </div>
     </div>
@@ -78,8 +78,8 @@ function Progress({ step, total }: { step: number; total: number }) {
 function StepLabel({ num, label }: { num: number; label: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-      <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#10b981", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>{num}</div>
-      <span style={{ fontSize: 17, fontWeight: 700, color: "#10b981" }}>{label}</span>
+      <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#0D9488", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>{num}</div>
+      <span style={{ fontSize: 17, fontWeight: 700, color: "#0D9488" }}>{label}</span>
     </div>
   );
 }
@@ -117,10 +117,10 @@ function FPLIndicator({ fplPct, income, houseSize, lang, maxAge }: {
   const zP = (v: number) => ((v - 100) / (meterMax - 100)) * 100;
 
   return (
-    <div style={{ background: "#12141c", border: `1px solid ${zoneBorder}`, borderRadius: 12, marginBottom: 18, overflow: "hidden", padding: 18 }}>
+    <div style={{ background: "#FFFFFF", border: `1px solid ${zoneBorder}`, borderRadius: 12, marginBottom: 18, overflow: "hidden", padding: 18 }}>
       {/* FPL METER BAR */}
       <div style={{ marginBottom: 4 }}>
-        <div style={{ position: "relative", height: 14, borderRadius: 7, background: "rgba(255,255,255,0.04)", overflow: "visible" }}>
+        <div style={{ position: "relative", height: 14, borderRadius: 7, background: "#F1F5F9", overflow: "visible" }}>
           <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${zP(250)}%`, borderRadius: "7px 0 0 7px", background: "rgba(16,185,129,0.35)" }} />
           <div style={{ position: "absolute", left: `${zP(250)}%`, top: 0, bottom: 0, width: `${zP(300) - zP(250)}%`, background: "rgba(16,185,129,0.2)" }} />
           <div style={{ position: "absolute", left: `${zP(300)}%`, top: 0, bottom: 0, width: `${zP(350) - zP(300)}%`, background: "rgba(251,191,36,0.25)" }} />
@@ -129,8 +129,8 @@ function FPLIndicator({ fplPct, income, houseSize, lang, maxAge }: {
           <div style={{ position: "absolute", left: `${zP(400)}%`, top: -6, bottom: -6, width: 2, background: "#ef4444", zIndex: 2 }} />
           <div style={{ position: "absolute", left: `${pctPos}%`, top: "50%", transform: "translate(-50%, -50%)", width: 18, height: 18, borderRadius: 9, background: "#fff", border: `3px solid ${zoneColor}`, zIndex: 3, boxShadow: `0 0 10px ${zoneColor}60` }} />
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 9, color: "#5a5e72", fontWeight: 600 }}>
-          <span style={{ color: "#10b981" }}>138%</span>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 9, color: "#94A3B8", fontWeight: 600 }}>
+          <span style={{ color: "#0D9488" }}>138%</span>
           <span>250%</span>
           <span>300%</span>
           <span>350%</span>
@@ -138,7 +138,7 @@ function FPLIndicator({ fplPct, income, houseSize, lang, maxAge }: {
           <span>500%+</span>
         </div>
         <div style={{ textAlign: "center", marginTop: 10, padding: "10px 16px", borderRadius: 10, background: `${zoneColor}15`, border: `1px solid ${zoneColor}30` }}>
-          <div style={{ fontSize: 14, color: "#e0e1e5", fontWeight: 600 }}>
+          <div style={{ fontSize: 14, color: "#334155", fontWeight: 600 }}>
             {isEs ? "Tu posición" : "Your position"}: <strong style={{ color: zoneColor, fontSize: 20 }}>{fplPct}% FPL</strong>
           </div>
           <div style={{ fontSize: 15, color: zoneColor, fontWeight: 800, marginTop: 4 }}>{zoneName}</div>
@@ -146,29 +146,29 @@ function FPLIndicator({ fplPct, income, houseSize, lang, maxAge }: {
       </div>
 
       {/* Technical details toggle */}
-      <div style={{ marginTop: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
+      <div style={{ marginTop: 12, borderRadius: 8, border: "1px solid #E2E8F0", overflow: "hidden" }}>
         <button
           onClick={() => setTechOpen(!techOpen)}
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "none",
+            padding: "10px 14px", background: "#F8FAFC", border: "none",
             cursor: "pointer", fontFamily: "inherit",
           }}
         >
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#5a5e72" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8" }}>
             📊 {isEs ? "Ver datos técnicos detallados" : "View detailed technical data"}
           </span>
-          <span style={{ fontSize: 10, color: "#5a5e72", transition: "transform .2s", transform: techOpen ? "rotate(180deg)" : "none" }}>▼</span>
+          <span style={{ fontSize: 10, color: "#94A3B8", transition: "transform .2s", transform: techOpen ? "rotate(180deg)" : "none" }}>▼</span>
         </button>
         <div style={{ maxHeight: techOpen ? 2000 : 0, overflow: "hidden", transition: "max-height .4s ease" }}>
           <div style={{ padding: "12px 14px", fontSize: 12, lineHeight: 1.7, color: "#6b7280" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-              <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>FPL%</div><div style={{ fontSize: 18, fontWeight: 800, color: zoneColor, marginTop: 2 }}>{fplPct}%</div></div>
-              <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{isEs ? "Límite 400%" : "400% Limit"}</div><div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>${threshold400.toLocaleString()}</div></div>
-              <div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{zone === "red" ? (isEs ? "Exceso" : "Excess") : (isEs ? "Margen" : "Buffer")}</div><div style={{ fontSize: 18, fontWeight: 800, color: zone === "red" ? "#ef4444" : "#fbbf24", marginTop: 2 }}>${(zone === "red" ? excess : buffer).toLocaleString()}</div></div>
+              <div><div style={{ fontSize: 10, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>FPL%</div><div style={{ fontSize: 18, fontWeight: 800, color: zoneColor, marginTop: 2 }}>{fplPct}%</div></div>
+              <div><div style={{ fontSize: 10, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{isEs ? "Límite 400%" : "400% Limit"}</div><div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>${threshold400.toLocaleString()}</div></div>
+              <div><div style={{ fontSize: 10, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3 }}>{zone === "red" ? (isEs ? "Exceso" : "Excess") : (isEs ? "Margen" : "Buffer")}</div><div style={{ fontSize: 18, fontWeight: 800, color: zone === "red" ? "#ef4444" : "#fbbf24", marginTop: 2 }}>${(zone === "red" ? excess : buffer).toLocaleString()}</div></div>
             </div>
             <div style={{ marginBottom: 8, fontSize: 11 }}>
-              <strong style={{ color: "#8b8fa3" }}>MAGI {isEs ? "reducción opciones" : "reduction options"}:</strong>
+              <strong style={{ color: "#64748B" }}>MAGI {isEs ? "reducción opciones" : "reduction options"}:</strong>
             </div>
             <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.6 }}>
               • HSA ({isFamily ? (isEs ? "familia" : "family") : "individual"}): ${hsaLimit.toLocaleString()}/{isEs ? "año" : "yr"}<br />
@@ -176,7 +176,7 @@ function FPLIndicator({ fplPct, income, houseSize, lang, maxAge }: {
               • 401(k): $23,500/{isEs ? "año" : "yr"}<br />
               • {isEs ? "Prima completa est." : "Est. full premium"}: ~${fullPremium}/{isEs ? "mes" : "mo"}
             </div>
-            <div style={{ marginTop: 10, fontSize: 10, color: "#3a3d4a" }}>
+            <div style={{ marginTop: 10, fontSize: 10, color: "#CBD5E1" }}>
               {isEs ? "Fuente" : "Source"}: IRS.gov, Healthcare.gov, KFF.org
             </div>
           </div>
@@ -186,43 +186,43 @@ function FPLIndicator({ fplPct, income, houseSize, lang, maxAge }: {
   );
 }
 
-// ==================== STYLES ====================
+// ==================== STYLES (light professional theme) ====================
 const S = {
-  app: { fontFamily: "'Satoshi', 'DM Sans', 'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: "#08090d", color: "#f0f1f5" } as React.CSSProperties,
-  hdr: { background: "linear-gradient(135deg, #08090d 0%, #0e1018 60%, #12141c 100%)", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.06)" } as React.CSSProperties,
-  logo: { color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: -0.5, display: "flex", alignItems: "center", gap: 8 } as React.CSSProperties,
-  logoIcon: { width: 30, height: 30, borderRadius: 7, background: "rgba(16,185,129,.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } as React.CSSProperties,
-  langBtn: { padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.06)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" } as React.CSSProperties,
-  hero: { background: "linear-gradient(135deg, #08090d 0%, #0e1018 60%, #12141c 100%)", padding: "12px 20px 44px", textAlign: "center" as const } as React.CSSProperties,
+  app: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", background: "#FFFFFF", color: "#1E293B" } as React.CSSProperties,
+  hdr: { background: "#FFFFFF", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E2E8F0" } as React.CSSProperties,
+  logo: { color: "#1E3A5F", fontSize: 18, fontWeight: 800, letterSpacing: -0.5, display: "flex", alignItems: "center", gap: 8 } as React.CSSProperties,
+  logoIcon: { width: 30, height: 30, borderRadius: 7, background: "rgba(13,148,136,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } as React.CSSProperties,
+  langBtn: { padding: "5px 12px", borderRadius: 5, border: "1px solid #E2E8F0", background: "#F8FAFC", color: "#1E3A5F", fontSize: 12, fontWeight: 700, cursor: "pointer" } as React.CSSProperties,
+  hero: { background: "#1E3A5F", padding: "12px 20px 44px", textAlign: "center" as const } as React.CSSProperties,
   wrap: { maxWidth: 640, margin: "-24px auto 0", padding: "0 14px 40px", position: "relative" as const } as React.CSSProperties,
-  card: { background: "#12141c", borderRadius: 14, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.2), 0 8px 20px rgba(0,0,0,.15)", border: "1px solid rgba(255,255,255,0.06)" } as React.CSSProperties,
-  label: { display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6, color: "#e0e1e5", textTransform: "uppercase" as const, letterSpacing: 0.5 } as React.CSSProperties,
-  input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15, outline: "none", boxSizing: "border-box" as const, fontFamily: "inherit", background: "#0e1018", color: "#f0f1f5" } as React.CSSProperties,
-  select: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15, outline: "none", boxSizing: "border-box" as const, background: "#0e1018", fontFamily: "inherit", color: "#f0f1f5" } as React.CSSProperties,
-  btn: { display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "15px 28px", borderRadius: 10, border: "none", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", minHeight: 48 } as React.CSSProperties,
-  pri: { background: "linear-gradient(135deg, #10b981, #059669)", color: "#fff" },
-  sec: { background: "#181a24", color: "#c0c4d0", border: "1px solid rgba(255,255,255,0.1)" },
-  dis: { background: "#1a1c26", color: "#5a5e72", cursor: "not-allowed" },
+  card: { background: "#FFFFFF", borderRadius: 14, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04)", border: "1px solid #E2E8F0" } as React.CSSProperties,
+  label: { display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "#1E293B", textTransform: "uppercase" as const, letterSpacing: 0.5 } as React.CSSProperties,
+  input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 15, outline: "none", boxSizing: "border-box" as const, fontFamily: "inherit", background: "#FFFFFF", color: "#1E293B" } as React.CSSProperties,
+  select: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 15, outline: "none", boxSizing: "border-box" as const, background: "#FFFFFF", fontFamily: "inherit", color: "#1E293B" } as React.CSSProperties,
+  btn: { display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "15px 28px", borderRadius: 10, border: "none", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minHeight: 48 } as React.CSSProperties,
+  pri: { background: "#0D9488", color: "#fff" },
+  sec: { background: "#FFFFFF", color: "#1E3A5F", border: "1px solid #CBD5E1" },
+  dis: { background: "#F1F5F9", color: "#94A3B8", cursor: "not-allowed" },
   row: { display: "flex", gap: 10 } as React.CSSProperties,
   g2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } as React.CSSProperties,
   g3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } as React.CSSProperties,
   g4: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 } as React.CSSProperties,
-  memberCard: { background: "#0e1018", borderRadius: 10, padding: 16, marginBottom: 12, border: "1px solid rgba(255,255,255,0.06)" } as React.CSSProperties,
-  stat: { background: "#0e1018", borderRadius: 8, padding: "9px 10px", textAlign: "center" as const } as React.CSSProperties,
-  statL: { fontSize: 10, color: "#c0c4d0", textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.3 } as React.CSSProperties,
-  statV: { fontSize: 17, fontWeight: 900, color: "#ffffff", marginTop: 2 } as React.CSSProperties,
-  planCard: { background: "#12141c", borderRadius: 14, padding: 20, marginBottom: 14, border: "2px solid rgba(255,255,255,0.08)", cursor: "pointer", transition: "all .2s" } as React.CSSProperties,
-  planExp: { background: "#12141c", borderRadius: 14, padding: 20, marginBottom: 14, border: "2px solid #10b981", boxShadow: "0 4px 20px rgba(16,185,129,.15)" } as React.CSSProperties,
-  alert: { background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 8, padding: 14, marginBottom: 18, fontSize: 13, color: "#fbbf24", lineHeight: 1.5 } as React.CSSProperties,
-  subBanner: { background: "linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10, padding: 18, marginBottom: 18, textAlign: "center" as const } as React.CSSProperties,
-  tyCard: { background: "linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))", borderRadius: 14, padding: 32, textAlign: "center" as const, border: "1px solid rgba(16,185,129,0.2)" } as React.CSSProperties,
-  footer: { textAlign: "center" as const, padding: "24px 14px", fontSize: 10, color: "#5a5e72", lineHeight: 1.6, maxWidth: 640, margin: "0 auto" } as React.CSSProperties,
+  memberCard: { background: "#F8FAFC", borderRadius: 10, padding: 16, marginBottom: 12, border: "1px solid #E2E8F0" } as React.CSSProperties,
+  stat: { background: "#F8FAFC", borderRadius: 8, padding: "9px 10px", textAlign: "center" as const } as React.CSSProperties,
+  statL: { fontSize: 10, color: "#64748B", textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.3 } as React.CSSProperties,
+  statV: { fontSize: 17, fontWeight: 900, color: "#1E293B", marginTop: 2 } as React.CSSProperties,
+  planCard: { background: "#FFFFFF", borderRadius: 14, padding: 20, marginBottom: 14, border: "2px solid #E2E8F0", cursor: "pointer", transition: "all .2s" } as React.CSSProperties,
+  planExp: { background: "#FFFFFF", borderRadius: 14, padding: 20, marginBottom: 14, border: "2px solid #0D9488", boxShadow: "0 4px 20px rgba(13,148,136,.1)" } as React.CSSProperties,
+  alert: { background: "rgba(217,119,6,0.06)", border: "1px solid rgba(217,119,6,0.3)", borderRadius: 8, padding: 14, marginBottom: 18, fontSize: 13, color: "#D97706", lineHeight: 1.5 } as React.CSSProperties,
+  subBanner: { background: "rgba(5,150,105,0.06)", border: "1px solid rgba(5,150,105,0.2)", borderRadius: 10, padding: 18, marginBottom: 18, textAlign: "center" as const } as React.CSSProperties,
+  tyCard: { background: "rgba(5,150,105,0.04)", borderRadius: 14, padding: 32, textAlign: "center" as const, border: "1px solid rgba(5,150,105,0.2)" } as React.CSSProperties,
+  footer: { textAlign: "center" as const, padding: "24px 14px", fontSize: 10, color: "#94A3B8", lineHeight: 1.6, maxWidth: 640, margin: "0 auto" } as React.CSSProperties,
 };
 
 const chip = (active: boolean): React.CSSProperties => ({
-  padding: "7px 16px", borderRadius: 20, border: `1.5px solid ${active ? "#10b981" : "rgba(255,255,255,0.15)"}`,
-  fontSize: 13, fontWeight: 700, cursor: "pointer", background: active ? "rgba(16,185,129,0.15)" : "#12141c",
-  color: active ? "#10b981" : "#c0c4d0", minHeight: 36,
+  padding: "7px 16px", borderRadius: 20, border: `1.5px solid ${active ? "#0D9488" : "#CBD5E1"}`,
+  fontSize: 13, fontWeight: 700, cursor: "pointer", background: active ? "rgba(13,148,136,0.08)" : "#FFFFFF",
+  color: active ? "#0D9488" : "#64748B", minHeight: 36,
 });
 
 // ==================== MAIN COMPONENT ====================
@@ -358,11 +358,13 @@ export default function QuoterPage() {
     const h = [...house]; h[i] = { ...h[i], [k]: v }; setHouse(h);
   };
   const leadName = `${firstName} ${lastName}`.trim();
-  const householdValid = house.every((m) => m.age >= 0 && m.age <= 120);
+  const householdValid = house.every((m) => m.age >= 1 && m.age <= 120);
   const phoneDigits = leadPhone.replace(/\D/g, "");
-  const phoneValid = phoneDigits.length >= 10;
+  const phoneValid = phoneDigits.length === 10;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail);
-  const contactFormValid = firstName.trim() && lastName.trim() && phoneValid && emailValid;
+  const firstNameValid = firstName.trim().length >= 2;
+  const lastNameValid = lastName.trim().length >= 2;
+  const contactFormValid = firstNameValid && lastNameValid && phoneValid && emailValid;
 
   const browseLeadCreated = useRef(false);
 
@@ -675,12 +677,17 @@ export default function QuoterPage() {
     <div style={S.app}>
       {/* Header */}
       <div style={S.hdr}>
-        <div style={S.logo}>
-          <div style={S.logoIcon}>🏥</div>
-          <span>{brandName}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <a href={urlParams.agentSlug ? "/agentes" : "/"} style={{ color: "#64748B", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>← {lang === "es" ? "Volver" : "Back"}</a>
+          <div style={S.logo}>
+            <div style={S.logoIcon}>🏥</div>
+            <span>{t.title}</span>
+          </div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {agentBrand && <span style={{ fontSize: 10, color: "rgba(255,255,255,.4)" }}>by {t.title}</span>}
+          {agentBrand && agentBrand.name !== t.title && (
+            <span style={{ fontSize: 11, color: "#64748B", fontWeight: 600 }}>{lang === "es" ? "Agente" : "Agent"}: {agentBrand.name}</span>
+          )}
           <button style={S.langBtn} onClick={() => setLang(lang === "en" ? "es" : "en")} aria-label={lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}>{t.langSwitch}</button>
         </div>
       </div>
@@ -688,21 +695,21 @@ export default function QuoterPage() {
       {/* Hero */}
       {step <= 4 && (
         <div style={S.hero}>
-          <div style={{ color: "#fff", fontSize: 22, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.2 }}>{t.hero}</div>
-          <div style={{ color: "#6ee7b7", fontSize: 22, fontWeight: 800 }}>{t.heroAccent}</div>
+          <div style={{ color: "#fff", fontSize: 22, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.2 }}>{t.hero}</div>
+          <div style={{ color: "#5EEAD4", fontSize: 22, fontWeight: 700 }}>{t.heroAccent}</div>
           <div style={{ color: "rgba(255,255,255,.8)", fontSize: 14, marginTop: 8 }}>{t.heroSub}</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, padding: "4px 12px", borderRadius: 20, background: "rgba(255,255,255,.1)", color: "rgba(255,255,255,.7)", fontSize: 11, fontWeight: 600 }}>🛡️ {t.trustBadge}</div>
         </div>
       )}
       {step === 45 && !consentRecord && (
         <div style={{ ...S.hero, paddingBottom: 44 }}>
-          <div style={{ color: "#fff", fontSize: 20, fontWeight: 800 }}>{lang === "es" ? "📋 Autorización CMS" : "📋 CMS Authorization"}</div>
+          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{lang === "es" ? "📋 Autorización CMS" : "📋 CMS Authorization"}</div>
           <div style={{ color: "rgba(255,255,255,.6)", fontSize: 13, marginTop: 4 }}>{lang === "es" ? "Firma digital requerida para continuar" : "Digital signature required to continue"}</div>
         </div>
       )}
       {step === 5 && (
         <div style={{ ...S.hero, paddingBottom: 44 }}>
-          <div style={{ color: "#fff", fontSize: 20, fontWeight: 800 }}>{t.s4}</div>
+          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{t.s4}</div>
           <div style={{ color: "rgba(255,255,255,.6)", fontSize: 13, marginTop: 4 }}>
             {county?.name}, {county?.state} · {house.length}p · ${Number(income).toLocaleString()}{lang === "es" ? "/año" : "/yr"} ({fpl}% FPL)
           </div>
@@ -710,13 +717,13 @@ export default function QuoterPage() {
       )}
       {step === 6 && (
         <div style={{ ...S.hero, paddingBottom: 44 }}>
-          <div style={{ color: "#fff", fontSize: 20, fontWeight: 800 }}>{t.confirmTitle || "Confirma tu plan"}</div>
+          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{t.confirmTitle || "Confirma tu plan"}</div>
           <div style={{ color: "rgba(255,255,255,.6)", fontSize: 13, marginTop: 4 }}>{t.confirmSub || "Review the details before confirming"}</div>
         </div>
       )}
       {step === 7 && (
         <div style={{ ...S.hero, paddingBottom: 44 }}>
-          <div style={{ color: "#fff", fontSize: 20, fontWeight: 800 }}>{t.tyTitle}</div>
+          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{t.tyTitle}</div>
         </div>
       )}
 
@@ -730,7 +737,7 @@ export default function QuoterPage() {
             <div style={{ marginBottom: 18 }}>
               <label htmlFor="zip-input" style={S.label}>{t.zip}</label>
               <input id="zip-input" style={S.input} type="text" maxLength={5} value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} placeholder={t.zipPh} aria-required="true" autoFocus />
-              {zipLoading && <div style={{ fontSize: 12, color: "#5a5e72", marginTop: 4 }}>{lang === "es" ? "Buscando condado..." : "Looking up county..."}</div>}
+              {zipLoading && <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 4 }}>{lang === "es" ? "Buscando condado..." : "Looking up county..."}</div>}
               {zip.length === 5 && !zipLoading && counties.length === 0 && <div role="alert" style={{ fontSize: 12, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "No se encontraron condados para este ZIP" : "No counties found for this ZIP code"}</div>}
             </div>
             {counties.length > 1 && (
@@ -742,7 +749,7 @@ export default function QuoterPage() {
                 </select>
               </div>
             )}
-            {county && <div style={{ fontSize: 13, color: "#10b981", marginBottom: 18, fontWeight: 600 }}>📍 {county.name}, {county.state}</div>}
+            {county && <div style={{ fontSize: 13, color: "#0D9488", marginBottom: 18, fontWeight: 600 }}>📍 {county.name}, {county.state}</div>}
             <button style={{ ...S.btn, ...(county ? S.pri : S.dis), width: "100%" }} disabled={!county} onClick={() => setStep(2)}>{t.next}</button>
           </div>
         )}
@@ -755,7 +762,7 @@ export default function QuoterPage() {
             {house.map((m, i) => (
               <div key={i} style={S.memberCard}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#10b981" }}>{t.person} {i + 1}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#0D9488" }}>{t.person} {i + 1}</span>
                   {i > 0 && <button style={{ ...S.btn, padding: "3px 10px", fontSize: 11, color: "#ef4444", background: "transparent" }} onClick={() => removePerson(i)} aria-label={`${t.removePerson} ${i + 1}`}>{t.removePerson}</button>}
                 </div>
                 <div style={S.g3}>
@@ -768,7 +775,7 @@ export default function QuoterPage() {
             <button style={{ ...S.btn, ...S.sec, width: "100%", marginBottom: 14, fontSize: 13 }} onClick={addPerson}>{t.addPerson}</button>
             <div style={S.row}>
               <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(1)}>{t.back}</button>
-              <button style={{ ...S.btn, ...S.pri, flex: 2 }} onClick={() => setStep(3)}>{t.next}</button>
+              <button style={{ ...S.btn, ...(householdValid ? S.pri : S.dis), flex: 2 }} disabled={!householdValid} onClick={() => setStep(3)}>{t.next}</button>
             </div>
           </div>
         )}
@@ -781,14 +788,14 @@ export default function QuoterPage() {
             <div style={{ marginBottom: 18 }}>
               <label htmlFor="income-input" style={S.label}>{t.income}</label>
               <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#5a5e72", fontWeight: 700 }} aria-hidden="true">$</span>
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94A3B8", fontWeight: 700 }} aria-hidden="true">$</span>
                 <input id="income-input" style={{ ...S.input, paddingLeft: 26 }} type="text" value={income ? Number(income).toLocaleString() : ""} onChange={(e) => setIncome(e.target.value.replace(/\D/g, ""))} placeholder={t.incomePh} aria-required="true" />
               </div>
             </div>
             {income && (
-              <div style={{ background: "rgba(16,185,129,0.08)", borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 13, color: "#10b981" }}>
+              <div style={{ background: "rgba(16,185,129,0.08)", borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 13, color: "#0D9488" }}>
                 <strong>{t.fplLabel}:</strong> {fpl}% FPL
-                <span style={{ color: "#5a5e72", marginLeft: 6 }}>(${getFPL(house.length).toLocaleString()} / {house.length}p)</span>
+                <span style={{ color: "#94A3B8", marginLeft: 6 }}>(${getFPL(house.length).toLocaleString()} / {house.length}p)</span>
               </div>
             )}
             {isMedicaid && <div role="alert" style={S.alert}>⚠️ {t.medicaidMsg}</div>}
@@ -811,32 +818,34 @@ export default function QuoterPage() {
           <div style={S.card}>
             <StepLabel num={4} label={t.sL} />
             <Progress step={4} total={4} />
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#10b981", marginBottom: 4 }}>{t.leadTitle}</div>
-            <div style={{ fontSize: 13, color: "#5a5e72", marginBottom: 20, lineHeight: 1.5 }}>{t.leadSub}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#0D9488", marginBottom: 4 }}>{t.leadTitle}</div>
+            <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 20, lineHeight: 1.5 }}>{t.leadSub}</div>
             <div style={{ ...S.g2, marginBottom: 14 }}>
               <div>
-                <label htmlFor="lead-first" style={S.label}>{lang === "es" ? "Nombre" : "First Name"} <span style={{ color: "#ef4444" }}>*</span></label>
-                <input id="lead-first" style={S.input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={lang === "es" ? "María" : "Maria"} aria-required="true" autoFocus={!firstName} />
-                {!firstName.trim() && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+                <label htmlFor="lead-first" style={S.label}>{lang === "es" ? "Nombre" : "First Name"} <span style={{ color: "#DC2626" }}>*</span></label>
+                <input id="lead-first" style={{ ...S.input, borderColor: firstName && !firstNameValid ? "#DC2626" : firstName && firstNameValid ? "#059669" : undefined }} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={lang === "es" ? "María" : "Maria"} aria-required="true" autoFocus={!firstName} />
+                {firstName && !firstNameValid && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Mínimo 2 caracteres" : "Minimum 2 characters"}</div>}
+                {!firstName && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
               <div>
-                <label htmlFor="lead-last" style={S.label}>{lang === "es" ? "Apellido" : "Last Name"} <span style={{ color: "#ef4444" }}>*</span></label>
-                <input id="lead-last" style={S.input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={lang === "es" ? "García" : "Garcia"} aria-required="true" />
-                {!lastName.trim() && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+                <label htmlFor="lead-last" style={S.label}>{lang === "es" ? "Apellido" : "Last Name"} <span style={{ color: "#DC2626" }}>*</span></label>
+                <input id="lead-last" style={{ ...S.input, borderColor: lastName && !lastNameValid ? "#DC2626" : lastName && lastNameValid ? "#059669" : undefined }} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={lang === "es" ? "García" : "Garcia"} aria-required="true" />
+                {lastName && !lastNameValid && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Mínimo 2 caracteres" : "Minimum 2 characters"}</div>}
+                {!lastName && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
             </div>
             <div style={{ ...S.g2, marginBottom: 14 }}>
               <div>
-                <label htmlFor="lead-phone" style={S.label}>{t.phone} <span style={{ color: "#ef4444" }}>*</span></label>
-                <input id="lead-phone" style={S.input} type="tel" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder={t.phonePh} aria-required="true" />
-                {leadPhone && !phoneValid && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Mínimo 10 dígitos" : "Minimum 10 digits"}</div>}
-                {!leadPhone && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+                <label htmlFor="lead-phone" style={S.label}>{t.phone} <span style={{ color: "#DC2626" }}>*</span></label>
+                <input id="lead-phone" style={{ ...S.input, borderColor: leadPhone && !phoneValid ? "#DC2626" : leadPhone && phoneValid ? "#059669" : undefined }} type="tel" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder={t.phonePh} maxLength={10} aria-required="true" />
+                {leadPhone && !phoneValid && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Debe ser exactamente 10 dígitos" : "Must be exactly 10 digits"}</div>}
+                {!leadPhone && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
               <div>
-                <label htmlFor="lead-email" style={S.label}>{t.email} <span style={{ color: "#ef4444" }}>*</span></label>
-                <input id="lead-email" style={S.input} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} aria-required="true" />
-                {leadEmail && !emailValid && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Correo no válido" : "Invalid email"}</div>}
-                {!leadEmail && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
+                <label htmlFor="lead-email" style={S.label}>{t.email} <span style={{ color: "#DC2626" }}>*</span></label>
+                <input id="lead-email" style={{ ...S.input, borderColor: leadEmail && !emailValid ? "#DC2626" : leadEmail && emailValid ? "#059669" : undefined }} type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder={t.emailPh} aria-required="true" />
+                {leadEmail && !emailValid && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Formato inválido" : "Invalid format"}</div>}
+                {!leadEmail && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Este campo es obligatorio" : "Required"}</div>}
               </div>
             </div>
             <div style={{ marginBottom: 18 }}>
@@ -854,25 +863,25 @@ export default function QuoterPage() {
               <label htmlFor="drug-search" style={S.label}>{t.drugLabel}</label>
               {selectedDrug ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10 }}>
-                  <span style={{ fontSize: 13, color: "#10b981", fontWeight: 600, flex: 1 }}>💊 {selectedDrug.name}</span>
-                  <button style={{ background: "none", border: "none", color: "#5a5e72", cursor: "pointer", fontSize: 16, padding: "0 4px" }} onClick={() => { setSelectedDrug(null); setDrugQuery(""); setDrugCoverage({}); }} aria-label={lang === "es" ? "Quitar medicamento" : "Remove medication"}>✕</button>
+                  <span style={{ fontSize: 13, color: "#0D9488", fontWeight: 600, flex: 1 }}>💊 {selectedDrug.name}</span>
+                  <button style={{ background: "none", border: "none", color: "#94A3B8", cursor: "pointer", fontSize: 16, padding: "0 4px" }} onClick={() => { setSelectedDrug(null); setDrugQuery(""); setDrugCoverage({}); }} aria-label={lang === "es" ? "Quitar medicamento" : "Remove medication"}>✕</button>
                 </div>
               ) : (
                 <>
                   <input id="drug-search" style={S.input} value={drugQuery} onChange={(e) => searchDrugs(e.target.value)} placeholder={t.drugPh} onFocus={() => drugResults.length > 0 && setDrugOpen(true)} onBlur={() => setTimeout(() => setDrugOpen(false), 200)} />
                   {drugSearchError && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Error en la busqueda" : "Search failed"}</div>}
                   {drugOpen && drugResults.length > 0 && (
-                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#1a1c26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, maxHeight: 220, overflowY: "auto", marginTop: 4 }}>
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 10, maxHeight: 220, overflowY: "auto", marginTop: 4 }}>
                       {drugResults.map((d) => (
-                        <div key={d.rxcui} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#f0f1f5" }} onMouseDown={() => { setSelectedDrug({ rxcui: d.rxcui, name: d.name }); setDrugQuery(""); setDrugOpen(false); setDrugResults([]); }}>
+                        <div key={d.rxcui} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#1E293B" }} onMouseDown={() => { setSelectedDrug({ rxcui: d.rxcui, name: d.name }); setDrugQuery(""); setDrugOpen(false); setDrugResults([]); }}>
                           <div style={{ fontWeight: 600 }}>{d.name}</div>
-                          {d.strength && <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{d.strength} · {d.route}</div>}
+                          {d.strength && <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>{d.strength} · {d.route}</div>}
                         </div>
                       ))}
                     </div>
                   )}
                   {drugQuery.length >= 2 && drugOpen && drugResults.length === 0 && (
-                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#1a1c26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", marginTop: 4, fontSize: 12, color: "#5a5e72" }}>{t.noResults}</div>
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 10, padding: "10px 14px", marginTop: 4, fontSize: 12, color: "#94A3B8" }}>{t.noResults}</div>
                   )}
                 </>
               )}
@@ -884,33 +893,33 @@ export default function QuoterPage() {
               {selectedDoctor ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 13, color: "#10b981", fontWeight: 600 }}>🩺 {selectedDoctor.name}</span>
-                    {selectedDoctor.specialty && <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{selectedDoctor.specialty}</div>}
+                    <span style={{ fontSize: 13, color: "#0D9488", fontWeight: 600 }}>🩺 {selectedDoctor.name}</span>
+                    {selectedDoctor.specialty && <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>{selectedDoctor.specialty}</div>}
                   </div>
-                  <button style={{ background: "none", border: "none", color: "#5a5e72", cursor: "pointer", fontSize: 16, padding: "0 4px" }} onClick={() => { setSelectedDoctor(null); setDoctorQuery(""); }} aria-label={lang === "es" ? "Quitar doctor" : "Remove doctor"}>✕</button>
+                  <button style={{ background: "none", border: "none", color: "#94A3B8", cursor: "pointer", fontSize: 16, padding: "0 4px" }} onClick={() => { setSelectedDoctor(null); setDoctorQuery(""); }} aria-label={lang === "es" ? "Quitar doctor" : "Remove doctor"}>✕</button>
                 </div>
               ) : (
                 <>
                   <input id="doctor-search" style={S.input} value={doctorQuery} onChange={(e) => searchDoctors(e.target.value)} placeholder={t.doctorPh} onFocus={() => doctorResults.length > 0 && setDoctorOpen(true)} onBlur={() => setTimeout(() => setDoctorOpen(false), 200)} />
                   {doctorSearchError && <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{lang === "es" ? "Error en la busqueda" : "Search failed"}</div>}
                   {doctorOpen && doctorResults.length > 0 && (
-                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#1a1c26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, maxHeight: 220, overflowY: "auto", marginTop: 4 }}>
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 10, maxHeight: 220, overflowY: "auto", marginTop: 4 }}>
                       {doctorResults.map((d) => (
-                        <div key={d.npi} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#f0f1f5" }} onMouseDown={() => { setSelectedDoctor({ npi: d.npi, name: d.name, specialty: d.specialty }); setDoctorQuery(""); setDoctorOpen(false); setDoctorResults([]); }}>
+                        <div key={d.npi} style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, color: "#1E293B" }} onMouseDown={() => { setSelectedDoctor({ npi: d.npi, name: d.name, specialty: d.specialty }); setDoctorQuery(""); setDoctorOpen(false); setDoctorResults([]); }}>
                           <div style={{ fontWeight: 600 }}>{d.name}</div>
-                          <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{d.specialty}{d.address ? ` · ${d.address}` : ""}</div>
+                          <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>{d.specialty}{d.address ? ` · ${d.address}` : ""}</div>
                         </div>
                       ))}
                     </div>
                   )}
                   {doctorQuery.length >= 2 && doctorOpen && doctorResults.length === 0 && (
-                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#1a1c26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", marginTop: 4, fontSize: 12, color: "#5a5e72" }}>{t.noResults}</div>
+                    <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 10, padding: "10px 14px", marginTop: 4, fontSize: 12, color: "#94A3B8" }}>{t.noResults}</div>
                   )}
                 </>
               )}
             </div>
 
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, cursor: "pointer", fontSize: 13, color: "#8b8fa3", lineHeight: 1.5 }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, cursor: "pointer", fontSize: 13, color: "#64748B", lineHeight: 1.5 }}>
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#10b981", cursor: "pointer" }} />
               {t.consent}
             </label>
@@ -962,8 +971,8 @@ export default function QuoterPage() {
 
             {results.aptc > 0 && (
               <div style={S.subBanner}>
-                <div style={{ fontSize: 12, color: "#10b981", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{t.subsidyLabel}</div>
-                <div style={{ fontSize: 36, fontWeight: 900, color: "#10b981", letterSpacing: -1 }}>${results.aptc}<span style={{ fontSize: 16, fontWeight: 600 }}>{t.mo}</span></div>
+                <div style={{ fontSize: 12, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{t.subsidyLabel}</div>
+                <div style={{ fontSize: 36, fontWeight: 900, color: "#0D9488", letterSpacing: -1 }}>${results.aptc}<span style={{ fontSize: 16, fontWeight: 600 }}>{t.mo}</span></div>
               </div>
             )}
             <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
@@ -972,14 +981,14 @@ export default function QuoterPage() {
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span style={{ fontSize: 12, color: "#c0c4d0", fontWeight: 700 }}>{t.sort}:</span>
+              <span style={{ fontSize: 12, color: "#64748B", fontWeight: 700 }}>{t.sort}:</span>
               <select style={{ ...S.select, width: "auto", padding: "5px 10px", fontSize: 12 }} value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
                 <option value="afterSubsidy">{t.sortPremium}</option>
                 <option value="deductible">{t.sortDeduct}</option>
                 <option value="oopMax">{t.sortOop}</option>
                 <option value="rating">{t.sortRate}</option>
               </select>
-              <span style={{ fontSize: 13, color: "#c0c4d0", marginLeft: "auto", fontWeight: 600 }}>{filtered?.length} {t.planCount}</span>
+              <span style={{ fontSize: 13, color: "#64748B", marginLeft: "auto", fontWeight: 600 }}>{filtered?.length} {t.planCount}</span>
             </div>
             {filtered?.map((plan) => {
               const exp = expandedPlan === plan.id;
@@ -994,16 +1003,16 @@ export default function QuoterPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                     <div style={{ flex: 1 }}>
                       <Badge metal={plan.metal} t={t} />
-                      {plan.hsa && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: "#10b981", background: "rgba(16,185,129,0.12)", padding: "2px 8px", borderRadius: 4 }}>HSA</span>}
-                      <div style={{ fontSize: 17, fontWeight: 900, marginTop: 8, color: "#ffffff", lineHeight: 1.3 }}>{plan.name}</div>
-                      <div style={{ fontSize: 12, color: "#8b8fa3", marginTop: 3 }}>{plan.issuer}</div>
+                      {plan.hsa && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: "#0D9488", background: "rgba(16,185,129,0.12)", padding: "2px 8px", borderRadius: 4 }}>HSA</span>}
+                      <div style={{ fontSize: 17, fontWeight: 900, marginTop: 8, color: "#1E293B", lineHeight: 1.3 }}>{plan.name}</div>
+                      <div style={{ fontSize: 12, color: "#64748B", marginTop: 3 }}>{plan.issuer}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                      {plan.aptc > 0 && <div style={{ fontSize: 12, color: "#8b8fa3", textDecoration: "line-through" }}>${plan.premium}{t.mo}</div>}
+                      {plan.aptc > 0 && <div style={{ fontSize: 12, color: "#64748B", textDecoration: "line-through" }}>${plan.premium}{t.mo}</div>}
                       <div style={{ fontSize: plan.afterSubsidy === 0 ? 32 : 28, fontWeight: 900, color: plan.afterSubsidy === 0 ? "#10b981" : "#10b981", letterSpacing: -1 }}>
                         {plan.afterSubsidy === 0 ? "$0" : `$${plan.afterSubsidy}`}
                       </div>
-                      <div style={{ fontSize: 11, color: "#8b8fa3", fontWeight: 600 }}>{t.mo}</div>
+                      <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600 }}>{t.mo}</div>
                     </div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
@@ -1014,7 +1023,7 @@ export default function QuoterPage() {
                   {/* Ver Detalles button */}
                   {!exp && (
                     <div style={{ marginTop: 12, textAlign: "center" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 20px", borderRadius: 8, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#10b981", fontSize: 13, fontWeight: 700 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 20px", borderRadius: 8, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#0D9488", fontSize: 13, fontWeight: 700 }}>
                         {lang === "es" ? "Ver Detalles ↓" : "View Details ↓"}
                       </span>
                     </div>
@@ -1058,14 +1067,14 @@ export default function QuoterPage() {
                   )}
                   {exp && (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, color: "#e0e1e5", textTransform: "uppercase", letterSpacing: 0.5 }}>{lang === "es" ? "Copagos" : "Copays"}</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, color: "#334155", textTransform: "uppercase", letterSpacing: 0.5 }}>{lang === "es" ? "Copagos" : "Copays"}</div>
                       <div style={S.g4}>
                         <div style={S.stat}><div style={S.statL}>🩺 {t.pcp}</div><div style={{ ...S.statV, fontSize: 14 }}>{plan.pcp ? `$${plan.pcp}` : (lang === "es" ? "Incluido" : "Included")}</div></div>
                         <div style={S.stat}><div style={S.statL}>👨‍⚕️ {t.specialist}</div><div style={{ ...S.statV, fontSize: 14 }}>{plan.specialist ? `$${plan.specialist}` : (lang === "es" ? "Incluido" : "Included")}</div></div>
                         <div style={S.stat}><div style={S.statL}>💊 {t.rx}</div><div style={{ ...S.statV, fontSize: 14 }}>{plan.genericRx ? `$${plan.genericRx}` : (lang === "es" ? "Incluido" : "Included")}</div></div>
                         <div style={S.stat}><div style={S.statL}>🚑 {t.er}</div><div style={{ ...S.statV, fontSize: 14 }}>{plan.er ? `$${plan.er}` : (lang === "es" ? "Consultar" : "Check plan")}</div></div>
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 16, color: "#e0e1e5", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 16, color: "#334155", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
                       <div style={S.g3}>
                         <div style={{ ...S.stat, background: "rgba(16,185,129,0.08)" }}><div style={S.statL}>{t.low}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yLow.toLocaleString()}</div></div>
                         <div style={{ ...S.stat, background: "rgba(251,191,36,0.08)" }}><div style={S.statL}>{t.med}</div><div style={{ ...S.statV, fontSize: 13 }}>${plan.yMed.toLocaleString()}</div></div>
@@ -1121,13 +1130,13 @@ export default function QuoterPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
                 <div>
                   <Badge metal={plan.metal} t={t} />
-                  <div style={{ fontSize: 20, fontWeight: 900, marginTop: 8, color: "#f0f1f5", lineHeight: 1.2 }}>{plan.name}</div>
-                  <div style={{ fontSize: 13, color: "#5a5e72", marginTop: 4 }}>{plan.issuer}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, marginTop: 8, color: "#1E293B", lineHeight: 1.2 }}>{plan.name}</div>
+                  <div style={{ fontSize: 13, color: "#94A3B8", marginTop: 4 }}>{plan.issuer}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  {plan.aptc > 0 && <div style={{ fontSize: 12, color: "#5a5e72", textDecoration: "line-through" }}>${plan.premium}{t.mo}</div>}
-                  <div style={{ fontSize: 36, fontWeight: 900, color: "#10b981", letterSpacing: -1 }}>${plan.afterSubsidy}</div>
-                  <div style={{ fontSize: 11, color: "#5a5e72" }}>{t.mo}</div>
+                  {plan.aptc > 0 && <div style={{ fontSize: 12, color: "#94A3B8", textDecoration: "line-through" }}>${plan.premium}{t.mo}</div>}
+                  <div style={{ fontSize: 36, fontWeight: 900, color: "#0D9488", letterSpacing: -1 }}>${plan.afterSubsidy}</div>
+                  <div style={{ fontSize: 11, color: "#94A3B8" }}>{t.mo}</div>
                 </div>
               </div>
 
@@ -1135,19 +1144,19 @@ export default function QuoterPage() {
               {plan.aptc > 0 && (
                 <div style={{ background: "linear-gradient(135deg, #ecfdf5, #d1fae5)", borderRadius: 10, padding: 14, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid rgba(16,185,129,0.2)" }}>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.subsidyLabel}</div>
-                    <div style={{ fontSize: 11, color: "#5a5e72", marginTop: 2 }}>{t.subsidyApplied || "Applied to your premium"}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#0D9488", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.subsidyLabel}</div>
+                    <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>{t.subsidyApplied || "Applied to your premium"}</div>
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: "#10b981" }}>-${plan.aptc}{t.mo}</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: "#0D9488" }}>-${plan.aptc}{t.mo}</div>
                 </div>
               )}
 
               {/* Key Numbers */}
-              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.planDetails || "Plan Details"}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.planDetails || "Plan Details"}</div>
               <div style={S.g2}>
                 <div style={{ ...S.stat, padding: 14 }}>
                   <div style={S.statL}>{t.premium}</div>
-                  <div style={{ ...S.statV, fontSize: 20 }}>${plan.afterSubsidy}<span style={{ fontSize: 11, fontWeight: 600, color: "#5a5e72" }}>{t.mo}</span></div>
+                  <div style={{ ...S.statV, fontSize: 20 }}>${plan.afterSubsidy}<span style={{ fontSize: 11, fontWeight: 600, color: "#94A3B8" }}>{t.mo}</span></div>
                 </div>
                 <div style={{ ...S.stat, padding: 14 }}>
                   <div style={S.statL}>{t.deductible}</div>
@@ -1164,7 +1173,7 @@ export default function QuoterPage() {
               </div>
 
               {/* Copays */}
-              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>Copays</div>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5 }}>Copays</div>
               <div style={S.g4}>
                 <div style={S.stat}><div style={S.statL}>{t.pcp}</div><div style={{ ...S.statV, fontSize: 15 }}>{plan.pcp ? `$${plan.pcp}` : "—"}</div></div>
                 <div style={S.stat}><div style={S.statL}>{t.specialist}</div><div style={{ ...S.statV, fontSize: 15 }}>{plan.specialist ? `$${plan.specialist}` : "—"}</div></div>
@@ -1173,11 +1182,11 @@ export default function QuoterPage() {
               </div>
 
               {/* Annual Cost Estimates */}
-              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#8b8fa3", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
               <div style={S.g3}>
-                <div style={{ ...S.stat, background: "rgba(16,185,129,0.08)", padding: 14 }}><div style={S.statL}>{t.low}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yLow.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
-                <div style={{ ...S.stat, background: "rgba(251,191,36,0.08)", padding: 14 }}><div style={S.statL}>{t.med}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yMed.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
-                <div style={{ ...S.stat, background: "rgba(239,68,68,0.08)", padding: 14 }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yHigh.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
+                <div style={{ ...S.stat, background: "rgba(16,185,129,0.08)", padding: 14 }}><div style={S.statL}>{t.low}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yLow.toLocaleString()}</div><div style={{ fontSize: 10, color: "#94A3B8", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
+                <div style={{ ...S.stat, background: "rgba(251,191,36,0.08)", padding: 14 }}><div style={S.statL}>{t.med}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yMed.toLocaleString()}</div><div style={{ fontSize: 10, color: "#94A3B8", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
+                <div style={{ ...S.stat, background: "rgba(239,68,68,0.08)", padding: 14 }}><div style={S.statL}>{t.high}</div><div style={{ ...S.statV, fontSize: 16 }}>${plan.yHigh.toLocaleString()}</div><div style={{ fontSize: 10, color: "#94A3B8", marginTop: 2 }}>{t.yearLabel || "/yr"}</div></div>
               </div>
 
               {/* HSA Simple Badge */}
@@ -1187,7 +1196,7 @@ export default function QuoterPage() {
                   padding: "12px 16px", border: "1px solid rgba(16,185,129,0.2)",
                   display: "flex", alignItems: "center", gap: 10,
                 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#10b981", lineHeight: 1.5 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#0D9488", lineHeight: 1.5 }}>
                     {fpl >= 350
                       ? (lang === "es" ? "🏦 HSA Elegible — Haz clic en el plan en la lista para ver cómo ahorrar dinero" : "🏦 HSA Eligible — Click the plan in the list to see how to save money")
                       : (lang === "es" ? "🏦 HSA Elegible" : "🏦 HSA Eligible")}
@@ -1196,9 +1205,9 @@ export default function QuoterPage() {
               )}
 
               {/* Summary for lead */}
-              <div style={{ background: "#0e1018", borderRadius: 10, padding: 16, marginTop: 20, border: "1px solid #e5e7eb" }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#5a5e72", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{t.yourInfo || "Your Information"}</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13, color: "#8b8fa3" }}>
+              <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 16, marginTop: 20, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{t.yourInfo || "Your Information"}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13, color: "#64748B" }}>
                   <div>👤 {leadName}</div>
                   <div>📞 {leadPhone}</div>
                   <div>📍 {county?.name}, {county?.state} {zip}</div>
@@ -1209,8 +1218,8 @@ export default function QuoterPage() {
               {/* Agent info */}
               {agentBrand && (
                 <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)", borderRadius: 10, padding: 14, marginTop: 20, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#f0f1f5" }}>{agentBrand.name}</div>
-                  {agentBrand.npn && <div style={{ fontSize: 12, color: "#10b981", marginTop: 2 }}>{lang === "es" ? "Agente Licenciado" : "Licensed Agent"} · NPN {agentBrand.npn}</div>}
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#1E293B" }}>{agentBrand.name}</div>
+                  {agentBrand.npn && <div style={{ fontSize: 12, color: "#0D9488", marginTop: 2 }}>{lang === "es" ? "Agente Licenciado" : "Licensed Agent"} · NPN {agentBrand.npn}</div>}
                 </div>
               )}
 
@@ -1237,25 +1246,32 @@ export default function QuoterPage() {
         {step === 7 && (
           <div style={S.tyCard}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#10b981", marginBottom: 8 }}>{t.tyTitle}</div>
-            <div style={{ fontSize: 14, color: "#10b981", marginBottom: 16, lineHeight: 1.6 }}>{t.tySub}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#0D9488", marginBottom: 8 }}>{t.tyTitle}</div>
+            <div style={{ fontSize: 14, color: "#0D9488", marginBottom: 16, lineHeight: 1.6 }}>{t.tySub}</div>
             {selectedPlanId && results && (() => {
               const plan = results.plans.find((p: any) => p.id === selectedPlanId);
               if (!plan) return null;
               return (
-                <div style={{ background: "#0e1018", borderRadius: 10, padding: 16, marginBottom: 16, textAlign: "left", border: "1px solid #d1fae5" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a5e72", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{t.tySelected}</div>
+                <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 16, marginBottom: 16, textAlign: "left", border: "1px solid #d1fae5" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{t.tySelected}</div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div><Badge metal={plan.metal} t={t} /><div style={{ fontSize: 14, fontWeight: 800, marginTop: 6 }}>{plan.name}</div></div>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: "#10b981" }}>${plan.afterSubsidy}<span style={{ fontSize: 12, fontWeight: 600 }}>{t.mo}</span></div>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: "#0D9488" }}>${plan.afterSubsidy}<span style={{ fontSize: 12, fontWeight: 600 }}>{t.mo}</span></div>
                   </div>
                 </div>
               );
             })()}
-            <div style={{ fontSize: 13, color: "#10b981", lineHeight: 1.6 }}>{t.tyDetail}</div>
+            <div style={{ fontSize: 13, color: "#0D9488", lineHeight: 1.6 }}>{t.tyDetail}</div>
             <button style={{ ...S.btn, ...S.sec, marginTop: 20 }} onClick={resetAll}>{t.newQuote}</button>
           </div>
         )}
+      </div>
+
+      {/* CMS Disclaimer */}
+      <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 14px" }}>
+        <div style={{ borderTop: "1px solid #E2E8F0", padding: "16px 0", textAlign: "center", fontSize: 12, color: "#94A3B8", lineHeight: 1.6 }}>
+          {t.cmsDisclaimer}
+        </div>
       </div>
 
       {/* Footer */}
@@ -1264,12 +1280,12 @@ export default function QuoterPage() {
         <div>{t.disclaimer}</div>
         {agentBrand && <div style={{ marginTop: 4 }}>{agentBrand.name}{agentBrand.npn ? ` · NPN ${agentBrand.npn}` : ""}</div>}
         <div style={{ marginTop: 8, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <a href="/privacy" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Privacidad" : "Privacy"}</a>
-          <a href="/terms" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Términos" : "Terms"}</a>
-          <a href="/compliance" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Cumplimiento" : "Compliance"}</a>
-          <a href="/ai-disclaimer" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Aviso IA" : "AI Disclaimer"}</a>
-          <a href="/agentes/login" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Portal Agentes" : "Agent Portal"}</a>
-          <a href="mailto:info@enrollsalud.com" style={{ color: "#5a5e72", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Contacto" : "Contact"}</a>
+          <a href="/privacy" style={{ color: "#94A3B8", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Privacidad" : "Privacy"}</a>
+          <a href="/terms" style={{ color: "#94A3B8", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Términos" : "Terms"}</a>
+          <a href="/compliance" style={{ color: "#94A3B8", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Cumplimiento" : "Compliance"}</a>
+          <a href="/ai-disclaimer" style={{ color: "#94A3B8", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Aviso IA" : "AI Disclaimer"}</a>
+          <a href="/agentes/login" style={{ color: "#94A3B8", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Portal Agentes" : "Agent Portal"}</a>
+          <a href="mailto:info@enrollsalud.com" style={{ color: "#94A3B8", textDecoration: "none", fontSize: 10 }}>{lang === "es" ? "Contacto" : "Contact"}</a>
         </div>
       </div>
 

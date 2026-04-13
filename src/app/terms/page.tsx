@@ -96,15 +96,28 @@ const CONTENT = {
         ),
       },
       {
+        id: "data-collection",
+        title: "6. Data Collection and Privacy",
+        content: (
+          <>
+            <P>EnrollSalud collects demographic information (age, income, household composition, ZIP code, tobacco use, pregnancy status) solely for the purpose of generating health insurance quotes. This information is NOT Protected Health Information (PHI) under HIPAA as defined by 45 CFR 160.103, as EnrollSalud does not provide healthcare services, health plans, or healthcare clearinghouse functions.</P>
+            <P>Your data is stored securely and is only shared with your assigned licensed insurance agent to facilitate enrollment. We do not sell your data to third parties.</P>
+            <AlertBox type="info">
+              <strong>Your Privacy:</strong> We collect only the minimum information necessary to generate accurate plan comparisons and connect you with a licensed agent. Your data is encrypted in transit and at rest.
+            </AlertBox>
+          </>
+        ),
+      },
+      {
         id: "eligibility",
-        title: "6. User Eligibility & Responsibilities",
+        title: "7. User Eligibility & Responsibilities",
         content: (
           <P>To use this Service, you must be at least 18 years of age and a resident of or seeking health insurance coverage in the State of Florida. You agree to provide accurate and truthful information when using the Service, and to use the Service only for lawful purposes.</P>
         ),
       },
       {
         id: "liability",
-        title: "7. Limitation of Liability",
+        title: "8. Limitation of Liability",
         content: (
           <>
             <AlertBox type="danger">
@@ -116,7 +129,7 @@ const CONTENT = {
       },
       {
         id: "governing-law",
-        title: "8. Governing Law",
+        title: "9. Governing Law",
         content: (
           <P>These Terms shall be governed by and construed in accordance with the laws of the State of Florida, without regard to its conflict of law provisions. Any disputes arising from these Terms shall be resolved in the courts of the State of Florida.</P>
         ),
@@ -183,15 +196,28 @@ const CONTENT = {
         ),
       },
       {
+        id: "data-collection",
+        title: "6. Recopilación de Datos y Privacidad",
+        content: (
+          <>
+            <P>EnrollSalud recopila información demográfica (edad, ingresos, composición del hogar, código postal, uso de tabaco, estado de embarazo) únicamente con el propósito de generar cotizaciones de seguros médicos. Esta información NO es Información de Salud Protegida (PHI) bajo HIPAA según lo definido por 45 CFR 160.103, ya que EnrollSalud no proporciona servicios de atención médica, planes de salud ni funciones de cámara de compensación de atención médica.</P>
+            <P>Sus datos se almacenan de forma segura y solo se comparten con su agente de seguros licenciado asignado para facilitar la inscripción. No vendemos sus datos a terceros.</P>
+            <AlertBox type="info">
+              <strong>Su Privacidad:</strong> Recopilamos solo la información mínima necesaria para generar comparaciones precisas de planes y conectarlo con un agente licenciado. Sus datos están encriptados en tránsito y en reposo.
+            </AlertBox>
+          </>
+        ),
+      },
+      {
         id: "eligibility",
-        title: "6. Elegibilidad y Responsabilidades del Usuario",
+        title: "7. Elegibilidad y Responsabilidades del Usuario",
         content: (
           <P>Para utilizar este Servicio, debe tener al menos 18 años de edad y ser residente del Estado de Florida o estar buscando cobertura de seguro médico en Florida. Usted acepta proporcionar información precisa y veraz al usar el Servicio, y usar el Servicio solo para fines legales.</P>
         ),
       },
       {
         id: "liability",
-        title: "7. Limitación de Responsabilidad",
+        title: "8. Limitación de Responsabilidad",
         content: (
           <>
             <AlertBox type="danger">
@@ -203,7 +229,7 @@ const CONTENT = {
       },
       {
         id: "governing-law",
-        title: "8. Ley Aplicable",
+        title: "9. Ley Aplicable",
         content: (
           <P>Estos Términos se regirán e interpretarán de acuerdo con las leyes del Estado de Florida, sin tener en cuenta sus disposiciones sobre conflictos de leyes. Cualquier disputa que surja de estos Términos se resolverá en los tribunales del Estado de Florida.</P>
         ),

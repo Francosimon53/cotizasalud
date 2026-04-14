@@ -49,6 +49,39 @@ HIOS ID: ${conversation?.selected_plan_hios_id || "N/A"}`;
   const waNum = waPhone.length === 10 ? `1${waPhone}` : waPhone;
   const waMsg = encodeURIComponent(`Hola ${lead.contact_name}, soy ${agent.name} tu agente de seguros de salud en EnrollSalud. Estoy preparando tu inscripción. ¿Tienes unos minutos para confirmar tus datos?`);
 
+  // HealthSherpa deeplink
+  const hsAgentId = agent.healthsherpa_agent_id || agent.npn || "";
+  const hsPlanId = conversation?.selected_plan_hios_id || (lead.selected_plan && typeof lead.selected_plan === "object" ? lead.selected_plan.id : "") || "";
+  const hsCountyFips = lead.county_fips || "";
+  const hsPhone = waPhone.length === 10 ? waPhone : "";
+  const canOpenHS = !!(hsAgentId && hsPlanId && lead.zipcode);
+
+  const openHealthSherpa = () => {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "https://www.healthsherpa.com/public/ichra/off_ex";
+    form.target = "_blank";
+    const fields: Record<string, string> = {
+      plan_hios_id: hsPlanId,
+      _agent_id: hsAgentId,
+      agent_of_record_npn: agent.npn || hsAgentId,
+      zip_code: lead.zipcode || "",
+      fip_code: hsCountyFips,
+      phone_number: hsPhone,
+      plan_year: String(new Date().getFullYear()),
+    };
+    for (const [k, v] of Object.entries(fields)) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = k;
+      input.value = v;
+      form.appendChild(input);
+    }
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  };
+
   const cardStyle: React.CSSProperties = {
     background: "#12141c", borderRadius: 16, padding: 24,
     border: "1px solid rgba(255,255,255,0.06)", marginBottom: 16,
@@ -69,6 +102,9 @@ HIOS ID: ${conversation?.selected_plan_hios_id || "N/A"}`;
           <a href={`tel:${lead.contact_phone}`} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, background: "#3b82f6", color: "#fff", fontSize: 14, fontWeight: 800, textDecoration: "none", textAlign: "center", minWidth: 140 }}>📞 Llamar</a>
           <a href={`https://wa.me/${waNum}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: "12px 20px", borderRadius: 10, background: "#25D366", color: "#fff", fontSize: 14, fontWeight: 800, textDecoration: "none", textAlign: "center", minWidth: 140 }}>💬 WhatsApp</a>
           <button onClick={handleMarkEnrolled} disabled={marking} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "none", background: marking ? "rgba(255,255,255,0.1)" : "#10b981", color: marking ? "#5a5e72" : "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", minWidth: 140 }}>✅ {marking ? "..." : "Marcar Enrolled"}</button>
+          {canOpenHS && (
+            <button onClick={openHealthSherpa} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", minWidth: 140 }}>🏥 Abrir en HealthSherpa</button>
+          )}
           <button onClick={async () => { await navigator.clipboard.writeText(allData); }} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#8b8fa3", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minWidth: 140 }}>📋 Copiar Todo</button>
         </div>
 

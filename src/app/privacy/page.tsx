@@ -69,11 +69,13 @@ const CONTENT = {
           <DataTable
             headers={["Data Type", "Purpose", "Required?"]}
             rows={[
-              ["Zip code & county", "Plan availability", "Yes"],
-              ["Household size & income", "Subsidy estimation", "Optional"],
-              ["Age & tobacco status", "Premium calculation", "Optional"],
+              ["ZIP code & county", "Plan availability", "Yes"],
+              ["Household size, ages, relationships", "Household composition for quotes", "Yes"],
+              ["Annual income", "Subsidy estimation (APTC)", "Yes"],
+              ["Gender", "Premium calculation", "Yes"],
+              ["Tobacco use, pregnancy status", "Premium calculation & eligibility", "Yes"],
+              ["Contact info (name, phone, email)", "Connect with licensed agent", "Yes (to receive quotes)"],
               ["Language preference", "UI personalization", "Auto-detected"],
-              ["Contact information", "Agent connection", "Only if requested"],
             ]}
           />
           <H3>1.2 Information Collected Automatically</H3>
@@ -104,9 +106,12 @@ const CONTENT = {
           <AlertBox type="info">
             <strong>We do NOT sell your personal information.</strong> We may share information only in these limited circumstances:
           </AlertBox>
-          <ListItem bold="Licensed Insurance Agents:">Only when you explicitly request to be connected with an agent, and only the minimum information necessary.</ListItem>
+          <ListItem bold="Licensed Insurance Agents:">Your name, phone, email, and quote preferences — only when you request to be connected with an agent.</ListItem>
+          <ListItem bold="CMS Marketplace API:">Anonymized household data (age, income, ZIP, tobacco status) to retrieve plan quotes. No personal identifiers (name, phone, email) are sent to CMS.</ListItem>
           <ListItem bold="Service Providers:">Third-party vendors who assist with platform operations (hosting, analytics), subject to confidentiality agreements.</ListItem>
-          <ListItem bold="Legal Requirements:">When required by law, regulation, or legal process.</ListItem>
+          <ListItem>We do <strong>NOT</strong> sell your personal information to third parties.</ListItem>
+          <ListItem>We do <strong>NOT</strong> share your data with advertisers.</ListItem>
+          <ListItem bold="Legal Requirements:">We may share data when required by law, regulation, or legal process.</ListItem>
         </>
       ),
     },
@@ -163,7 +168,7 @@ const CONTENT = {
           <ListItem>Request deletion of your information</ListItem>
           <ListItem>Opt out of non-essential communications</ListItem>
           <ListItem>Withdraw consent for data processing at any time</ListItem>
-          <P>To exercise these rights, contact us at <a href="mailto:privacy@enrollsalud.com" className="text-teal-600 hover:underline">privacy@enrollsalud.com</a>.</P>
+          <P>To exercise these rights, contact us at <a href="mailto:francosimon@hotmail.com" className="text-teal-600 hover:underline">francosimon@hotmail.com</a>.</P>
         </>
       ),
     },
@@ -172,6 +177,34 @@ const CONTENT = {
       title: "9. Children's Privacy",
       content: (
         <P>EnrollSalud is not directed at children under 18. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us immediately.</P>
+      ),
+    },
+    {
+      id: "hipaa",
+      title: "10. HIPAA Disclaimer",
+      content: (
+        <AlertBox type="info">
+          EnrollSalud collects demographic information (age, income, household composition, ZIP code, tobacco use, pregnancy status) solely for the purpose of generating health insurance quotes. This information is <strong>NOT Protected Health Information (PHI)</strong> under HIPAA as defined by 45 CFR 160.103, as EnrollSalud does not provide healthcare services, health plans, or healthcare clearinghouse functions. Your data is stored securely and is only shared with your assigned licensed insurance agent to facilitate enrollment. We do not sell your data to third parties.
+        </AlertBox>
+      ),
+    },
+    {
+      id: "changes",
+      title: "11. Changes to This Policy",
+      content: (
+        <P>We may update this Privacy Policy periodically to reflect changes in our practices or legal requirements. The updated policy will be posted on this page with the revised date. We encourage you to review this page regularly.</P>
+      ),
+    },
+    {
+      id: "contact",
+      title: "12. Contact Information",
+      content: (
+        <>
+          <P>If you have questions about this Privacy Policy or wish to exercise your data rights, contact us:</P>
+          <ListItem bold="Email:"><a href="mailto:francosimon@hotmail.com" className="text-teal-600 hover:underline">francosimon@hotmail.com</a></ListItem>
+          <ListItem bold="Entity:">FPI Enterprises, Inc.</ListItem>
+          <ListItem bold="Location:">Ave María, FL</ListItem>
+        </>
       ),
     },
   ],
@@ -187,10 +220,12 @@ const CONTENT = {
             headers={["Tipo de Dato", "Propósito", "¿Requerido?"]}
             rows={[
               ["Código postal y condado", "Disponibilidad de planes", "Sí"],
-              ["Tamaño del hogar e ingresos", "Estimación de subsidios", "Opcional"],
-              ["Edad y estado de tabaco", "Cálculo de primas", "Opcional"],
+              ["Tamaño del hogar, edades, relaciones", "Composición del hogar para cotizaciones", "Sí"],
+              ["Ingreso anual", "Estimación de subsidio (APTC)", "Sí"],
+              ["Género", "Cálculo de primas", "Sí"],
+              ["Uso de tabaco, estado de embarazo", "Cálculo de primas y elegibilidad", "Sí"],
+              ["Info de contacto (nombre, teléfono, email)", "Conexión con agente licenciado", "Sí (para recibir cotizaciones)"],
               ["Preferencia de idioma", "Personalización", "Auto-detectado"],
-              ["Información de contacto", "Conexión con agente", "Solo si se solicita"],
             ]}
           />
           <H3>1.2 Información Recopilada Automáticamente</H3>
@@ -221,9 +256,12 @@ const CONTENT = {
           <AlertBox type="info">
             <strong>NO vendemos su información personal.</strong> Solo compartimos información en estas circunstancias limitadas:
           </AlertBox>
-          <ListItem bold="Agentes de Seguros Licenciados:">Solo cuando usted solicita explícitamente conectarse con un agente, y solo la información mínima necesaria.</ListItem>
+          <ListItem bold="Agentes de Seguros Licenciados:">Su nombre, teléfono, email y preferencias de cotización — solo cuando solicita conectarse con un agente.</ListItem>
+          <ListItem bold="API del Mercado CMS:">Datos del hogar anonimizados (edad, ingreso, ZIP, tabaco) para obtener cotizaciones. No se envían identificadores personales (nombre, teléfono, email) al CMS.</ListItem>
           <ListItem bold="Proveedores de Servicios:">Proveedores externos que ayudan con las operaciones de la plataforma (alojamiento, análisis), sujetos a acuerdos de confidencialidad.</ListItem>
-          <ListItem bold="Requisitos Legales:">Cuando lo requiera la ley, regulación o proceso legal.</ListItem>
+          <ListItem><strong>NO</strong> vendemos su información personal a terceros.</ListItem>
+          <ListItem><strong>NO</strong> compartimos sus datos con anunciantes.</ListItem>
+          <ListItem bold="Requisitos Legales:">Podemos compartir datos cuando lo requiera la ley, regulación o proceso legal.</ListItem>
         </>
       ),
     },
@@ -280,7 +318,7 @@ const CONTENT = {
           <ListItem>Solicitar la eliminación de su información</ListItem>
           <ListItem>Optar por no recibir comunicaciones no esenciales</ListItem>
           <ListItem>Retirar el consentimiento para el procesamiento de datos en cualquier momento</ListItem>
-          <P>Para ejercer estos derechos, contáctenos en <a href="mailto:privacy@enrollsalud.com" className="text-teal-600 hover:underline">privacy@enrollsalud.com</a>.</P>
+          <P>Para ejercer estos derechos, contáctenos en <a href="mailto:francosimon@hotmail.com" className="text-teal-600 hover:underline">francosimon@hotmail.com</a>.</P>
         </>
       ),
     },
@@ -291,6 +329,34 @@ const CONTENT = {
         <P>EnrollSalud no está dirigido a menores de 18 años. No recopilamos conscientemente información personal de menores. Si cree que un menor nos ha proporcionado información personal, contáctenos inmediatamente.</P>
       ),
     },
+    {
+      id: "hipaa",
+      title: "10. Aviso HIPAA",
+      content: (
+        <AlertBox type="info">
+          EnrollSalud recopila información demográfica (edad, ingresos, composición del hogar, código postal, uso de tabaco, estado de embarazo) únicamente con el propósito de generar cotizaciones de seguros médicos. Esta información <strong>NO es Información de Salud Protegida (PHI)</strong> bajo HIPAA según lo definido por 45 CFR 160.103, ya que EnrollSalud no proporciona servicios de atención médica, planes de salud ni funciones de cámara de compensación. Sus datos se almacenan de forma segura y solo se comparten con su agente licenciado asignado. No vendemos sus datos a terceros.
+        </AlertBox>
+      ),
+    },
+    {
+      id: "changes",
+      title: "11. Cambios a Esta Política",
+      content: (
+        <P>Podemos actualizar esta Política de Privacidad periódicamente para reflejar cambios en nuestras prácticas o requisitos legales. La política actualizada se publicará en esta página con la fecha revisada. Le recomendamos revisar esta página regularmente.</P>
+      ),
+    },
+    {
+      id: "contact",
+      title: "12. Información de Contacto",
+      content: (
+        <>
+          <P>Si tiene preguntas sobre esta Política de Privacidad o desea ejercer sus derechos de datos, contáctenos:</P>
+          <ListItem bold="Email:"><a href="mailto:francosimon@hotmail.com" className="text-teal-600 hover:underline">francosimon@hotmail.com</a></ListItem>
+          <ListItem bold="Entidad:">FPI Enterprises, Inc.</ListItem>
+          <ListItem bold="Ubicación:">Ave María, FL</ListItem>
+        </>
+      ),
+    },
   ],
 };
 
@@ -299,6 +365,7 @@ export default function PrivacyPolicyPage() {
     <LegalLayout titleEn="Privacy Policy" titleEs="Política de Privacidad">
       {(lang) => (
         <div>
+          <p className="text-xs text-slate-400 mb-6 font-mono">{lang === "en" ? "Last updated: April 13, 2026" : "Última actualización: 13 de abril de 2026"}</p>
           {CONTENT[lang].map((section) => (
             <Section key={section.id} id={section.id}>
               <H2>{section.title}</H2>

@@ -8,6 +8,7 @@ import { lookupCounties, getFPL, getFPLpct } from "@/lib/data";
 import { generateQuote } from "@/lib/plans";
 import type { County, HouseholdMember, Plan, QuoteResults, AgentBrand } from "@/lib/types";
 import CMSConsentForm, { type ConsentRecord } from "./CMSConsentForm";
+import SignaturePad from "./SignaturePad";
 
 const AIPlanAdvisor = dynamic(() => import("./AIPlanAdvisor"), {
   loading: () => <div style={{ padding: 16, textAlign: "center", fontSize: 12, color: "#94A3B8" }}>Loading advisor...</div>,
@@ -248,6 +249,7 @@ export default function QuoterPage() {
   const [currentInsuranceName, setCurrentInsuranceName] = useState("");
   const [contactPreference, setContactPreference] = useState<string[]>([]);
   const [bestCallTime, setBestCallTime] = useState("");
+  const [signatureData, setSignatureData] = useState("");
   const [consent, setConsent] = useState(false);
   const [consentRecord, setConsentRecord] = useState<ConsentRecord | null>(null);
   const [results, setResults] = useState<QuoteResults | null>(null);
@@ -386,7 +388,7 @@ export default function QuoterPage() {
   const firstNameValid = firstName.trim().length >= 2;
   const lastNameValid = lastName.trim().length >= 2;
   const addressValid = streetAddress.trim().length >= 3 && city.trim().length >= 2;
-  const contactFormValid = firstNameValid && lastNameValid && phoneValid && emailValid && addressValid;
+  const contactFormValid = firstNameValid && lastNameValid && phoneValid && emailValid && addressValid && !!signatureData;
 
   const browseLeadCreated = useRef(false);
 
@@ -482,6 +484,8 @@ export default function QuoterPage() {
             contactPreference: contactPreference.join(","),
             bestCallTime,
             householdDobs: house.map((h) => h.dob || "").join(","),
+            signatureData,
+            consentTimestamp: new Date().toISOString(),
           }),
         });
         // Send notification email
@@ -529,6 +533,8 @@ export default function QuoterPage() {
           contactPreference: contactPreference.join(","),
           bestCallTime,
           householdDobs: house.map((h) => h.dob || "").join(","),
+          signatureData,
+          consentTimestamp: new Date().toISOString(),
           utmSource: urlParams.utm_source || undefined,
           utmMedium: urlParams.utm_medium || undefined,
           utmCampaign: urlParams.utm_campaign || undefined,
@@ -599,7 +605,7 @@ export default function QuoterPage() {
     setStep(1); setResults(null); setSelectedPlanId(null); setIsMockData(false);
     setConsent(false); setConsentRecord(null); setFirstName(""); setLastName(""); setLeadPhone(""); setLeadEmail("");
     setStreetAddress(""); setCity(""); setStateForm("FL"); setAptNumber("");
-    setCurrentInsurance(""); setCurrentInsuranceName(""); setContactPreference([]); setBestCallTime("");
+    setCurrentInsurance(""); setCurrentInsuranceName(""); setContactPreference([]); setBestCallTime(""); setSignatureData("");
     setZip(""); setCounty(null); setIncome("");
     setHouse([{ age: 30, gender: "Female", tobacco: false }]);
     setSelectedDrug(null); setSelectedDoctor(null); setDrugQuery(""); setDoctorQuery("");
@@ -1036,8 +1042,20 @@ export default function QuoterPage() {
               )}
             </div>
 
+            {/* Signature pad */}
+            <div style={{ marginBottom: 18 }}>
+              <SignaturePad
+                label={lang === "es" ? "Firma / Signature" : "Signature"}
+                hint={lang === "es" ? "Firme con su dedo o ratón" : "Sign with your finger or mouse"}
+                clearLabel={lang === "es" ? "Limpiar" : "Clear"}
+                onSignature={(data) => setSignatureData(data)}
+                onClear={() => setSignatureData("")}
+              />
+              {!signatureData && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Firma requerida" : "Signature required"}</div>}
+            </div>
+
             <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, cursor: "pointer", fontSize: 13, color: "#64748B", lineHeight: 1.5 }}>
-              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#10b981", cursor: "pointer" }} />
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#0D9488", cursor: "pointer" }} />
               {t.consent}
             </label>
             <div style={S.row}>

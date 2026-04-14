@@ -35,7 +35,7 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-export default function LeadDetailClient({ lead: initialLead, activity: initialActivity, conversation }: { lead: any; activity: any[]; conversation?: any }) {
+export default function LeadDetailClient({ lead: initialLead, activity: initialActivity, conversation, agent }: { lead: any; activity: any[]; conversation?: any; agent?: any }) {
   const router = useRouter();
   const [lead, setLead] = useState(initialLead);
   const [activity, setActivity] = useState(initialActivity);
@@ -68,6 +68,34 @@ export default function LeadDetailClient({ lead: initialLead, activity: initialA
   const waNum = waPhone.length === 10 ? `1${waPhone}` : waPhone;
   const firstName = lead.first_name || (lead.contact_name || "").split(" ")[0] || "";
   const lastName = lead.last_name || (lead.contact_name || "").split(" ").slice(1).join(" ") || "";
+
+  // HealthSherpa deeplink
+  const hsAgentId = agent?.healthsherpa_agent_id || agent?.npn || "";
+  const hsPlanId = planObj?.id || conversation?.selected_plan_hios_id || "";
+  const canOpenHS = !!(hsAgentId && hsPlanId && lead.zipcode);
+  const openHealthSherpa = () => {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "https://www.healthsherpa.com/public/ichra/off_ex";
+    form.target = "_blank";
+    const fields: Record<string, string> = {
+      plan_hios_id: hsPlanId,
+      _agent_id: hsAgentId,
+      agent_of_record_npn: agent?.npn || hsAgentId,
+      zip_code: lead.zipcode || "",
+      fip_code: lead.county_fips || "",
+      phone_number: waPhone.length === 10 ? waPhone : "",
+      plan_year: String(new Date().getFullYear()),
+    };
+    for (const [k, v] of Object.entries(fields)) {
+      const input = document.createElement("input");
+      input.type = "hidden"; input.name = k; input.value = v;
+      form.appendChild(input);
+    }
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  };
 
   const handleStatusSaved = (_leadId: string, newStatus: string) => {
     setLead((prev: any) => ({ ...prev, status: newStatus }));
@@ -214,8 +242,12 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
         {lead.contact_email && (
           <a href={`mailto:${lead.contact_email}?subject=Tu seguro médico - EnrollSalud&body=${encodeURIComponent(`Hola ${lead.contact_name || ""},\n\nSoy tu agente de seguros de salud.${planName ? ` Vi que te interesó el plan ${planName}.` : ""}\n\n¿Tienes unos minutos para hablar sobre tu cobertura?\n\nSaludos`)}`} style={actionBtn("#3b82f6", "#fff")}>📧 Email</a>
         )}
-        <button onClick={() => copyText(allData, "datos")} style={actionBtn("rgba(255,255,255,0.08)", copied === "datos" ? "#10b981" : "#8b8fa3")}>{copied === "datos" ? "✓ Copiado" : "📋 Copiar datos"}</button>
+        {canOpenHS && <button onClick={openHealthSherpa} style={actionBtn("linear-gradient(135deg, #f59e0b, #d97706)", "#fff")}>🏥 Abrir en HealthSherpa</button>}
+        <button onClick={() => copyText(allData, "datos")} style={actionBtn("rgba(255,255,255,0.08)", copied === "datos" ? "#10b981" : "#94A3B8")}>{copied === "datos" ? "✓ Copiado" : "📋 Copiar datos"}</button>
         <button onClick={() => copyText(healthSherpaData, "sherpa")} style={actionBtn("rgba(245,158,11,0.15)", copied === "sherpa" ? "#10b981" : "#f59e0b")}>{copied === "sherpa" ? "✓ Copiado" : "📋 HealthSherpa"}</button>
+        {lead.status !== "browsing" && (
+          <a href={`/api/leads/${lead.id}/consent-pdf`} download style={actionBtn("transparent", "#3B82F6")}><span style={{ borderBottom: "1px solid #3B82F6" }}>📄 Descargar Consentimiento (PDF)</span></a>
+        )}
       </div>
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px 60px" }}>

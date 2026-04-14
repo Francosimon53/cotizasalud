@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import ActionToday from "./ActionToday";
 import LeadsTable from "./LeadsTable";
 import AddClientModal from "./AddClientModal";
 
@@ -36,8 +35,7 @@ export default function DashboardClient({ leads, agentSlug }: { leads: any[]; ag
         />
       )}
 
-      <ActionToday leads={leads} onLeadClick={(id) => router.push(`/agentes/dashboard/${id}`)} />
-      <LeadsTable leads={leads} />
+      <LeadsTable leads={leads} onRefresh={() => router.refresh()} />
     </>
   );
 }

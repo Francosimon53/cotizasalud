@@ -24,6 +24,8 @@ export async function saveLead(data: {
   contactPreference?: string
   bestCallTime?: string
   householdDobs?: string
+  signatureData?: string
+  consentTimestamp?: string
   referrer?: string
   utmSource?: string
   utmMedium?: string

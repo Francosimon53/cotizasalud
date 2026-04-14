@@ -10,10 +10,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'leadId required' }, { status: 400 })
     }
 
+    const plan = body.plan || {};
     const { error } = await supabase
       .from('leads')
       .update({
-        selected_plan: body.plan,
+        selected_plan: plan,
+        selected_plan_name: plan.name || null,
+        selected_premium: plan.afterSubsidy ?? plan.premium ?? null,
         status: 'quoted',
       })
       .eq('id', body.leadId)

@@ -13,7 +13,7 @@ export default async function EnrollPage({ params }: { params: Promise<{ leadId:
   if (!user) redirect("/agentes/login");
 
   const db = createServiceClient();
-  const { data: agent } = await db.from("agents").select("slug, name, phone").eq("auth_user_id", user.id).single();
+  const { data: agent } = await db.from("agents").select("slug, name, phone, npn, healthsherpa_agent_id").eq("auth_user_id", user.id).single();
   if (!agent) redirect("/agentes/dashboard");
 
   const { data: lead } = await db.from("leads").select("*").eq("id", leadId).eq("agent_slug", agent.slug).single();

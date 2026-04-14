@@ -2,9 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
-import LeadsTable from "./LeadsTable";
 import DashboardHeader from "./DashboardHeader";
-import ActionToday from "./ActionToday";
 import DashboardClient from "./DashboardClient";
 import ShareCard from "./ShareCard";
 import "../agentes.css";
@@ -92,26 +90,26 @@ export default async function DashboardPage() {
 
   return (
     <div style={{
-      fontFamily: "'Satoshi', -apple-system, sans-serif",
-      minHeight: "100vh", background: "#08090d", color: "#f0f1f5",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      minHeight: "100vh", background: "#0F172A", color: "#E2E8F0",
     }}>
       <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} isAdmin={["simon-dev", "delbert"].includes(agent.slug)} />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 60px" }}>
         {/* Agent Profile */}
         <div style={{
-          background: "#12141c", borderRadius: 16, padding: 24,
-          border: "1px solid rgba(255,255,255,0.06)", marginBottom: 20,
+          background: "#1E293B", borderRadius: 16, padding: 24,
+          border: "1px solid #334155", marginBottom: 20,
           display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16,
         }}>
           <div>
-            <div style={{ fontSize: 10, color: "#5a5e72", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>Agente</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f1f5", marginTop: 4 }}>{agent.name}</div>
+            <div style={{ fontSize: 10, color: "#94A3B8", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>Agente</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginTop: 4 }}>{agent.name}</div>
             {agent.agency_name && <div style={{ fontSize: 12, color: "#8b8fa3", marginTop: 2 }}>{agent.agency_name}</div>}
           </div>
           <div>
-            <div style={{ fontSize: 10, color: "#5a5e72", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>NPN</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#f0f1f5", marginTop: 4 }}>{agent.npn || "—"}</div>
+            <div style={{ fontSize: 10, color: "#94A3B8", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>NPN</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginTop: 4 }}>{agent.npn || "—"}</div>
             <div style={{ fontSize: 12, color: "#8b8fa3", marginTop: 2 }}>{agent.email}</div>
           </div>
           <ShareCard slug={agent.slug} />
@@ -120,7 +118,7 @@ export default async function DashboardPage() {
         {/* KPI Row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10, marginBottom: 20 }}>
           {[
-            { label: "Total", value: allLeads.length, color: "#f0f1f5" },
+            { label: "Total", value: allLeads.length, color: "#E2E8F0" },
             { label: "Semana", value: thisWeek, color: "#06b6d4" },
             { label: "Mes", value: thisMonth, color: "#8b5cf6" },
             { label: "Conversión", value: `${conversionRate}%`, color: "#10b981" },
@@ -129,11 +127,11 @@ export default async function DashboardPage() {
             { label: "Acción hoy", value: actionCount, color: actionCount > 0 ? "#ef4444" : "#5a5e72" },
           ].map((kpi) => (
             <div key={kpi.label} style={{
-              background: "#12141c", borderRadius: 12, padding: "14px 10px",
-              border: "1px solid rgba(255,255,255,0.06)", textAlign: "center",
+              background: "#1E293B", borderRadius: 12, padding: "14px 10px",
+              border: "1px solid #334155", textAlign: "center",
             }}>
               <div style={{ fontSize: 24, fontWeight: 900, color: kpi.color, letterSpacing: -0.5 }}>{kpi.value}</div>
-              <div style={{ fontSize: 9, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{kpi.label}</div>
+              <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{kpi.label}</div>
             </div>
           ))}
         </div>
@@ -149,12 +147,12 @@ export default async function DashboardPage() {
             { label: "Perdidos", value: pipeline.lost, color: "#ef4444" },
           ].map((p) => (
             <div key={p.label} style={{
-              background: "#12141c", borderRadius: 10, padding: "12px 10px",
-              border: "1px solid rgba(255,255,255,0.06)", textAlign: "center",
+              background: "#1E293B", borderRadius: 10, padding: "12px 10px",
+              border: "1px solid #334155", textAlign: "center",
               borderTop: `3px solid ${p.color}`,
             }}>
               <div style={{ fontSize: 22, fontWeight: 900, color: p.color }}>{p.value}</div>
-              <div style={{ fontSize: 9, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{p.label}</div>
+              <div style={{ fontSize: 9, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{p.label}</div>
             </div>
           ))}
         </div>
@@ -163,11 +161,11 @@ export default async function DashboardPage() {
 
         {/* Footer */}
         <div style={{ textAlign: "center", padding: "32px 0 0", display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-          <a href="/privacy" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Privacidad</a>
-          <a href="/terms" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Términos</a>
-          <a href="/compliance" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Cumplimiento</a>
-          <a href="/ai-disclaimer" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Aviso IA</a>
-          <a href="mailto:info@enrollsalud.com" style={{ fontSize: 10, color: "#3a3d4a", textDecoration: "none" }}>Contacto</a>
+          <a href="/privacy" style={{ fontSize: 10, color: "#475569", textDecoration: "none" }}>Privacidad</a>
+          <a href="/terms" style={{ fontSize: 10, color: "#475569", textDecoration: "none" }}>Términos</a>
+          <a href="/compliance" style={{ fontSize: 10, color: "#475569", textDecoration: "none" }}>Cumplimiento</a>
+          <a href="/ai-disclaimer" style={{ fontSize: 10, color: "#475569", textDecoration: "none" }}>Aviso IA</a>
+          <a href="mailto:info@enrollsalud.com" style={{ fontSize: 10, color: "#475569", textDecoration: "none" }}>Contacto</a>
         </div>
       </div>
     </div>

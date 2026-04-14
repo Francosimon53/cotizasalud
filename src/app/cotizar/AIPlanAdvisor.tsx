@@ -20,22 +20,49 @@ interface AIPlanAdvisorProps {
   doctorNetworkStatus?: "in_network" | "not_found" | "checking" | null;
   agentSlug?: string;
   onReadyToEnroll?: (conversationId: string, summary: string) => void;
+  allPlans?: any[];
 }
 
-export default function AIPlanAdvisor({ plan, household, income, fplPct, aptc, lang, t, householdSize, fplThreshold400, isOverCliff, isNearCliff, excessOverCliff, selectedDrug, drugCoverageStatus, selectedDoctor, doctorNetworkStatus, agentSlug, onReadyToEnroll }: AIPlanAdvisorProps) {
+const METAL_COLORS: Record<string, string> = {
+  bronze: "#CD7F32", silver: "#C0C0C0", gold: "#FFD700", platinum: "#4A90D9", catastrophic: "#6b7280",
+};
+function detectMetal(name: string): { label: string; color: string } | null {
+  const l = (name || "").toLowerCase();
+  if (l.includes("gold") || l.includes("oro")) return { label: "GOLD", color: METAL_COLORS.gold };
+  if (l.includes("silver") || l.includes("plata")) return { label: "SILVER", color: METAL_COLORS.silver };
+  if (l.includes("bronze") || l.includes("bronce")) return { label: "BRONZE", color: METAL_COLORS.bronze };
+  if (l.includes("platinum") || l.includes("platino")) return { label: "PLAT", color: METAL_COLORS.platinum };
+  return null;
+}
+
+export default function AIPlanAdvisor({ plan: initialPlan, household, income, fplPct, aptc, lang, t, householdSize, fplThreshold400, isOverCliff, isNearCliff, excessOverCliff, selectedDrug, drugCoverageStatus, selectedDoctor, doctorNetworkStatus, agentSlug, onReadyToEnroll, allPlans }: AIPlanAdvisorProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [explanation, setExplanation] = useState("");
   const [error, setError] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
+  const [activePlanId, setActivePlanId] = useState(initialPlan.id);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const plan = (allPlans && allPlans.find((p: any) => p.id === activePlanId)) || initialPlan;
 
   const isFamily = householdSize >= 2;
   const hsaLimit = isFamily ? 8550 : 4300;
   const buffer = fplThreshold400 - income;
   const maxAge = Math.max(...household.map(m => m.age));
   const fullPremium = maxAge >= 55 ? 950 : maxAge >= 40 ? 650 : 400;
+
+  // Auto-generate when plan changes via strip selection
+  const prevPlanRef = useRef(activePlanId);
+  useEffect(() => {
+    if (open && activePlanId !== prevPlanRef.current && !loading) {
+      prevPlanRef.current = activePlanId;
+      // Small delay to let state settle
+      const timer = setTimeout(() => generateExplanation(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activePlanId, open]);
 
   // Estimate 2025 ARP premium (enhanced subsidies capped premiums as % of income, no cliff)
   const show2025 = fplPct > 300;
@@ -425,9 +452,61 @@ Explain everything I need to know about this plan and my financial situation in 
       </div>
 
       {/* CMS Disclaimer */}
-      <div style={{ padding: "8px 16px", fontSize: 10, color: "#94A3B8", lineHeight: 1.5, borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+      <div style={{ padding: "8px 16px", fontSize: 10, color: "#94A3B8", lineHeight: 1.5, borderBottom: "1px solid #e9d5ff", textAlign: "center" }}>
         {t.cmsDisclaimer || "EnrollSalud is not the Health Insurance Marketplace. Plan info from public CMS API."}
       </div>
+
+      {/* Plan Selector Strip */}
+      {allPlans && allPlans.length > 1 && (
+        <div style={{ padding: "10px 12px", borderBottom: "1px solid #e9d5ff", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#7c3aed", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 }}>
+            {lang === "es" ? "Selecciona un plan para que te lo explique:" : "Select a plan for me to explain:"}
+          </div>
+          <div style={{ display: "flex", gap: 8, minWidth: "max-content" }}>
+            {allPlans.slice(0, 10).map((p: any) => {
+              const isActive = p.id === activePlanId;
+              const metal = detectMetal(p.name || p.metal || "");
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    if (p.id !== activePlanId) {
+                      setActivePlanId(p.id);
+                      setExplanation("");
+                      setError(false);
+                      setConversationId(null);
+                    }
+                  }}
+                  style={{
+                    flexShrink: 0,
+                    padding: "8px 12px",
+                    borderRadius: 10,
+                    border: isActive ? "2px solid #7c3aed" : "1.5px solid #e5e7eb",
+                    background: isActive ? "rgba(124,58,237,0.08)" : "#fff",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    textAlign: "left",
+                    minWidth: 140,
+                    maxWidth: 180,
+                    transition: "all .15s",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                    {metal && <span style={{ display: "inline-block", padding: "1px 5px", borderRadius: 3, fontSize: 8, fontWeight: 900, color: "#000", background: metal.color, lineHeight: "12px" }}>{metal.label}</span>}
+                    <span style={{ fontSize: 10, color: "#64748B", fontWeight: 600 }}>{p.issuer ? p.issuer.split(" ")[0] : ""}</span>
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#1E293B", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{(p.name || "").length > 22 ? (p.name || "").slice(0, 22) + "…" : p.name}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: isActive ? "#7c3aed" : "#0D9488" }}>${p.afterSubsidy}<span style={{ fontSize: 9, fontWeight: 600 }}>/mes</span></span>
+                    <span style={{ fontSize: 9, color: "#94A3B8" }}>ded ${p.deductible ? "$" + Number(p.deductible).toLocaleString() : "—"}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div ref={contentRef} style={{

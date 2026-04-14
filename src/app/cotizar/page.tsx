@@ -1331,6 +1331,7 @@ export default function QuoterPage() {
                         selectedDoctor={selectedDoctor}
                         doctorNetworkStatus={selectedDoctor ? (doctorNetwork[plan.id] || null) : null}
                         agentSlug={urlParams.agentSlug || undefined}
+                        allPlans={results?.plans || []}
                         onReadyToEnroll={(convId, summary) => {
                           // Pre-select the plan and go to lead capture
                           setSelectedPlanId(plan.id);

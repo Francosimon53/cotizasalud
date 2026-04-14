@@ -20,6 +20,8 @@ export async function POST(request: NextRequest) {
         ages: body.ages || "",
         uses_tobacco: body.usesTobacco || false,
         household_dobs: body.householdDobs || "",
+        household_members: body.householdMembers || null,
+        genders: body.genders || "",
         language: body.language || "es",
         contact_name: "",
         contact_phone: "",

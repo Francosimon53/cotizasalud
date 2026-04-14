@@ -54,6 +54,8 @@ export async function PATCH(request: NextRequest) {
     if (body.contactPreference) update.contact_preference = body.contactPreference
     if (body.bestCallTime) update.best_call_time = body.bestCallTime
     if (body.householdDobs) update.household_dobs = body.householdDobs
+    if (body.householdMembers) update.household_members = body.householdMembers
+    if (body.genders) update.genders = body.genders
     if (body.signatureData) update.signature_data = body.signatureData
     if (body.signatureData) update.consent_ip = request.headers.get('x-forwarded-for') || ''
     if (body.consentTimestamp) update.consent_timestamp = body.consentTimestamp
@@ -111,6 +113,8 @@ export async function POST(request: NextRequest) {
         contact_preference: body.contactPreference || '',
         best_call_time: body.bestCallTime || '',
         household_dobs: body.householdDobs || '',
+        household_members: body.householdMembers || null,
+        genders: body.genders || '',
         signature_data: body.signatureData || '',
         consent_ip: request.headers.get('x-forwarded-for') || '',
         consent_timestamp: body.consentTimestamp || new Date().toISOString(),

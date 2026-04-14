@@ -249,6 +249,7 @@ export default function QuoterPage() {
   const [currentInsuranceName, setCurrentInsuranceName] = useState("");
   const [contactPreference, setContactPreference] = useState<string[]>([]);
   const [bestCallTime, setBestCallTime] = useState("");
+  const [tellUsMemberIdx, setTellUsMemberIdx] = useState(0);
   const [signatureData, setSignatureData] = useState("");
   const [consent, setConsent] = useState(false);
   const [consentRecord, setConsentRecord] = useState<ConsentRecord | null>(null);
@@ -438,7 +439,9 @@ export default function QuoterPage() {
             annualIncome: Number(income),
             fplPercentage: getFPLpct(Number(income), house.length),
             ages: house.map((h) => h.age).join(","),
+            genders: house.map((h) => h.gender).join(","),
             householdDobs: house.map((h) => h.dob || "").join(","),
+            householdMembers: house,
             usesTobacco: house.some((h) => h.tobacco),
             language: lang,
             utmSource: urlParams.utm_source || undefined,
@@ -484,6 +487,8 @@ export default function QuoterPage() {
             contactPreference: contactPreference.join(","),
             bestCallTime,
             householdDobs: house.map((h) => h.dob || "").join(","),
+            householdMembers: house,
+            genders: house.map((h) => h.gender).join(","),
             signatureData,
             consentTimestamp: new Date().toISOString(),
           }),
@@ -533,6 +538,8 @@ export default function QuoterPage() {
           contactPreference: contactPreference.join(","),
           bestCallTime,
           householdDobs: house.map((h) => h.dob || "").join(","),
+          householdMembers: house,
+          genders: house.map((h) => h.gender).join(","),
           signatureData,
           consentTimestamp: new Date().toISOString(),
           utmSource: urlParams.utm_source || undefined,
@@ -744,7 +751,7 @@ export default function QuoterPage() {
       </div>
 
       {/* Hero */}
-      {step <= 4 && (
+      {(step <= 4 || step === 25) && (
         <div style={S.hero}>
           <div style={{ color: "#fff", fontSize: 22, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.2 }}>{t.hero}</div>
           <div style={{ color: "#5EEAD4", fontSize: 22, fontWeight: 700 }}>{t.heroAccent}</div>
@@ -831,10 +838,99 @@ export default function QuoterPage() {
             <button style={{ ...S.btn, ...S.sec, width: "100%", marginBottom: 14, fontSize: 13 }} onClick={addPerson}>{t.addPerson}</button>
             <div style={S.row}>
               <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => setStep(1)}>{t.back}</button>
-              <button style={{ ...S.btn, ...(householdValid ? S.pri : S.dis), flex: 2 }} disabled={!householdValid} onClick={() => setStep(3)}>{t.next}</button>
+              <button style={{ ...S.btn, ...(householdValid ? S.pri : S.dis), flex: 2 }} disabled={!householdValid} onClick={() => { setTellUsMemberIdx(0); setStep(25); }}>{t.next}</button>
             </div>
           </div>
         )}
+
+        {/* Step 2.5: Tell Us About Yourself (per member) */}
+        {step === 25 && (() => {
+          const mi = tellUsMemberIdx;
+          const m = house[mi];
+          if (!m) { setStep(3); return null; }
+          const toggleField = (field: "hasEmployerCoverage" | "isParentGuardian" | "isPregnant" | "tobacco") => {
+            const h = [...house];
+            if (field === "tobacco") h[mi] = { ...h[mi], tobacco: !h[mi].tobacco };
+            else h[mi] = { ...h[mi], [field]: !h[mi][field] };
+            setHouse(h);
+          };
+          const setNone = () => {
+            const h = [...house];
+            h[mi] = { ...h[mi], tobacco: false, hasEmployerCoverage: false, isParentGuardian: false, isPregnant: false };
+            setHouse(h);
+          };
+          const isNone = !m.tobacco && !m.hasEmployerCoverage && !m.isParentGuardian && !m.isPregnant;
+          const advance = () => {
+            if (mi + 1 < house.length) setTellUsMemberIdx(mi + 1);
+            else setStep(3);
+          };
+          return (
+            <div style={S.card}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#0D9488", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>{mi + 1}</div>
+                <span style={{ fontSize: 17, fontWeight: 700, color: "#0D9488" }}>{t.tellUsTitle}</span>
+              </div>
+              <div style={{ fontSize: 13, color: "#64748B", marginBottom: 4 }}>{t.person} {mi + 1}{m.dob ? ` — ${m.age} ${t.yearsOld}` : ""}{m.gender === "Male" ? `, ${t.male}` : `, ${t.female}`}</div>
+              <Progress step={2} total={4} />
+
+              {/* Age + Gender display */}
+              <div style={{ ...S.g2, marginBottom: 16 }}>
+                <div>
+                  <label style={S.label}>{t.age}</label>
+                  <input style={S.input} type="number" min={0} max={120} value={m.age} onChange={(e) => updatePerson(mi, "age", e.target.value)} />
+                </div>
+                <div>
+                  <label style={S.label}>{t.gender}</label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button type="button" style={chip(m.gender === "Female")} onClick={() => updatePerson(mi, "gender", "Female")}>{t.female}</button>
+                    <button type="button" style={chip(m.gender === "Male")} onClick={() => updatePerson(mi, "gender", "Male")}>{t.male}</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Checkboxes */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1E293B", marginBottom: 4 }}>{t.tellUsSub}</div>
+                <div style={{ fontSize: 12, color: "#94A3B8", marginBottom: 12 }}>{t.tellUsOptional}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <button type="button" style={{ ...chip(!!m.hasEmployerCoverage), textAlign: "left", borderRadius: 10, padding: "12px 14px", fontSize: 13, lineHeight: 1.4 }} onClick={() => toggleField("hasEmployerCoverage")}>
+                    {m.hasEmployerCoverage ? "✓ " : ""}{t.eligEmployer}
+                  </button>
+                  <button type="button" style={{ ...chip(!!m.isParentGuardian), textAlign: "left", borderRadius: 10, padding: "12px 14px", fontSize: 13, lineHeight: 1.4 }} onClick={() => toggleField("isParentGuardian")}>
+                    {m.isParentGuardian ? "✓ " : ""}{t.eligParent}
+                  </button>
+                  {m.gender === "Female" && (
+                    <div>
+                      <button type="button" style={{ ...chip(!!m.isPregnant), textAlign: "left", borderRadius: 10, padding: "12px 14px", fontSize: 13, lineHeight: 1.4, width: "100%" }} onClick={() => toggleField("isPregnant")}>
+                        {m.isPregnant ? "✓ " : ""}{t.eligPregnant}
+                      </button>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 3, marginLeft: 14, lineHeight: 1.4 }}>{t.eligPregnantHelper}</div>
+                    </div>
+                  )}
+                  <div>
+                    <button type="button" style={{ ...chip(m.tobacco), textAlign: "left", borderRadius: 10, padding: "12px 14px", fontSize: 13, lineHeight: 1.4, width: "100%" }} onClick={() => toggleField("tobacco")}>
+                      {m.tobacco ? "✓ " : ""}{t.eligTobacco}
+                    </button>
+                    <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 3, marginLeft: 14, lineHeight: 1.4 }}>{t.eligTobaccoHelper}</div>
+                  </div>
+                </div>
+                {/* Divider + None */}
+                <div style={{ borderTop: "1px solid #E2E8F0", marginTop: 12, paddingTop: 12 }}>
+                  <button type="button" style={{ ...chip(isNone), textAlign: "left", borderRadius: 10, padding: "12px 14px", fontSize: 13, lineHeight: 1.4, width: "100%" }} onClick={setNone}>
+                    {isNone ? "✓ " : ""}{t.eligNone}
+                  </button>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div style={S.row}>
+                <button style={{ ...S.btn, ...S.pri, flex: 1 }} onClick={advance}>{t.next}</button>
+                <button style={{ ...S.btn, ...S.sec, flex: 1 }} onClick={() => { setNone(); advance(); }}>{t.skipBtn}</button>
+              </div>
+              {house.length > 1 && <div style={{ fontSize: 11, color: "#94A3B8", textAlign: "center", marginTop: 8 }}>{mi + 1} / {house.length}</div>}
+            </div>
+          );
+        })()}
 
         {/* Step 3: Income */}
         {step === 3 && (

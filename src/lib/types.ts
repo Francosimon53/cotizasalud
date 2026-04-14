@@ -8,6 +8,9 @@ export interface HouseholdMember {
   gender: string;
   tobacco: boolean;
   dob?: string;
+  hasEmployerCoverage?: boolean;
+  isParentGuardian?: boolean;
+  isPregnant?: boolean;
 }
 export interface Plan {
   id: string;

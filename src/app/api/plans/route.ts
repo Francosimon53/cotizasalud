@@ -19,18 +19,51 @@ interface CMSRequest {
   offset?: number;
 }
 
+// ────────────────────────────────────────────────────────────────
+// FIX #1: APTC eligibility — reemplaza el hardcoded `true`.
+// ────────────────────────────────────────────────────────────────
+// Lee hasEmployerCoverage (bundled: job/Medicare/Medicaid/CHIP).
+// Si ese flag es true, la persona NO califica para APTC y el CMS API
+// devolverá premium_w_credit === premium para ella (coincide con
+// cuidadodesalud.gov). Default conservador: aptc_eligible=true si
+// el flag está ausente o false.
+//
+// Otros disqualifiers (dependiente en otra declaración, TRICARE,
+// incarceración, immigration status) NO son capturados hoy por la UI.
+// Si la UI los agrega en el futuro, extender esta función.
+function determineAptcEligible(m: any): boolean {
+  if (m?.hasEmployerCoverage === true) return false;
+  return true;
+}
+
+// ────────────────────────────────────────────────────────────────
+// FIX #2: Year derivation — maneja el boundary de OEP (Nov 1 – Jan 15).
+// ────────────────────────────────────────────────────────────────
+// `new Date().getFullYear()` devuelve el año actual; durante OEP los
+// usuarios compran planes del AÑO SIGUIENTE. Soporta PLAN_YEAR env
+// var como override manual para testing o emergencias.
+function derivePlanYear(now: Date = new Date()): number {
+  const envOverride = process.env.PLAN_YEAR;
+  if (envOverride && /^\d{4}$/.test(envOverride)) {
+    return Number(envOverride);
+  }
+  const month = now.getMonth(); // 0-indexed: Nov = 10, Dec = 11
+  const year = now.getFullYear();
+  if (month >= 10) return year + 1; // Nov/Dec → shop next year
+  return year;
+}
+
 function parseDollar(s: string | number | undefined | null): number {
   if (s == null) return 0;
   if (typeof s === "number") return Math.round(s);
   return Math.round(parseFloat(s.replace(/[$,]/g, "")) || 0);
 }
 
-function mapCMSPlan(p: any, aptc: number): any {
+function mapCMSPlan(p: any): any {
   const metal = (p.metal_level || "").toLowerCase().replace("expanded ", "");
   const premium = Math.round(p.premium || 0);
   const afterSubsidy = Math.max(0, Math.round(p.premium_w_credit ?? premium));
 
-  // Deductible: individual in-network medical EHB
   const dedEntry = (p.deductibles || []).find(
     (d: any) =>
       d.type === "Medical EHB Deductible" &&
@@ -39,7 +72,6 @@ function mapCMSPlan(p: any, aptc: number): any {
   );
   const deductible = parseDollar(dedEntry?.amount);
 
-  // OOP Max: individual in-network
   const oopEntry = (p.moops || []).find(
     (m: any) =>
       m.network_tier?.toLowerCase().includes("in-network") &&
@@ -47,7 +79,6 @@ function mapCMSPlan(p: any, aptc: number): any {
   );
   const oopMax = parseDollar(oopEntry?.amount);
 
-  // Benefits: extract copay amounts by name
   const copay = (name: string): number => {
     const b = (p.benefits || []).find((x: any) =>
       (x.name || "").toLowerCase().includes(name.toLowerCase())
@@ -67,7 +98,6 @@ function mapCMSPlan(p: any, aptc: number): any {
   const rating = p.quality_rating?.global_rating || 0;
   const hsa = !!p.hsa_eligible;
 
-  // Yearly cost estimates (same formula as generateQuote)
   const yLow = afterSubsidy * 12 + Math.round(deductible * 0.05);
   const yMed = afterSubsidy * 12 + Math.round(deductible * 0.4);
   const yHigh = afterSubsidy * 12 + Math.min(oopMax, deductible + 3000);
@@ -94,6 +124,17 @@ function mapCMSPlan(p: any, aptc: number): any {
   };
 }
 
+// ────────────────────────────────────────────────────────────────
+// FIX #3: Global APTC — derivado de todos los planes elegibles,
+// no de cmsPlans[0]. Antes si el primer plan era Catastrophic
+// (que nunca acepta APTC), el valor global volvía $0.
+// ────────────────────────────────────────────────────────────────
+function computeGlobalAPTC(plans: Array<{ premium: number; aptc: number }>): number {
+  const withAptc = plans.filter((p) => p.aptc > 0);
+  if (withAptc.length === 0) return 0;
+  return Math.max(...withAptc.map((p) => p.aptc));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -115,17 +156,16 @@ export async function POST(req: NextRequest) {
           age: Number(m.age),
           gender: m.gender || "Female",
           uses_tobacco: !!m.tobacco,
-          aptc_eligible: true,
+          aptc_eligible: determineAptcEligible(m),
         })),
       },
       market: "Individual",
       place: { countyfips, state, zipcode },
-      year: new Date().getFullYear(),
+      year: derivePlanYear(),
       limit: 50,
       offset: 0,
     };
 
-    // Paginate through plans (capped at 200)
     let allPlans: any[] = [];
     let offset = 0;
     const maxPlans = 200;
@@ -152,18 +192,11 @@ export async function POST(req: NextRequest) {
       console.log(`CMS API page: offset=${offset}, got=${pagePlans.length}, total=${total}`);
     } while (offset < total && allPlans.length < maxPlans);
 
-    console.log(`CMS API DONE: total=${total}, fetched=${allPlans.length}`);
-    const cmsPlans = allPlans;
+    console.log(`CMS API DONE: total=${total}, fetched=${allPlans.length}, year=${cmsBody.year}`);
 
+    const plans = allPlans.map((p: any) => mapCMSPlan(p));
+    const aptc = computeGlobalAPTC(plans);
     const fplPct = getFPLpct(Number(income), household.length);
-
-    // APTC from the first plan's premium_w_credit difference, or 0
-    const samplePlan = cmsPlans[0];
-    const aptc = samplePlan
-      ? Math.max(0, Math.round((samplePlan.premium || 0) - (samplePlan.premium_w_credit || samplePlan.premium || 0)))
-      : 0;
-
-    const plans = cmsPlans.map((p: any) => mapCMSPlan(p, aptc));
 
     return NextResponse.json({ plans, aptc, fplPct });
   } catch (err: any) {

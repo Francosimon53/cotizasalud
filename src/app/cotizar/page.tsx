@@ -563,16 +563,20 @@ export default function QuoterPage() {
       await saveConsent({
         leadId: leadId || undefined,
         consumerName: record.consumerName,
-        consumerSignature: record.signatureDataUrl,
+        consumerPhone: record.consumerPhone,
+        consumerEmail: record.consumerEmail,
+        consumerDob: record.consumerDob,
+        consumerIncome: record.consumerIncome,
+        typedSignature: record.typedSignature,
         consentDate: record.consentDate,
-        consentDuration: record.consentDuration || '12_months',
-        authSearch: false,
-        authEnrollment: false,
-        authMaintenance: false,
-        authInquiries: false,
-        eligibilityVerified: record.eligibilityReviewed || false,
         agentName: record.agentName || 'EnrollSalud',
         agentNpn: record.agentNPN || undefined,
+        agentPhone: record.agentPhone || undefined,
+        planName: record.planName,
+        planPremium: record.planPremium,
+        planDeductible: record.planDeductible,
+        planMaxOop: record.planMaxOop,
+        effectiveDate: record.effectiveDate,
       });
     } catch (err) {
       console.error('Failed to save consent:', err);
@@ -1169,13 +1173,22 @@ export default function QuoterPage() {
             consumerName={leadName}
             consumerPhone={leadPhone}
             consumerEmail={leadEmail}
+            consumerDob={house[0]?.dob || ""}
+            consumerIncome={Number(income)}
             agentName={agentBrand?.name}
             agentNPN={agentBrand?.npn}
-            agencyName={agentBrand?.brand_name}
+            agentPhone={agentBrand?.phone}
             selectedPlan={selectedPlanId && results ? (() => {
               const p = results.plans.find((pl: any) => pl.id === selectedPlanId);
-              return p ? { name: p.name, issuer: p.issuer, metal: p.metal, premium: p.premium, afterSubsidy: p.afterSubsidy, deductible: p.deductible } : undefined;
+              return p ? { name: p.name, issuer: p.issuer, metal: p.metal, premium: p.premium, afterSubsidy: p.afterSubsidy, deductible: p.deductible, oopMax: p.oopMax } : undefined;
             })() : undefined}
+            effectiveDate={(() => {
+              const now = new Date();
+              const eff = now.getDate() <= 15
+                ? new Date(now.getFullYear(), now.getMonth() + 1, 1)
+                : new Date(now.getFullYear(), now.getMonth() + 2, 1);
+              return eff.toISOString().split("T")[0];
+            })()}
             lang={lang}
             t={t}
             onConsent={handleConsent}

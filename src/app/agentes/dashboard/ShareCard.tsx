@@ -15,24 +15,46 @@ export default function ShareCard({ slug }: { slug: string }) {
   };
 
   return (
-    <div>
-      <div style={{ fontSize: 10, color: "#5a5e72", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>Tu Link</div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "#10b981", marginTop: 4, wordBreak: "break-all" }}>
-        enrollsalud.com/q/{slug}
+    <div style={{
+      background: "linear-gradient(135deg, rgba(16,185,129,0.18), rgba(6,182,212,0.10))",
+      border: "1.5px solid rgba(16,185,129,0.35)",
+      borderRadius: 16, padding: 22, marginBottom: 20,
+      display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
+    }}>
+      <div style={{ flex: 1, minWidth: 260 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 800, textTransform: "uppercase",
+          letterSpacing: 0.6, color: "#86efac", marginBottom: 6,
+          display: "flex", alignItems: "center", gap: 6,
+        }}>🚀 Tu link personal</div>
+        <div style={{
+          fontSize: 22, fontWeight: 900, color: "#10b981",
+          wordBreak: "break-all", lineHeight: 1.25, letterSpacing: -0.3,
+        }}>
+          enrollsalud.com/q/{slug}
+        </div>
+        <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 8 }}>
+          Los clientes que entren por tu link aparecerán aquí automáticamente.
+        </div>
       </div>
-      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button onClick={handleCopy} style={{
-          padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+          padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800,
           border: "none", cursor: "pointer", fontFamily: "inherit",
-          background: copied ? "#10b981" : "rgba(16,185,129,0.15)",
-          color: copied ? "#000" : "#10b981",
-          transition: "all .2s",
-        }}>{copied ? "Copiado!" : "Copiar"}</button>
+          background: copied ? "#059669" : "#10b981",
+          color: "#000", transition: "all .2s", whiteSpace: "nowrap",
+        }}>{copied ? "¡Copiado!" : "📋 Copiar link"}</button>
         <button onClick={() => router.push("/agentes/dashboard/share")} style={{
-          padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-          border: "1px solid rgba(255,255,255,0.1)", background: "transparent",
-          color: "#8b8fa3", cursor: "pointer", fontFamily: "inherit",
-        }}>Compartir</button>
+          padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800,
+          border: "1.5px solid rgba(16,185,129,0.4)", cursor: "pointer", fontFamily: "inherit",
+          background: "transparent", color: "#10b981", whiteSpace: "nowrap",
+        }}>📣 Compartir</button>
+        <button onClick={() => router.push("/agentes/dashboard/share")} style={{
+          padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800,
+          border: "1.5px solid rgba(255,255,255,0.15)", cursor: "pointer", fontFamily: "inherit",
+          background: "transparent", color: "#E2E8F0", whiteSpace: "nowrap",
+        }}>📱 Ver QR</button>
       </div>
     </div>
   );

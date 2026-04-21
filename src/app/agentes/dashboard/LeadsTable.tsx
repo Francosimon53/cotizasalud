@@ -36,7 +36,7 @@ const STATUSES = [
 const statusMap = Object.fromEntries(STATUSES.map((s) => [s.value, s]));
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" });
 }
 
 function timeAgo(iso: string): string {

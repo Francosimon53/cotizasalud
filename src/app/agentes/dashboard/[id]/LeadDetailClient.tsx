@@ -32,7 +32,7 @@ function detectMetal(name: string) {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleString("es-US", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" });
 }
 
 export default function LeadDetailClient({ lead: initialLead, activity: initialActivity, conversation, agent }: { lead: any; activity: any[]; conversation?: any; agent?: any }) {
@@ -245,8 +245,9 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
         {canOpenHS && <button onClick={openHealthSherpa} style={actionBtn("linear-gradient(135deg, #f59e0b, #d97706)", "#fff")}>🏥 Abrir en HealthSherpa</button>}
         <button onClick={() => copyText(allData, "datos")} style={actionBtn("rgba(255,255,255,0.08)", copied === "datos" ? "#10b981" : "#94A3B8")}>{copied === "datos" ? "✓ Copiado" : "📋 Copiar datos"}</button>
         <button onClick={() => copyText(healthSherpaData, "sherpa")} style={actionBtn("rgba(245,158,11,0.15)", copied === "sherpa" ? "#10b981" : "#f59e0b")}>{copied === "sherpa" ? "✓ Copiado" : "📋 HealthSherpa"}</button>
+        <a href={`/api/precarta-pdf?leadId=${lead.id}`} download style={actionBtn("transparent", "#8B5CF6")}><span style={{ borderBottom: "1px solid #8B5CF6" }}>📋 Pre-Carta PDF</span></a>
         {lead.status !== "browsing" && (
-          <a href={`/api/leads/${lead.id}/consent-pdf`} download style={actionBtn("transparent", "#3B82F6")}><span style={{ borderBottom: "1px solid #3B82F6" }}>📄 Descargar Consentimiento (PDF)</span></a>
+          <a href={`/api/leads/${lead.id}/consent-pdf`} download style={actionBtn("transparent", "#3B82F6")}><span style={{ borderBottom: "1px solid #3B82F6" }}>📄 Consent PDF</span></a>
         )}
       </div>
 

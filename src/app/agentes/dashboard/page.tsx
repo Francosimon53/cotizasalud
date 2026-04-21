@@ -96,11 +96,14 @@ export default async function DashboardPage() {
       <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} isAdmin={["simon-dev", "delbert"].includes(agent.slug)} />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 60px" }}>
+        {/* Hero Share Card — prominent, full-width */}
+        <ShareCard slug={agent.slug} />
+
         {/* Agent Profile */}
         <div style={{
           background: "#1E293B", borderRadius: 16, padding: 24,
           border: "1px solid #334155", marginBottom: 20,
-          display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16,
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16,
         }}>
           <div>
             <div style={{ fontSize: 10, color: "#94A3B8", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>Agente</div>
@@ -112,7 +115,6 @@ export default async function DashboardPage() {
             <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginTop: 4 }}>{agent.npn || "—"}</div>
             <div style={{ fontSize: 12, color: "#8b8fa3", marginTop: 2 }}>{agent.email}</div>
           </div>
-          <ShareCard slug={agent.slug} />
         </div>
 
         {/* KPI Row */}

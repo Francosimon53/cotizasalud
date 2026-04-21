@@ -32,7 +32,7 @@ const lostReasonLabels: Record<string, string> = {
 
 function formatDateTime(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString("es-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" });
 }
 
 export default function ActivityTimeline({ activity }: { activity: Activity[] }) {

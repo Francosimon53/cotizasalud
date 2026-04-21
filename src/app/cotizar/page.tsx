@@ -9,6 +9,8 @@ import { generateQuote } from "@/lib/plans";
 import type { County, HouseholdMember, Plan, QuoteResults, AgentBrand } from "@/lib/types";
 import CMSConsentForm, { type ConsentRecord } from "./CMSConsentForm";
 import SignaturePad from "./SignaturePad";
+import DobSelect from "./DobSelect";
+import PreCarta from "./PreCarta";
 
 const AIPlanAdvisor = dynamic(() => import("./AIPlanAdvisor"), {
   loading: () => <div style={{ padding: 16, textAlign: "center", fontSize: 12, color: "#94A3B8" }}>Loading advisor...</div>,
@@ -229,7 +231,9 @@ const chip = (active: boolean): React.CSSProperties => ({
 // ==================== MAIN COMPONENT ====================
 export default function QuoterPage() {
   const [lang, setLang] = useState<Lang>("es");
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
+  const [preCartaSigned, setPreCartaSigned] = useState(false);
+  const [preCartaSigData, setPreCartaSigData] = useState("");
   const [zip, setZip] = useState("");
   const [counties, setCounties] = useState<County[]>([]);
   const [county, setCounty] = useState<County | null>(null);
@@ -261,8 +265,10 @@ export default function QuoterPage() {
   const [doctorSearchError, setDoctorSearchError] = useState(false);
   const [sortKey, setSortKey] = useState("afterSubsidy");
   const [metalFilter, setMetalFilter] = useState("all");
+  const [carrierFilter, setCarrierFilter] = useState("all");
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedPlanData, setSelectedPlanData] = useState<{ name: string; issuer: string; metal: string; premium: number; afterSubsidy: number; deductible: number; oopMax: number } | null>(null);
   const [urlParams, setUrlParams] = useState<ReturnType<typeof parseSmartLink>>({ name: "", zip: "", phone: "", email: "", agentSlug: "", lang: "", utm_source: "", utm_medium: "", utm_campaign: "" });
   const [agentBrand, setAgentBrand] = useState<AgentBrand | null>(null);
 
@@ -302,24 +308,56 @@ export default function QuoterPage() {
     }
     // Always try to fetch agent (URL slug or default via API)
     const fetchSlug = slugToFetch || "default";
+    const applyAgent = (agent: any) => {
+      if (agent) {
+        setAgentBrand({
+          slug: agent.slug,
+          name: agent.name,
+          npn: agent.npn || "",
+          brand_name: agent.brand_name || "",
+          brand_color: agent.brand_color || "#10b981",
+          email: agent.email || "",
+          phone: agent.phone || "",
+          logo_url: agent.logo_url || "",
+        });
+      }
+    };
     fetch(`/api/agents?slug=${encodeURIComponent(fetchSlug)}`)
       .then((r) => r.ok ? r.json() : null)
       .then((agent) => {
         if (agent) {
-          setAgentBrand({
-            slug: agent.slug,
-            name: agent.name,
-            npn: agent.npn || "",
-            brand_name: agent.brand_name || "",
-            brand_color: agent.brand_color || "#10b981",
-            email: agent.email || "",
-            phone: agent.phone || "",
-            logo_url: agent.logo_url || "",
-          });
+          applyAgent(agent);
+        } else if (fetchSlug === "default") {
+          // Fallback: if DEFAULT_AGENT_SLUG env var not set, use hardcoded default
+          fetch("/api/agents?slug=delbert")
+            .then((r) => r.ok ? r.json() : null)
+            .then(applyAgent)
+            .catch(() => {});
         }
       })
       .catch(() => {});
   }, []);
+
+  // Pre-carta completion handler
+  const handlePreCarta = (data: { firstName: string; lastName: string; dob: string; signatureDataUrl: string; pdfStorageUrl?: string }) => {
+    setFirstName(data.firstName);
+    setLastName(data.lastName);
+    // Set DOB on first household member
+    const h = [...house];
+    h[0] = { ...h[0], dob: data.dob };
+    if (data.dob) {
+      const birth = new Date(data.dob + "T00:00:00");
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+      h[0].age = Math.max(0, Math.min(120, age));
+    }
+    setHouse(h);
+    setPreCartaSigned(true);
+    setPreCartaSigData(data.signatureDataUrl);
+    setStep(1);
+  };
 
   // ZIP lookup — CMS API with client-side cache
   const countyCache = useRef<Map<string, County[]>>(new Map());
@@ -586,6 +624,7 @@ export default function QuoterPage() {
 
   const selectPlan = async (plan: Plan) => {
     setSelectedPlanId(plan.id);
+    setSelectedPlanData({ name: plan.name, issuer: plan.issuer, metal: plan.metal, premium: plan.premium, afterSubsidy: plan.afterSubsidy, deductible: plan.deductible, oopMax: plan.oopMax });
     // Track plan view on browsing lead
     if (leadId) {
       try {
@@ -613,8 +652,8 @@ export default function QuoterPage() {
   };
 
   const resetAll = () => {
-    setStep(1); setResults(null); setSelectedPlanId(null); setIsMockData(false);
-    setConsent(false); setConsentRecord(null); setFirstName(""); setLastName(""); setLeadPhone(""); setLeadEmail("");
+    setStep(preCartaSigned ? 1 : 0); setResults(null); setSelectedPlanId(null); setSelectedPlanData(null); setIsMockData(false);
+    setConsent(false); setConsentRecord(null); setLeadPhone(""); setLeadEmail("");
     setStreetAddress(""); setCity(""); setStateForm("FL"); setAptNumber("");
     setCurrentInsurance(""); setCurrentInsuranceName(""); setContactPreference([]); setBestCallTime(""); setSignatureData("");
     setZip(""); setCounty(null); setIncome("");
@@ -729,8 +768,10 @@ export default function QuoterPage() {
 
   const fpl = income ? getFPLpct(Number(income), house.length) : 0;
   const isMedicaid = fpl > 0 && fpl < 138;
+  const carriers = results?.plans ? Array.from(new Set(results.plans.map((p) => p.issuer).filter(Boolean))) : [];
   const filtered = results?.plans
     ?.filter((p) => metalFilter === "all" || p.metal === metalFilter)
+    .filter((p) => carrierFilter === "all" || p.issuer === carrierFilter)
     .sort((a, b) => sortKey === "rating" ? b.rating - a.rating : (a as any)[sortKey] - (b as any)[sortKey]);
 
   const brandName = agentBrand?.brand_name || agentBrand?.name || t.title;
@@ -755,7 +796,13 @@ export default function QuoterPage() {
       </div>
 
       {/* Hero */}
-      {(step <= 4 || step === 25) && (
+      {step === 0 && (
+        <div style={{ ...S.hero, paddingBottom: 44 }}>
+          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{lang === "es" ? "📋 Autorización para Cotización" : "📋 Quote Authorization"}</div>
+          <div style={{ color: "rgba(255,255,255,.6)", fontSize: 13, marginTop: 4 }}>{lang === "es" ? "Firma requerida antes de cotizar" : "Signature required before quoting"}</div>
+        </div>
+      )}
+      {((step >= 1 && step <= 4) || step === 25) && (
         <div style={S.hero}>
           <div style={{ color: "#fff", fontSize: 22, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.2 }}>{t.hero}</div>
           <div style={{ color: "#5EEAD4", fontSize: 22, fontWeight: 700 }}>{t.heroAccent}</div>
@@ -765,7 +812,7 @@ export default function QuoterPage() {
       )}
       {step === 45 && !consentRecord && (
         <div style={{ ...S.hero, paddingBottom: 44 }}>
-          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{lang === "es" ? "📋 Autorización CMS" : "📋 CMS Authorization"}</div>
+          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{lang === "es" ? "📋 Carta de Consentimiento" : "📋 Consent Letter"}</div>
           <div style={{ color: "rgba(255,255,255,.6)", fontSize: 13, marginTop: 4 }}>{lang === "es" ? "Firma digital requerida para continuar" : "Digital signature required to continue"}</div>
         </div>
       )}
@@ -791,6 +838,17 @@ export default function QuoterPage() {
 
       {/* Content */}
       <div style={S.wrap}>
+        {/* Step 0: Pre-Carta */}
+        {step === 0 && (
+          <PreCarta
+            agentName={agentBrand?.name || "EnrollSalud Agent"}
+            agentNPN={agentBrand?.npn || ""}
+            agentPhone={agentBrand?.phone || ""}
+            lang={lang}
+            onComplete={handlePreCarta}
+          />
+        )}
+
         {/* Step 1: Location */}
         {step === 1 && (
           <div style={S.card}>
@@ -827,13 +885,20 @@ export default function QuoterPage() {
                   <span style={{ fontSize: 13, fontWeight: 800, color: "#0D9488" }}>{t.person} {i + 1}</span>
                   {i > 0 && <button style={{ ...S.btn, padding: "3px 10px", fontSize: 11, color: "#ef4444", background: "transparent" }} onClick={() => removePerson(i)} aria-label={`${t.removePerson} ${i + 1}`}>{t.removePerson}</button>}
                 </div>
-                <div style={S.g3}>
-                  <div>
-                    <label htmlFor={`dob-${i}`} style={S.label}>{t.dob}</label>
-                    <input id={`dob-${i}`} style={S.input} type="date" value={m.dob || ""} max={new Date().toISOString().split("T")[0]} onChange={(e) => updatePerson(i, "dob", e.target.value)} aria-required="true" />
-                    {m.dob && <div style={{ fontSize: 12, color: "#0D9488", marginTop: 4, fontWeight: 600 }}>{m.age} {t.yearsOld}</div>}
-                    {!m.dob && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Requerido" : "Required"}</div>}
-                  </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={S.label}>{t.dob}</label>
+                  <DobSelect
+                    id={`dob-${i}`}
+                    value={m.dob || ""}
+                    onChange={(v) => updatePerson(i, "dob", v)}
+                    lang={lang}
+                    selectStyle={S.select}
+                    labelStyle={{ ...S.label, fontSize: 10, marginBottom: 3 }}
+                  />
+                  {m.dob && <div style={{ fontSize: 12, color: "#0D9488", marginTop: 4, fontWeight: 600 }}>{m.age} {t.yearsOld}</div>}
+                  {!m.dob && <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>{lang === "es" ? "Requerido" : "Required"}</div>}
+                </div>
+                <div style={S.g2}>
                   <div><label htmlFor={`gender-${i}`} style={S.label}>{t.gender}</label><select id={`gender-${i}`} style={S.select} value={m.gender} onChange={(e) => updatePerson(i, "gender", e.target.value)}><option value="Female">{t.female}</option><option value="Male">{t.male}</option></select></div>
                   <div><label htmlFor={`tobacco-${i}`} style={S.label}>{t.tobacco}</label><select id={`tobacco-${i}`} style={S.select} value={m.tobacco ? "y" : "n"} onChange={(e) => updatePerson(i, "tobacco", e.target.value === "y")}><option value="n">{t.no}</option><option value="y">{t.yes}</option></select></div>
                 </div>
@@ -1178,10 +1243,7 @@ export default function QuoterPage() {
             agentName={agentBrand?.name}
             agentNPN={agentBrand?.npn}
             agentPhone={agentBrand?.phone}
-            selectedPlan={selectedPlanId && results ? (() => {
-              const p = results.plans.find((pl: any) => pl.id === selectedPlanId);
-              return p ? { name: p.name, issuer: p.issuer, metal: p.metal, premium: p.premium, afterSubsidy: p.afterSubsidy, deductible: p.deductible, oopMax: p.oopMax } : undefined;
-            })() : undefined}
+            selectedPlan={selectedPlanData || undefined}
             effectiveDate={(() => {
               const now = new Date();
               const eff = now.getDate() <= 15
@@ -1219,11 +1281,19 @@ export default function QuoterPage() {
                 <div style={{ fontSize: 36, fontWeight: 900, color: "#0D9488", letterSpacing: -1 }}>${results.aptc}<span style={{ fontSize: 16, fontWeight: 600 }}>{t.mo}</span></div>
               </div>
             )}
-            <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
               {["all", "bronze", "silver", "gold", "platinum"].map((m) => (
                 <button key={m} style={chip(metalFilter === m)} onClick={() => setMetalFilter(m)}>{t[m] || m}</button>
               ))}
             </div>
+            {carriers.length > 1 && (
+              <div style={{ display: "flex", gap: 6, marginBottom: 14, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 2 }}>
+                <button style={chip(carrierFilter === "all")} onClick={() => setCarrierFilter("all")}>{lang === "es" ? "Todos" : "All"}</button>
+                {carriers.map((c) => (
+                  <button key={c} style={{ ...chip(carrierFilter === c), whiteSpace: "nowrap" }} onClick={() => setCarrierFilter(c)}>{c.split(" ")[0]}</button>
+                ))}
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <span style={{ fontSize: 12, color: "#64748B", fontWeight: 700 }}>{t.sort}:</span>
               <select style={{ ...S.select, width: "auto", padding: "5px 10px", fontSize: 12 }} value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
@@ -1348,6 +1418,7 @@ export default function QuoterPage() {
                         onReadyToEnroll={(convId, summary) => {
                           // Pre-select the plan and go to lead capture
                           setSelectedPlanId(plan.id);
+                          setSelectedPlanData({ name: plan.name, issuer: plan.issuer, metal: plan.metal, premium: plan.premium, afterSubsidy: plan.afterSubsidy, deductible: plan.deductible, oopMax: plan.oopMax });
                           setStep(4);
                         }}
                       />
@@ -1479,7 +1550,7 @@ export default function QuoterPage() {
               </button>
               <button
                 style={{ ...S.btn, ...S.sec, width: "100%", marginTop: 10 }}
-                onClick={() => { setSelectedPlanId(null); setStep(5); }}
+                onClick={() => { setSelectedPlanId(null); setSelectedPlanData(null); setStep(5); }}
               >
                 {t.backToPlans || "← Ver otros planes"}
               </button>

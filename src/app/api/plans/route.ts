@@ -64,12 +64,18 @@ function mapCMSPlan(p: any): any {
   const premium = Math.round(p.premium || 0);
   const afterSubsidy = Math.max(0, Math.round(p.premium_w_credit ?? premium));
 
-  const dedEntry = (p.deductibles || []).find(
-    (d: any) =>
-      d.type === "Medical EHB Deductible" &&
-      d.network_tier?.toLowerCase().includes("in-network") &&
-      d.family_cost === "Individual"
-  );
+  // Deductible extraction. Some issuers (Kaiser, Bright, some Bronze plans)
+  // only report a "Combined Medical and Drug EHB Deductible" and omit the
+  // separate "Medical EHB Deductible" entry. Without this fallback those
+  // plans rendered as $0, which is worse than showing the combined number.
+  // Preference order: Medical only → Combined (Medical+Drug).
+  const deductibles: any[] = p.deductibles || [];
+  const matchesDedTierAndCost = (d: any) =>
+    d.network_tier?.toLowerCase().includes("in-network") &&
+    d.family_cost === "Individual";
+  const dedEntry =
+    deductibles.find((d: any) => d.type === "Medical EHB Deductible" && matchesDedTierAndCost(d)) ||
+    deductibles.find((d: any) => d.type === "Combined Medical and Drug EHB Deductible" && matchesDedTierAndCost(d));
   const deductible = parseDollar(dedEntry?.amount);
 
   const oopEntry = (p.moops || []).find(

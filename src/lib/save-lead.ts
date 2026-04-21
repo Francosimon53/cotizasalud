@@ -51,16 +51,20 @@ export async function saveLead(data: {
 export async function saveConsent(data: {
   leadId?: string
   consumerName: string
-  consumerSignature: string
+  consumerPhone?: string
+  consumerEmail?: string
+  consumerDob?: string
+  consumerIncome?: number
+  typedSignature: string
   consentDate: string
-  consentDuration: string
-  authSearch: boolean
-  authEnrollment: boolean
-  authMaintenance: boolean
-  authInquiries: boolean
-  eligibilityVerified: boolean
   agentName: string
   agentNpn?: string
+  agentPhone?: string
+  planName?: string
+  planPremium?: number
+  planDeductible?: number
+  planMaxOop?: number
+  effectiveDate?: string
 }): Promise<{ success: boolean; consentId?: string }> {
   try {
     const res = await fetch('/api/consents', {

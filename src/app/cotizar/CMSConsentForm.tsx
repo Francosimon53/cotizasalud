@@ -1,23 +1,25 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 
-interface SelectedPlanInfo {
+interface PlanDetails {
   name: string;
-  issuer: string;
-  metal: string;
   premium: number;
   afterSubsidy: number;
   deductible: number;
+  oopMax: number;
 }
 
 interface CMSConsentFormProps {
   consumerName: string;
   consumerPhone: string;
   consumerEmail: string;
+  consumerDob: string;
+  consumerIncome: number;
   agentName?: string;
   agentNPN?: string;
-  agencyName?: string;
-  selectedPlan?: SelectedPlanInfo;
+  agentPhone?: string;
+  selectedPlan?: PlanDetails;
+  effectiveDate?: string;
   lang: string;
   t: Record<string, string>;
   onConsent: (consentData: ConsentRecord) => void;
@@ -28,240 +30,124 @@ export interface ConsentRecord {
   consumerName: string;
   consumerPhone: string;
   consumerEmail: string;
+  consumerDob: string;
+  consumerIncome: number;
   agentName: string;
   agentNPN: string;
-  agencyName: string;
+  agentPhone: string;
+  planName: string;
+  planPremium: number;
+  planDeductible: number;
+  planMaxOop: number;
+  effectiveDate: string;
   consentDate: string;
   consentTimestamp: number;
-  signatureDataUrl: string;
+  typedSignature: string;
   consentGranted: boolean;
-  eligibilityReviewed: boolean;
-  consentDuration: string;
   ipAddress?: string;
 }
 
-const TEXTS = {
-  en: {
-    title: "Authorization & Consent",
-    subtitle: "Required by CMS before your agent can assist you",
-    part1Title: "Consumer Consent",
-    part1Body: (name: string, agent: string) =>
-      `I, ${name || "[Your Name]"}, give my permission to ${agent || "[Agent/Agency]"} to serve as the health insurance agent or broker for myself and my entire household, if applicable, for purposes of enrollment in a Qualified Health Plan offered on the Marketplace.`,
-    authItems: [
-      "Search for an existing Marketplace application",
-      "Complete an application for eligibility and enrollment in a Marketplace Qualified Health Plan or an application for Medicaid, CHIP, or advance payments of the premium tax credit (APTC)",
-      "Provide ongoing account maintenance and enrollment assistance",
-      "Respond to inquiries from the Marketplace regarding my application",
-    ],
-    authIntro:
-      "By providing my consent, I authorize the above-mentioned agent/agency to view and use my confidential information, including personally identifiable information (PII), only for the following purposes:",
-    privacyNote:
-      "I understand that my PII will not be used or shared for any purposes other than those listed above. I do not have to share additional PII or protected health information (PHI) beyond what is required for the Marketplace application.",
-    durationLabel: "This consent remains in effect for:",
-    durationOptions: ["12 months", "24 months", "Until I revoke it"],
-    revokeNote: (method: string) =>
-      `I may revoke or modify my consent at any time by ${method}.`,
-    revokeMethod: "contacting my agent directly",
-    part2Title: "Eligibility Review",
-    part2Body:
-      "I confirm that I have reviewed the eligibility application information and confirmed its accuracy. The attestations at the end of the eligibility application have been explained to me and I was given an opportunity to ask questions.",
-    agentInfo: "Agent Information",
-    signHere: "Sign here (draw your signature)",
-    clearSig: "Clear",
-    checkConsent: "I authorize the above agent/agency to assist me as described",
-    checkEligibility: "I confirm my eligibility information is accurate",
-    submit: "Sign & Continue →",
-    sigRequired: "Signature required",
-    back: "← Back",
-    dateLine: "Date",
-    cmsRef: "Ref: CMS Model Consent Form · OMB 0938-1438",
-  },
-  es: {
-    title: "Autorización y Consentimiento",
-    subtitle: "Requerido por CMS antes de que tu agente pueda asistirte",
-    part1Title: "Consentimiento del Consumidor",
-    part1Body: (name: string, agent: string) =>
-      `Yo, ${name || "[Tu Nombre]"}, autorizo a ${agent || "[Agente/Agencia]"} a servir como agente o broker de seguros de salud para mí y mi hogar, según corresponda, con el propósito de inscripción en un Plan de Salud Calificado ofrecido en el Mercado de Seguros.`,
-    authItems: [
-      "Buscar una solicitud existente en el Marketplace",
-      "Completar una solicitud de elegibilidad e inscripción en un Plan de Salud Calificado o una solicitud para Medicaid, CHIP, o pagos adelantados del crédito fiscal de prima (APTC)",
-      "Proveer mantenimiento continuo de cuenta y asistencia de inscripción",
-      "Responder a consultas del Marketplace sobre mi solicitud",
-    ],
-    authIntro:
-      "Al dar mi consentimiento, autorizo al agente/agencia mencionado a ver y usar mi información confidencial, incluyendo información de identificación personal (PII), solo para los siguientes propósitos:",
-    privacyNote:
-      "Entiendo que mi PII no será usada ni compartida para propósitos distintos a los listados arriba. No tengo que compartir PII adicional o información de salud protegida (PHI) más allá de lo requerido para la solicitud del Marketplace.",
-    durationLabel: "Este consentimiento permanece en efecto por:",
-    durationOptions: ["12 meses", "24 meses", "Hasta que lo revoque"],
-    revokeNote: (method: string) =>
-      `Puedo revocar o modificar mi consentimiento en cualquier momento ${method}.`,
-    revokeMethod: "contactando a mi agente directamente",
-    part2Title: "Revisión de Elegibilidad",
-    part2Body:
-      "Confirmo que he revisado la información de mi solicitud de elegibilidad y que es correcta. Las atestaciones al final de la solicitud me fueron explicadas y tuve la oportunidad de hacer preguntas.",
-    agentInfo: "Información del Agente",
-    signHere: "Firma aquí (dibuja tu firma)",
-    clearSig: "Borrar",
-    checkConsent: "Autorizo al agente/agencia a asistirme según lo descrito",
-    checkEligibility: "Confirmo que mi información de elegibilidad es correcta",
-    submit: "Firmar y Continuar →",
-    sigRequired: "Se requiere firma",
-    back: "← Volver",
-    dateLine: "Fecha",
-    cmsRef: "Ref: Formulario Modelo CMS · OMB 0938-1438",
-  },
-};
+function fmtCurrency(n: number): string {
+  return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDate(iso: string): string {
+  if (!iso) return "N/A";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("es-US", { day: "numeric", month: "long", year: "numeric" });
+}
 
 export default function CMSConsentForm({
   consumerName,
   consumerPhone,
   consumerEmail,
+  consumerDob,
+  consumerIncome,
   agentName,
   agentNPN,
-  agencyName,
+  agentPhone,
   selectedPlan,
+  effectiveDate,
   lang,
   t: parentT,
   onConsent,
   onBack,
 }: CMSConsentFormProps) {
-  const txt = TEXTS[lang === "es" ? "es" : "en"];
-
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [hasSig, setHasSig] = useState(false);
-  const [checkConsent, setCheckConsent] = useState(false);
-  const [checkEligibility, setCheckEligibility] = useState(false);
-  const duration = txt.durationOptions[0]; // Fixed 12 months
+  const [typedSignature, setTypedSignature] = useState("");
   const [showError, setShowError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const agentDisplay = agentName || agencyName || (lang === "es" ? "EnrollSalud (plataforma)" : "EnrollSalud (platform)");
-  const today = new Date();
-  const dateStr = today.toLocaleDateString(lang === "es" ? "es-US" : "en-US", {
-    year: "numeric", month: "long", day: "numeric",
+  const now = new Date();
+  const signatureDateStr = now.toLocaleString("es-US", {
+    day: "numeric", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: "America/New_York",
   });
 
-  // Canvas signature pad
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * 2;
-    canvas.height = rect.height * 2;
-    ctx.scale(2, 2);
-    ctx.strokeStyle = "#f0f1f5";
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-  }, []);
+  const agentDisplay = agentName || "EnrollSalud Agent";
+  const agentNpnDisplay = agentNPN || "N/A";
+  const agentPhoneDisplay = agentPhone || "N/A";
 
-  const getPos = (e: React.TouchEvent | React.MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    const rect = canvas.getBoundingClientRect();
-    if ("touches" in e) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
-    }
-    return { x: (e as React.MouseEvent).clientX - rect.left, y: (e as React.MouseEvent).clientY - rect.top };
-  };
+  const planName = selectedPlan?.name || "N/A";
+  const premium = selectedPlan ? fmtCurrency(selectedPlan.afterSubsidy) : "N/A";
+  const deductible = selectedPlan ? fmtCurrency(selectedPlan.deductible) : "N/A";
+  const maxOop = selectedPlan ? fmtCurrency(selectedPlan.oopMax) : "N/A";
+  const incomeDisplay = consumerIncome ? fmtCurrency(consumerIncome) : "N/A";
+  const effectiveDateDisplay = effectiveDate ? fmtDate(effectiveDate) : "N/A";
 
-  const startDraw = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-    const pos = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-    setIsDrawing(true);
-  };
-
-  const draw = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isDrawing) return;
-    e.preventDefault();
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-    const pos = getPos(e);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    setHasSig(true);
-  };
-
-  const endDraw = () => setIsDrawing(false);
-
-  const clearSig = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setHasSig(false);
-  };
+  const isValid = typedSignature.trim().length >= 2;
 
   const handleSubmit = () => {
-    if (!checkConsent || !checkEligibility || !hasSig) {
+    if (!isValid) {
       setShowError(true);
       return;
     }
     if (submitting) return;
     setSubmitting(true);
-    const sigData = canvasRef.current?.toDataURL("image/png") || "";
     onConsent({
       consumerName,
       consumerPhone,
       consumerEmail,
-      agentName: agentName || "",
-      agentNPN: agentNPN || "",
-      agencyName: agencyName || "",
-      consentDate: today.toISOString(),
-      consentTimestamp: today.getTime(),
-      signatureDataUrl: sigData,
+      consumerDob,
+      consumerIncome,
+      agentName: agentDisplay,
+      agentNPN: agentNpnDisplay,
+      agentPhone: agentPhoneDisplay,
+      planName,
+      planPremium: selectedPlan?.afterSubsidy || 0,
+      planDeductible: selectedPlan?.deductible || 0,
+      planMaxOop: selectedPlan?.oopMax || 0,
+      effectiveDate: effectiveDate || "",
+      consentDate: now.toISOString(),
+      consentTimestamp: now.getTime(),
+      typedSignature: typedSignature.trim(),
       consentGranted: true,
-      eligibilityReviewed: true,
-      consentDuration: duration,
     });
   };
 
-  const isValid = checkConsent && checkEligibility && hasSig;
-
   // Styles
   const card: React.CSSProperties = {
-    background: "#12141c", borderRadius: 16, padding: "24px 20px",
-    boxShadow: "0 2px 12px rgba(0,0,0,.3)", maxWidth: 640, margin: "0 auto",
-  };
-  const sectionTitle: React.CSSProperties = {
-    fontSize: 14, fontWeight: 800, color: "#10b981", marginBottom: 6,
-    textTransform: "uppercase", letterSpacing: 0.5,
-    display: "flex", alignItems: "center", gap: 8,
+    background: "#fff", borderRadius: 14, padding: "32px 24px",
+    boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04)",
+    maxWidth: 640, margin: "0 auto", border: "1px solid #E2E8F0",
   };
   const legalText: React.CSSProperties = {
-    fontSize: 12.5, lineHeight: 1.7, color: "#8b8fa3", marginBottom: 12,
+    fontSize: 13, lineHeight: 1.8, color: "#374151", marginBottom: 16,
   };
-  const bulletItem: React.CSSProperties = {
-    fontSize: 12.5, lineHeight: 1.6, color: "#8b8fa3", paddingLeft: 20,
-    position: "relative" as const, marginBottom: 4,
+  const sectionDivider: React.CSSProperties = {
+    height: 1, background: "#E2E8F0", margin: "20px 0",
   };
-  const bulletDot: React.CSSProperties = {
-    position: "absolute" as const, left: 6, top: 8,
-    width: 5, height: 5, borderRadius: "50%", background: "#10b981",
+  const infoGrid: React.CSSProperties = {
+    display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 24px",
+    fontSize: 13, color: "#374151", marginBottom: 16,
   };
-  const divider: React.CSSProperties = {
-    height: 1, background: "rgba(255,255,255,0.06)", margin: "18px 0",
+  const infoLabel: React.CSSProperties = {
+    fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase",
+    letterSpacing: 0.5,
   };
-  const checkRow: React.CSSProperties = {
-    display: "flex", alignItems: "flex-start", gap: 10,
-    marginBottom: 12, cursor: "pointer",
-  };
-  const infoBox: React.CSSProperties = {
-    background: "rgba(16,185,129,0.08)", borderRadius: 10, padding: 14,
-    border: "1px solid rgba(16,185,129,0.2)", marginBottom: 16,
-  };
-  const infoRow: React.CSSProperties = {
-    display: "grid", gridTemplateColumns: "1fr 1fr",
-    gap: 6, fontSize: 12, color: "#8b8fa3",
+  const infoValue: React.CSSProperties = {
+    fontSize: 14, fontWeight: 600, color: "#1E293B", marginTop: 2,
   };
   const btn: React.CSSProperties = {
     padding: "14px 28px", borderRadius: 10, border: "none",
@@ -272,244 +158,183 @@ export default function CMSConsentForm({
   return (
     <div style={card}>
       {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: "#10b981", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
-          📋 CMS Marketplace
-        </div>
-        <div style={{ fontSize: 20, fontWeight: 900, color: "#10b981", lineHeight: 1.2 }}>
-          {txt.title}
-        </div>
-        <div style={{ fontSize: 13, color: "#5a5e72", marginTop: 4 }}>
-          {txt.subtitle}
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#1E3A5F", letterSpacing: 0.5 }}>
+          CARTA DE CONSENTIMIENTO
         </div>
       </div>
 
-      {/* Selected Plan Summary */}
-      {selectedPlan && (() => {
-        const isEs = lang === "es";
-        const metalLabels: Record<string, { en: string; es: string }> = {
-          bronze: { en: "Bronze", es: "Bronce" },
-          silver: { en: "Silver", es: "Plata" },
-          gold: { en: "Gold", es: "Oro" },
-          platinum: { en: "Platinum", es: "Platino" },
-          catastrophic: { en: "Catastrophic", es: "Catastrófico" },
-        };
-        const metalColors: Record<string, string> = {
-          catastrophic: "#6b7280", bronze: "#92400e", silver: "#9ca3af", gold: "#b45309", platinum: "#4338ca",
-        };
-        const metalLabel = metalLabels[selectedPlan.metal]?.[isEs ? "es" : "en"] || selectedPlan.metal;
-        return (
-          <div style={{
-            background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)",
-            border: "1.5px solid #6ee7b7",
-            borderRadius: 12, padding: 16, marginBottom: 20,
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#065f46", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
-              {isEs ? "Plan seleccionado" : "Selected Plan"}
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-              <div>
-                <span style={{
-                  display: "inline-block", padding: "2px 10px", borderRadius: 4,
-                  fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8,
-                  color: "#fff", backgroundColor: metalColors[selectedPlan.metal] || "#6b7280",
-                }}>
-                  {metalLabel}
-                </span>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a", marginTop: 6, lineHeight: 1.3 }}>
-                  {selectedPlan.name}
-                </div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-                  {selectedPlan.issuer}
-                </div>
-              </div>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                {selectedPlan.afterSubsidy < selectedPlan.premium && (
-                  <div style={{ fontSize: 11, color: "#9ca3af", textDecoration: "line-through" }}>
-                    ${selectedPlan.premium}{isEs ? "/mes" : "/mo"}
-                  </div>
-                )}
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#059669", letterSpacing: -0.5 }}>
-                  ${selectedPlan.afterSubsidy}
-                </div>
-                <div style={{ fontSize: 10, color: "#6b7280" }}>{isEs ? "/mes" : "/mo"}</div>
-              </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
-                  {isEs ? "Prima mensual" : "Monthly Premium"}
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 2 }}>
-                  ${selectedPlan.afterSubsidy}
-                </div>
-              </div>
-              <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
-                  {isEs ? "Deducible" : "Deductible"}
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", marginTop: 2 }}>
-                  ${selectedPlan.deductible.toLocaleString()}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Part 1: Consumer Consent */}
-      <div style={sectionTitle}>
-        <span style={{ fontSize: 18 }}>1️⃣</span> {txt.part1Title}
-      </div>
+      {/* Main consent body */}
       <div style={legalText}>
-        {txt.part1Body(consumerName, agentDisplay)}
-      </div>
-      <div style={{ ...legalText, fontWeight: 600, color: "#10b981", marginBottom: 8 }}>
-        {txt.authIntro}
-      </div>
-      {txt.authItems.map((item, i) => (
-        <div key={i} style={bulletItem}>
-          <div style={bulletDot} />
-          {item}
-        </div>
-      ))}
-      <div style={{ ...legalText, marginTop: 12, fontStyle: "italic", color: "#5a5e72" }}>
-        {txt.privacyNote}
+        Yo, <strong>{consumerName || "[Nombre del Cliente]"}</strong>
+        {" "}estoy solicitando asistencia para enrolarme en un Seguro de Salud por Medio del Mercado de Seguros Médicos. He brindado la información necesaria para ser elegible al crédito fiscal que otorga el Mercado de Seguros Médicos y así obtener beneficios de una prima reducida. Certifico que he recibido y entendido la asesoría brindada por:
       </div>
 
-      {/* Duration — fixed 12 months */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12.5, color: "#8b8fa3", lineHeight: 1.6 }}>
-          {txt.durationLabel} <strong style={{ color: "#10b981" }}>{duration}</strong>.
-        </div>
-        <div style={{ fontSize: 11.5, color: "#5a5e72", marginTop: 4 }}>
-          {txt.revokeNote(txt.revokeMethod)}
+      {/* Agent info inline */}
+      <div style={{
+        background: "#F8FAFC", borderRadius: 10, padding: 16,
+        border: "1px solid #E2E8F0", marginBottom: 20,
+      }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 32px", fontSize: 13, color: "#374151" }}>
+          <div><span style={{ fontWeight: 700 }}>Agente Autorizado:</span> {agentDisplay}</div>
+          <div><span style={{ fontWeight: 700 }}>NPN:</span> {agentNpnDisplay}</div>
+          <div><span style={{ fontWeight: 700 }}>Teléfono:</span> {agentPhoneDisplay}</div>
         </div>
       </div>
 
-      <div style={divider} />
-
-      {/* Part 2: Eligibility Review */}
-      <div style={sectionTitle}>
-        <span style={{ fontSize: 18 }}>2️⃣</span> {txt.part2Title}
-      </div>
       <div style={legalText}>
-        {txt.part2Body}
+        Por este medio doy permiso a <strong>{agentDisplay}</strong> para actuar como mi Agente, de Seguro de Salud de mi familia. Al dar mi consentimiento a este acuerdo, autorizo a utilizar la información confidencial proporcionada por escrito, electrónicamente o por teléfono, solo para los fines de uno o más de los siguientes propósitos:
       </div>
 
-      <div style={divider} />
-
-      {/* Agent Info */}
-      {(agentName || agencyName) && (
-        <>
-          <div style={{ ...sectionTitle, fontSize: 12 }}>
-            {txt.agentInfo}
-          </div>
-          <div style={infoBox}>
-            <div style={infoRow}>
-              {agentName && <div>👤 {agentName}</div>}
-              {agentNPN && <div>🆔 NPN: {agentNPN}</div>}
-              {agencyName && <div>🏢 {agencyName}</div>}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Consumer Info */}
-      <div style={infoBox}>
-        <div style={infoRow}>
-          <div>👤 {consumerName}</div>
-          <div>📞 {consumerPhone}</div>
-          {consumerEmail && <div>📧 {consumerEmail}</div>}
-          <div>📅 {dateStr}</div>
+      {/* Numbered purposes */}
+      <div style={{ ...legalText, paddingLeft: 8 }}>
+        <div style={{ marginBottom: 8 }}>
+          <strong>1.</strong> Búsqueda y/o creación de una aplicación en el Mercado de Seguros.
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <strong>2.</strong> Completar una solicitud de elegibilidad e inscripción en un Plan de Salud del Mercado u otros programas gubernamentales de asequibilidad de seguros o créditos fiscales anticipados para ayudar a pagar las primas del Mercado.
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <strong>3.</strong> Brindar mantenimiento continuo de la cuenta y asistencia para la inscripción según sea necesario.
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <strong>4.</strong> Responder a consultas del Mercado con respecto a mi solicitud.
         </div>
       </div>
 
-      {/* Checkboxes */}
-      <label style={checkRow}>
-        <input
-          type="checkbox"
-          checked={checkConsent}
-          onChange={() => setCheckConsent(!checkConsent)}
-          aria-label={txt.checkConsent}
-          aria-required="true"
-          style={{ width: 20, height: 20, accentColor: "#10b981", cursor: "pointer", flexShrink: 0, marginTop: 1 }}
-        />
-        <span style={{ fontSize: 13, color: "#f0f1f5", lineHeight: 1.5 }}>
-          {txt.checkConsent}
-        </span>
-      </label>
-      <label style={checkRow}>
-        <input
-          type="checkbox"
-          checked={checkEligibility}
-          onChange={() => setCheckEligibility(!checkEligibility)}
-          aria-label={txt.checkEligibility}
-          aria-required="true"
-          style={{ width: 20, height: 20, accentColor: "#10b981", cursor: "pointer", flexShrink: 0, marginTop: 1 }}
-        />
-        <span style={{ fontSize: 13, color: "#f0f1f5", lineHeight: 1.5 }}>
-          {txt.checkEligibility}
-        </span>
-      </label>
+      <div style={sectionDivider} />
 
-      {/* Signature Pad */}
-      <div style={{ marginTop: 8, marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#8b8fa3" }}>{txt.signHere}</div>
-          {hasSig && (
-            <button onClick={clearSig} style={{
-              fontSize: 11, color: "#ef4444", background: "none", border: "none",
-              cursor: "pointer", fontWeight: 600, fontFamily: "inherit",
-            }}>{txt.clearSig}</button>
+      {/* Plan Details */}
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#1E3A5F", marginBottom: 14, textTransform: "uppercase", letterSpacing: 0.5 }}>
+        Detalles del Plan
+      </div>
+      <div style={{
+        background: "#F0FDF4", borderRadius: 10, padding: 16,
+        border: "1px solid #BBF7D0", marginBottom: 20,
+      }}>
+        <div style={infoGrid}>
+          <div>
+            <div style={infoLabel}>Nombre del Plan</div>
+            <div style={infoValue}>{planName}</div>
+          </div>
+          <div>
+            <div style={infoLabel}>Prima Mensual</div>
+            <div style={{ ...infoValue, color: "#059669" }}>{premium}</div>
+          </div>
+          <div>
+            <div style={infoLabel}>Deducible</div>
+            <div style={infoValue}>{deductible}</div>
+          </div>
+          <div>
+            <div style={infoLabel}>Gasto máximo de bolsillo</div>
+            <div style={infoValue}>{maxOop}</div>
+          </div>
+          <div>
+            <div style={infoLabel}>Ingreso Total</div>
+            <div style={infoValue}>{incomeDisplay}</div>
+          </div>
+          <div>
+            <div style={infoLabel}>Fecha de Vigencia</div>
+            <div style={infoValue}>{effectiveDateDisplay}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Ongoing consent text */}
+      <div style={legalText}>
+        Entiendo que mi consentimiento permanece vigente hasta que sea revocado o modificado poniéndome en contacto con el agente arriba mencionado y que mi información personal no será divulgada y será guardada de forma segura. Así mismo entiendo que en casos de cambios tales como:
+      </div>
+
+      <div style={{ ...legalText, paddingLeft: 16 }}>
+        <div style={{ marginBottom: 4 }}>• Estatus Marital.</div>
+        <div style={{ marginBottom: 4 }}>• Cambios de Ingresos.</div>
+        <div style={{ marginBottom: 4 }}>• Cambios en el número de personas en mi declaración de Impuestos.</div>
+        <div style={{ marginBottom: 4 }}>• Cambios en el número de personas que necesitan cobertura médica en mi aplicación.</div>
+        <div style={{ marginBottom: 4 }}>• Cambios de estatus migratorio.</div>
+        <div style={{ marginBottom: 4 }}>• Cambios de dirección.</div>
+      </div>
+
+      <div style={legalText}>
+        Debo notificar a mi representante inmediatamente si ocurren estos cambios y sean actualizados en el Sistema. De la misma manera confirmo no tener otro seguro médico.
+      </div>
+
+      <div style={sectionDivider} />
+
+      {/* Client footer info */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={infoGrid}>
+          <div>
+            <div style={infoLabel}>Fecha de Nacimiento</div>
+            <div style={infoValue}>{consumerDob ? fmtDate(consumerDob) : "N/A"}</div>
+          </div>
+          <div>
+            <div style={infoLabel}>Teléfono</div>
+            <div style={infoValue}>{consumerPhone || "N/A"}</div>
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <div style={infoLabel}>Email</div>
+            <div style={infoValue}>{consumerEmail || "N/A"}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={sectionDivider} />
+
+      {/* Signature area */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.7, marginBottom: 14 }}>
+          Al firmar digitalmente escribiendo su nombre en este espacio, usted representa legalmente su firma real y reconoce que la información proporcionada es precisa y válida.
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#1E293B", marginBottom: 6 }}>
+            Firma (escriba su nombre completo)
+          </label>
+          <input
+            type="text"
+            value={typedSignature}
+            onChange={(e) => { setTypedSignature(e.target.value); setShowError(false); }}
+            placeholder="Escriba su nombre aquí como firma"
+            style={{
+              width: "100%", padding: "14px 16px", borderRadius: 8,
+              border: showError && !isValid ? "2px solid #ef4444" : "1.5px solid #E2E8F0",
+              fontSize: 18, fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontStyle: "italic", outline: "none", boxSizing: "border-box",
+              background: "#FAFAFA", color: "#1E293B",
+            }}
+            aria-required="true"
+            aria-label="Firma digital"
+          />
+          {showError && !isValid && (
+            <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>
+              Se requiere escribir su nombre como firma
+            </div>
           )}
         </div>
-        <div style={{
-          border: showError && !hasSig ? "2px solid #ef4444" : "1.5px solid #d1d5db",
-          borderRadius: 10, overflow: "hidden", background: "#0e1018",
-          touchAction: "none",
-        }}>
-          <canvas
-            ref={canvasRef}
-            role="img"
-            aria-label={txt.signHere}
-            style={{ width: "100%", height: 100, display: "block", cursor: "crosshair" }}
-            onMouseDown={startDraw}
-            onMouseMove={draw}
-            onMouseUp={endDraw}
-            onMouseLeave={endDraw}
-            onTouchStart={startDraw}
-            onTouchMove={draw}
-            onTouchEnd={endDraw}
-          />
-        </div>
-        {showError && !hasSig && (
-          <div role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{txt.sigRequired}</div>
-        )}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-          <div style={{ fontSize: 11, color: "#5a5e72" }}>{txt.dateLine}: {dateStr}</div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.1)" }}>{txt.cmsRef}</div>
+
+        <div style={{ fontSize: 13, color: "#6B7280" }}>
+          <span style={{ fontWeight: 700 }}>Fecha de Firma:</span> {signatureDateStr}
         </div>
       </div>
 
       {/* Action Buttons */}
       <div style={{ display: "flex", gap: 10 }}>
         <button onClick={onBack} style={{
-          ...btn, flex: 1, background: "#181a24", color: "#8b8fa3",
-          border: "1px solid #e5e7eb",
+          ...btn, flex: 1, background: "#F8FAFC", color: "#64748B",
+          border: "1px solid #CBD5E1",
         }}>
-          {txt.back}
+          ← Volver
         </button>
         <button
           onClick={handleSubmit}
           disabled={!isValid || submitting}
           style={{
             ...btn, flex: 2,
-            background: isValid && !submitting ? "#10b981" : "rgba(255,255,255,0.1)",
-            color: isValid && !submitting ? "#fff" : "#5a5e72",
+            background: isValid && !submitting ? "#0D9488" : "#F1F5F9",
+            color: isValid && !submitting ? "#fff" : "#94A3B8",
           }}
         >
-          {submitting ? "..." : txt.submit}
+          {submitting ? "Procesando..." : "Firmar y Continuar →"}
         </button>
       </div>
     </div>

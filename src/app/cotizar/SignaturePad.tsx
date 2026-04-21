@@ -12,30 +12,21 @@ interface Props {
 
 export default function SignaturePad({ onSignature, onClear, label, hint, clearLabel }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [drawing, setDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
 
-  const getPos = useCallback((e: MouseEvent | TouchEvent): { x: number; y: number } | null => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    if ("touches" in e) {
-      const t = e.touches[0];
-      if (!t) return null;
-      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
-    }
-    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-  }, []);
+  // Store callbacks in refs so the canvas effect never re-runs due to prop changes
+  const onSignatureRef = useRef(onSignature);
+  onSignatureRef.current = onSignature;
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
 
+  // One-time canvas setup — no dependencies, never re-runs
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set up canvas for retina
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
@@ -48,27 +39,35 @@ export default function SignaturePad({ onSignature, onClear, label, hint, clearL
 
     let isDown = false;
 
+    const getPos = (e: MouseEvent | TouchEvent): { x: number; y: number } | null => {
+      const r = canvas.getBoundingClientRect();
+      if ("touches" in e) {
+        const t = e.touches[0];
+        if (!t) return null;
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
+      }
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
+
     const start = (e: MouseEvent | TouchEvent) => {
       e.preventDefault();
       isDown = true;
       const pos = getPos(e);
-      if (pos) { ctx.beginPath(); ctx.moveTo(pos.x / dpr, pos.y / dpr); }
+      if (pos) { ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
     };
 
     const move = (e: MouseEvent | TouchEvent) => {
       if (!isDown) return;
       e.preventDefault();
       const pos = getPos(e);
-      if (pos) { ctx.lineTo(pos.x / dpr, pos.y / dpr); ctx.stroke(); }
+      if (pos) { ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
     };
 
     const end = () => {
       if (!isDown) return;
       isDown = false;
       setHasSignature(true);
-      // Export as PNG data URL
-      const dataUrl = canvas.toDataURL("image/png");
-      onSignature(dataUrl);
+      onSignatureRef.current(canvas.toDataURL("image/png"));
     };
 
     canvas.addEventListener("mousedown", start);
@@ -88,7 +87,7 @@ export default function SignaturePad({ onSignature, onClear, label, hint, clearL
       canvas.removeEventListener("touchmove", move);
       canvas.removeEventListener("touchend", end);
     };
-  }, [getPos, onSignature]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const clear = () => {
     const canvas = canvasRef.current;
@@ -97,7 +96,7 @@ export default function SignaturePad({ onSignature, onClear, label, hint, clearL
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
-    onClear();
+    onClearRef.current();
   };
 
   return (

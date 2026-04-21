@@ -43,7 +43,6 @@ export default function AIPlanAdvisor({ plan: initialPlan, household, income, fp
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
   const [activePlanId, setActivePlanId] = useState(initialPlan.id);
-  const [carrierFilter, setCarrierFilter] = useState("all");
   const contentRef = useRef<HTMLDivElement>(null);
 
   const plan = (allPlans && allPlans.find((p: any) => p.id === activePlanId)) || initialPlan;
@@ -457,61 +456,39 @@ Explain everything I need to know about this plan and my financial situation in 
         {t.cmsDisclaimer || "EnrollSalud is not the Health Insurance Marketplace. Plan info from public CMS API."}
       </div>
 
-      {/* Carrier Filter Tabs + Plan List */}
-      {allPlans && allPlans.length > 1 && (() => {
-        const carriers = Array.from(new Set(allPlans.map((p: any) => p.issuer || "").filter(Boolean)));
-        const filteredPlans = carrierFilter === "all" ? allPlans : allPlans.filter((p: any) => p.issuer === carrierFilter);
-        return (
-          <div style={{ borderBottom: "1px solid #e9d5ff" }}>
-            {/* Carrier tabs */}
-            <div style={{ padding: "10px 12px 0", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-              <div style={{ display: "flex", gap: 6, minWidth: "max-content", paddingBottom: 10 }}>
-                <button type="button" onClick={() => setCarrierFilter("all")} style={{
-                  padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", border: "none",
-                  background: carrierFilter === "all" ? "#7c3aed" : "rgba(124,58,237,0.08)",
-                  color: carrierFilter === "all" ? "#fff" : "#7c3aed",
-                }}>{lang === "es" ? "Todos" : "All"}</button>
-                {carriers.map((c) => (
-                  <button key={c} type="button" onClick={() => setCarrierFilter(c)} style={{
-                    padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", border: "none", whiteSpace: "nowrap",
-                    background: carrierFilter === c ? "#7c3aed" : "rgba(124,58,237,0.08)",
-                    color: carrierFilter === c ? "#fff" : "#7c3aed",
-                  }}>{c.split(" ")[0]}</button>
-                ))}
-              </div>
-            </div>
-            {/* Filtered plan cards — vertical list */}
-            <div style={{ maxHeight: 220, overflowY: "auto", padding: "0 12px 10px" }}>
-              {filteredPlans.map((p: any) => {
-                const isActive = p.id === activePlanId;
-                const metal = detectMetal(p.name || p.metal || "");
-                return (
-                  <button key={p.id} type="button" onClick={() => {
-                    if (p.id !== activePlanId) { setActivePlanId(p.id); setExplanation(""); setError(false); setConversationId(null); }
-                  }} style={{
-                    width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-                    padding: "10px 12px", marginBottom: 4, borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-                    border: isActive ? "2px solid #7c3aed" : "1.5px solid #e5e7eb",
-                    background: isActive ? "rgba(124,58,237,0.06)" : "#fff",
-                  }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        {metal && <span style={{ display: "inline-block", padding: "1px 5px", borderRadius: 3, fontSize: 8, fontWeight: 900, color: "#000", background: metal.color, lineHeight: "12px" }}>{metal.label}</span>}
-                        <span style={{ fontSize: 12, fontWeight: 700, color: "#1E293B", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
-                      </div>
-                      <div style={{ fontSize: 10, color: "#64748B", marginTop: 2 }}>{p.issuer} · ded ${p.deductible ? "$" + Number(p.deductible).toLocaleString() : "—"}</div>
+      {/* Plan List (no carrier tabs — those are on the main page) */}
+      {allPlans && allPlans.length > 1 && (
+        <div style={{ borderBottom: "1px solid #e9d5ff" }}>
+          <div style={{ maxHeight: 220, overflowY: "auto", padding: "8px 12px 10px" }}>
+            {allPlans.map((p: any) => {
+              const isActive = p.id === activePlanId;
+              const metal = detectMetal(p.name || p.metal || "");
+              return (
+                <button key={p.id} type="button" onClick={() => {
+                  if (p.id !== activePlanId) { setActivePlanId(p.id); setExplanation(""); setError(false); setConversationId(null); }
+                }} style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+                  padding: "10px 12px", marginBottom: 4, borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                  border: isActive ? "2px solid #7c3aed" : "1.5px solid #e5e7eb",
+                  background: isActive ? "rgba(124,58,237,0.06)" : "#fff",
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      {metal && <span style={{ display: "inline-block", padding: "1px 5px", borderRadius: 3, fontSize: 8, fontWeight: 900, color: "#000", background: metal.color, lineHeight: "12px" }}>{metal.label}</span>}
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#1E293B", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
                     </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 900, color: isActive ? "#7c3aed" : "#0D9488" }}>${p.afterSubsidy}</div>
-                      <div style={{ fontSize: 9, color: "#94A3B8" }}>/mes</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    <div style={{ fontSize: 10, color: "#64748B", marginTop: 2 }}>{p.issuer} · ded ${p.deductible ? "$" + Number(p.deductible).toLocaleString() : "—"}</div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: isActive ? "#7c3aed" : "#0D9488" }}>${p.afterSubsidy}</div>
+                    <div style={{ fontSize: 9, color: "#94A3B8" }}>/mes</div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* Content */}
       <div ref={contentRef} style={{

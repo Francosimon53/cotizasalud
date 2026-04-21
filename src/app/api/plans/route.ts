@@ -59,30 +59,44 @@ function parseDollar(s: string | number | undefined | null): number {
   return Math.round(parseFloat(s.replace(/[$,]/g, "")) || 0);
 }
 
-function mapCMSPlan(p: any): any {
+function mapCMSPlan(p: any, householdSize: number): any {
   const metal = (p.metal_level || "").toLowerCase().replace("expanded ", "");
   const premium = Math.round(p.premium || 0);
   const afterSubsidy = Math.max(0, Math.round(p.premium_w_credit ?? premium));
 
-  // Deductible extraction. Some issuers (Kaiser, Bright, some Bronze plans)
-  // only report a "Combined Medical and Drug EHB Deductible" and omit the
-  // separate "Medical EHB Deductible" entry. Without this fallback those
-  // plans rendered as $0, which is worse than showing the combined number.
-  // Preference order: Medical only → Combined (Medical+Drug).
+  // Deductible / OOP extraction cascades on two axes:
+  //
+  // 1. household size: >1 person → prefer "Family" (total family deductible,
+  //    eg $18000), fall back to "Individual" if the plan only reports that
+  //    variant. Single-person households only look at "Individual".
+  // 2. type (deductible only): prefer "Medical EHB Deductible", fall back to
+  //    "Combined Medical and Drug EHB Deductible" (Kaiser, Bright, and some
+  //    Bronze plans only ship the combined variant).
+  //
+  // For deductible, cost tier is outer priority (matching the user's
+  // household is more important than the type label), type is inner.
+  const inNetwork = (d: any) => d.network_tier?.toLowerCase().includes("in-network");
+  const COSTS: string[] = householdSize > 1 ? ["Family", "Individual"] : ["Individual"];
+
   const deductibles: any[] = p.deductibles || [];
-  const matchesDedTierAndCost = (d: any) =>
-    d.network_tier?.toLowerCase().includes("in-network") &&
-    d.family_cost === "Individual";
-  const dedEntry =
-    deductibles.find((d: any) => d.type === "Medical EHB Deductible" && matchesDedTierAndCost(d)) ||
-    deductibles.find((d: any) => d.type === "Combined Medical and Drug EHB Deductible" && matchesDedTierAndCost(d));
+  const DED_TYPES = ["Medical EHB Deductible", "Combined Medical and Drug EHB Deductible"];
+  let dedEntry: any;
+  outer: for (const cost of COSTS) {
+    for (const type of DED_TYPES) {
+      const m = deductibles.find(
+        (d: any) => d.type === type && inNetwork(d) && d.family_cost === cost
+      );
+      if (m) { dedEntry = m; break outer; }
+    }
+  }
   const deductible = parseDollar(dedEntry?.amount);
 
-  const oopEntry = (p.moops || []).find(
-    (m: any) =>
-      m.network_tier?.toLowerCase().includes("in-network") &&
-      m.family_cost === "Individual"
-  );
+  const moops: any[] = p.moops || [];
+  let oopEntry: any;
+  for (const cost of COSTS) {
+    const m = moops.find((mo: any) => inNetwork(mo) && mo.family_cost === cost);
+    if (m) { oopEntry = m; break; }
+  }
   const oopMax = parseDollar(oopEntry?.amount);
 
   const copay = (name: string): number => {
@@ -200,7 +214,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`CMS API DONE: total=${total}, fetched=${allPlans.length}, year=${cmsBody.year}`);
 
-    const plans = allPlans.map((p: any) => mapCMSPlan(p));
+    const plans = allPlans.map((p: any) => mapCMSPlan(p, household.length));
     const aptc = computeGlobalAPTC(plans);
     const fplPct = getFPLpct(Number(income), household.length);
 

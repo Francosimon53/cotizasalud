@@ -4,6 +4,31 @@ import { getFPLpct } from "@/lib/data";
 
 const CMS_URL = "https://marketplace.api.healthcare.gov/api/v1/plans/search";
 
+// Pagination tuning — see usage block in POST handler for rationale.
+const PAGE_SIZE = 10;
+const PARALLEL_BATCH = 10;
+const maxPlans = 200;
+
+async function fetchPage(
+  apiKey: string,
+  body: CMSRequest,
+  off: number
+): Promise<{ plans: any[]; total: number }> {
+  const res = await fetch(`${CMS_URL}?apikey=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...body, offset: off }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    const err: any = new Error(`CMS API ${res.status}: ${text.slice(0, 200)}`);
+    err.status = res.status;
+    throw err;
+  }
+  const data = await res.json();
+  return { plans: data.plans || [], total: data.total || 0 };
+}
+
 interface CMSPerson {
   age: number;
   gender: string;
@@ -183,35 +208,47 @@ export async function POST(req: NextRequest) {
       market: "Individual",
       place: { countyfips, state, zipcode },
       year: derivePlanYear(),
-      limit: 50,
+      // NOTE: CMS Marketplace API silently caps server-side to 10/page regardless
+      // of the limit requested. Setting limit=10 explicitly to match server
+      // behavior, reduce confusion, and allow accurate roundtrip accounting.
+      // If CMS ever starts honoring higher limits, revisit this.
+      limit: PAGE_SIZE,
       offset: 0,
     };
 
     let allPlans: any[] = [];
-    let offset = 0;
-    const maxPlans = 200;
     let total = 0;
 
-    do {
-      const res = await fetch(`${CMS_URL}?apikey=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...cmsBody, offset }),
-      });
+    try {
+      // First page serially to learn `total`, then parallelize the rest.
+      // Broward family-of-4 has ~196 plans → 20 pages. Serial cost was
+      // ~5s (20 × ~250ms RTT). Parallel batches drop this to ~750ms
+      // while staying polite to the gov API (capped at PARALLEL_BATCH
+      // concurrent requests per round).
+      const first = await fetchPage(apiKey, cmsBody, 0);
+      total = first.total;
+      allPlans = [...first.plans];
 
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("CMS API error:", res.status, text);
-        return NextResponse.json({ error: "CMS API error", status: res.status }, { status: 502 });
+      const offsets: number[] = [];
+      for (let off = allPlans.length; off < total && off < maxPlans; off += PAGE_SIZE) {
+        offsets.push(off);
       }
 
-      const data = await res.json();
-      total = data.total || 0;
-      const pagePlans = data.plans || [];
-      allPlans = [...allPlans, ...pagePlans];
-      offset += pagePlans.length;
-      console.log(`CMS API page: offset=${offset}, got=${pagePlans.length}, total=${total}`);
-    } while (offset < total && allPlans.length < maxPlans);
+      for (let i = 0; i < offsets.length; i += PARALLEL_BATCH) {
+        const batch = offsets.slice(i, i + PARALLEL_BATCH);
+        const results = await Promise.all(
+          batch.map((off) => fetchPage(apiKey, cmsBody, off))
+        );
+        for (const r of results) allPlans = [...allPlans, ...r.plans];
+        if (allPlans.length >= maxPlans) break;
+      }
+    } catch (err: any) {
+      console.error("CMS API error:", err?.message || err);
+      return NextResponse.json(
+        { error: "CMS API error", status: err?.status || 502 },
+        { status: 502 }
+      );
+    }
 
     console.log(`CMS API DONE: total=${total}, fetched=${allPlans.length}, year=${cmsBody.year}`);
 

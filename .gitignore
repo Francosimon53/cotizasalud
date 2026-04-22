@@ -27,3 +27,4 @@ out/
 
 # supabase temp
 supabase/.temp/
+.diagnostics/

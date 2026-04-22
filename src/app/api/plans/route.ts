@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getFPLpct } from "@/lib/data";
 
 const CMS_URL = "https://marketplace.api.healthcare.gov/api/v1/plans/search";
@@ -217,6 +218,46 @@ export async function POST(req: NextRequest) {
     const plans = allPlans.map((p: any) => mapCMSPlan(p, household.length));
     const aptc = computeGlobalAPTC(plans);
     const fplPct = getFPLpct(Number(income), household.length);
+
+    // TEMP: aptc-forensics logging — quitar después del 2026-04-28
+    // Purpose: validar en producción que computeGlobalAPTC matchea el endpoint canónico del CMS
+    // PR de remoción: TBD
+    if (Math.random() < 0.05) {
+      try {
+        const topPlansByPremium = [...plans]
+          .sort((a, b) => b.premium - a.premium)
+          .slice(0, 3)
+          .map((p) => ({
+            issuer_name: p.issuer,
+            premium: p.premium,
+            premium_w_credit: p.afterSubsidy,
+            aptc_derived: p.aptc,
+            metal_tier: p.metal,
+          }));
+        Sentry.captureMessage("aptc-forensics", {
+          level: "info",
+          tags: { purpose: "aptc-forensics" },
+          extra: {
+            state: cmsBody.place.state,
+            countyfips: cmsBody.place.countyfips,
+            zip_prefix: String(cmsBody.place.zipcode || "").slice(0, 3),
+            income_decile: Math.round(Number(income) / 10000) * 10000,
+            household_size: cmsBody.household.people.length,
+            household_ages: cmsBody.household.people.map((p) => p.age),
+            employer_coverage_flags: household.map((m: any) => !!m?.hasEmployerCoverage),
+            year: cmsBody.year,
+            total,
+            plans_fetched: allPlans.length,
+            globalAPTC: aptc,
+            fplPct,
+            topPlansByPremium,
+          },
+        });
+      } catch (err) {
+        // Telemetry must never break the request path.
+        console.warn("aptc-forensics capture failed", err);
+      }
+    }
 
     return NextResponse.json({ plans, aptc, fplPct });
   } catch (err: any) {

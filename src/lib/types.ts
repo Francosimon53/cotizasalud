@@ -47,3 +47,38 @@ export interface AgentBrand {
   phone?: string;
   logo_url?: string;
 }
+
+import type { SubscriptionPlan, SubscriptionStatus } from "./subscription-plans";
+
+export interface Agent {
+  id: string;
+  slug: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  npn: string | null;
+  agency_name: string | null;
+  brand_color: string | null;
+  logo_url: string | null;
+  is_active: boolean;
+  auth_user_id: string | null;
+  onboarding_complete: boolean;
+  preferred_language: string | null;
+
+  subscription_plan: SubscriptionPlan;
+  subscription_status: SubscriptionStatus;
+  subscription_start: string | null;
+  subscription_end: string | null;
+
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+
+  leads_limit_monthly: number;
+  leads_count_current_month: number;
+  leads_count_reset_at: string;
+  trial_end_date: string | null;
+  legacy_grace_period_until: string | null;
+
+  created_at: string;
+}

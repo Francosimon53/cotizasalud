@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import "./agentes.css";
+import PricingSection from "./PricingSection";
 
 const _CSS_REMOVED = `
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -940,6 +941,7 @@ export default function AgentesPage() {
           <a href="#features">Funciones</a>
           <a href="#testimonials">Testimonios</a>
           <a href="#roi">ROI</a>
+          <a href="#precios">Precios</a>
           <Link href="/agentes/login" style={{ color: "#10b981", fontWeight: 700 }}>Iniciar Sesión</Link>
           <Link href="/agentes/registro" className="ag-nav-cta">Crear Cuenta &rarr;</Link>
         </div>
@@ -1162,6 +1164,9 @@ export default function AgentesPage() {
           </div>
         </div>
       </section>
+
+      {/* PRICING SECTION */}
+      <PricingSection />
 
       {/* CTA SECTION */}
       <section className="ag-cta-section">

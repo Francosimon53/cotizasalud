@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
+import { SUBSCRIPTION_PLANS, TRIAL_DAYS } from "@/lib/subscription-plans";
 import DashboardHeader from "./DashboardHeader";
 import DashboardClient from "./DashboardClient";
 import ShareCard from "./ShareCard";
@@ -21,6 +22,7 @@ export default async function DashboardPage() {
     const slug = user.email?.split("@")[0]?.replace(/[^a-z0-9-]/gi, "-").toLowerCase() || `agent-${Date.now()}`;
     const { data: slugExists } = await db.from("agents").select("id").eq("slug", slug).single();
     const finalSlug = slugExists ? `${slug}-${Math.random().toString(36).slice(2, 6)}` : slug;
+    const trialEndDate = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
     await db.from("agents").insert({
       auth_user_id: user.id,
       name: user.email?.split("@")[0] || "Nuevo Agente",
@@ -28,7 +30,9 @@ export default async function DashboardPage() {
       email: user.email,
       is_active: true,
       subscription_plan: "trial",
-      subscription_status: "active",
+      subscription_status: "trialing",
+      leads_limit_monthly: SUBSCRIPTION_PLANS.trial.leads_limit,
+      trial_end_date: trialEndDate,
     });
     const { data: newAgent } = await db.from("agents").select("*").eq("auth_user_id", user.id).single();
     agent = newAgent;

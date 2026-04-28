@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, max-age=0, must-revalidate',
+  'CDN-Cache-Control': 'no-store',
+  'Vercel-CDN-Cache-Control': 'no-store',
+} as const
+
 const VALID_STATUSES = ['browsing', 'new', 'contacted', 'quoted', 'enrolled', 'lost']
 const LOST_REASONS = ['too_expensive', 'another_plan', 'got_medicaid', 'no_response', 'other']
 const STATUS_TIMESTAMP: Record<string, string> = {
@@ -16,15 +25,24 @@ export async function PATCH(request: NextRequest) {
     const { leadId, status, note, lostReason, nextFollowupDate, contactName, contactPhone, contactEmail, firstName, lastName } = body
 
     if (!leadId || !status || !VALID_STATUSES.includes(status)) {
-      return NextResponse.json({ error: 'Invalid leadId or status' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Invalid leadId or status' },
+        { status: 400, headers: NO_STORE_HEADERS }
+      )
     }
     // Note required for agent-side status changes, not for browsing→new upgrade
     const isContactUpgrade = (status === 'new' && contactName && contactPhone)
     if (!isContactUpgrade && (!note || !note.trim())) {
-      return NextResponse.json({ error: 'Note is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Note is required' },
+        { status: 400, headers: NO_STORE_HEADERS }
+      )
     }
     if (status === 'lost' && (!lostReason || !LOST_REASONS.includes(lostReason))) {
-      return NextResponse.json({ error: 'Lost reason is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Lost reason is required' },
+        { status: 400, headers: NO_STORE_HEADERS }
+      )
     }
 
     const supabase = createServiceClient()
@@ -63,7 +81,10 @@ export async function PATCH(request: NextRequest) {
     const { error } = await supabase.from('leads').update(update).eq('id', leadId)
     if (error) {
       console.error('Lead update error:', error)
-      return NextResponse.json({ error: 'Failed to update lead' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to update lead' },
+        { status: 500, headers: NO_STORE_HEADERS }
+      )
     }
 
     // Log activity
@@ -76,10 +97,13 @@ export async function PATCH(request: NextRequest) {
       lost_reason: status === 'lost' ? lostReason : null,
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true }, { headers: NO_STORE_HEADERS })
   } catch (err) {
     console.error('API error:', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Server error' },
+      { status: 500, headers: NO_STORE_HEADERS }
+    )
   }
 }
 
@@ -132,7 +156,10 @@ export async function POST(request: NextRequest) {
 
     if (leadError) {
       console.error('Lead insert error:', leadError)
-      return NextResponse.json({ error: 'Failed to save lead' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to save lead' },
+        { status: 500, headers: NO_STORE_HEADERS }
+      )
     }
 
     // Track page view
@@ -164,9 +191,12 @@ export async function POST(request: NextRequest) {
       }),
     }).catch((err) => console.error('Lead notification failed:', err))
 
-    return NextResponse.json({ success: true, leadId: lead.id })
+    return NextResponse.json({ success: true, leadId: lead.id }, { headers: NO_STORE_HEADERS })
   } catch (err) {
     console.error('API error:', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Server error' },
+      { status: 500, headers: NO_STORE_HEADERS }
+    )
   }
 }

@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getFPLpct } from "@/lib/data";
 
+// Freshness is non-negotiable for the cotizador — every response must match CMS live data.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0, must-revalidate",
+  "CDN-Cache-Control": "no-store",
+  "Vercel-CDN-Cache-Control": "no-store",
+} as const;
+
 const CMS_URL = "https://marketplace.api.healthcare.gov/api/v1/plans/search";
 
 // Pagination tuning — see usage block in POST handler for rationale.
@@ -187,12 +197,18 @@ export async function POST(req: NextRequest) {
     const { zipcode, countyfips, state, income, household } = body;
 
     if (!zipcode || !countyfips || !state || !income || !household?.length) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400, headers: NO_STORE_HEADERS }
+      );
     }
 
     const apiKey = process.env.CMS_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "CMS API key not configured" }, { status: 500 });
+      return NextResponse.json(
+        { error: "CMS API key not configured" },
+        { status: 500, headers: NO_STORE_HEADERS }
+      );
     }
 
     const cmsBody: CMSRequest = {
@@ -246,7 +262,7 @@ export async function POST(req: NextRequest) {
       console.error("CMS API error:", err?.message || err);
       return NextResponse.json(
         { error: "CMS API error", status: err?.status || 502 },
-        { status: 502 }
+        { status: 502, headers: NO_STORE_HEADERS }
       );
     }
 
@@ -296,9 +312,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ plans, aptc, fplPct });
+    return NextResponse.json({ plans, aptc, fplPct }, { headers: NO_STORE_HEADERS });
   } catch (err: any) {
     console.error("Plans API error:", err);
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Internal error" },
+      { status: 500, headers: NO_STORE_HEADERS }
+    );
   }
 }

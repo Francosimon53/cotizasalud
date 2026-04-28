@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { jsPDF } from "jspdf";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0, must-revalidate",
+  "CDN-Cache-Control": "no-store",
+  "Vercel-CDN-Cache-Control": "no-store",
+} as const;
+
 function fmtDate(iso: string): string {
   if (!iso) return "N/A";
   const d = new Date(iso);
@@ -20,7 +29,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const supabase = createServiceClient();
 
     const { data: lead, error } = await supabase.from("leads").select("*").eq("id", id).single();
-    if (error || !lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    if (error || !lead) return NextResponse.json(
+      { error: "Lead not found" },
+      { status: 404, headers: NO_STORE_HEADERS }
+    );
 
     const { data: agent } = await supabase.from("agents").select("name, npn, agency_name, phone").eq("slug", lead.agent_slug).single();
 
@@ -280,10 +292,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="Consentimiento_${clientName.replace(/\s+/g, "_")}_${lead.created_at.split("T")[0]}.pdf"`,
+        ...NO_STORE_HEADERS,
       },
     });
   } catch (err) {
     console.error("Consent PDF error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500, headers: NO_STORE_HEADERS }
+    );
   }
 }

@@ -1381,12 +1381,43 @@ export default function QuoterPage() {
                   )}
                   {exp && (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, color: "#334155", textTransform: "uppercase", letterSpacing: 0.5 }}>{lang === "es" ? "Copagos" : "Copays"}</div>
-                      <div style={S.g4}>
-                        <div style={S.stat}><div style={S.statL}>🩺 {t.pcp}</div><div style={{ ...S.statV, fontSize: 14 }}>{plan.pcp ? `$${plan.pcp}` : (lang === "es" ? "Incluido" : "Included")}</div></div>
-                        <div style={S.stat}><div style={S.statL}>👨‍⚕️ {t.specialist}</div><div style={{ ...S.statV, fontSize: 14 }}>{plan.specialist ? `$${plan.specialist}` : (lang === "es" ? "Incluido" : "Included")}</div></div>
-                        <div style={S.stat}><div style={S.statL}>💊 {t.rx}</div><div style={{ ...S.statV, fontSize: 14 }}>{plan.genericRx ? `$${plan.genericRx}` : (lang === "es" ? "Incluido" : "Included")}</div></div>
-                        <div style={S.stat}><div style={S.statL}>🚑 {t.er}</div><div style={{ ...S.statV, fontSize: 14 }}>{plan.er ? `$${plan.er}` : (lang === "es" ? "Consultar" : "Check plan")}</div></div>
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, color: "#334155", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.youPay}</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+                        {[
+                          { label: t.pcpFull, value: plan.copays_display.primary_care },
+                          { label: t.specialistFull, value: plan.copays_display.specialist },
+                          { label: t.urgentCare, value: plan.copays_display.urgent_care },
+                          { label: t.emergencyRoom, value: plan.copays_display.emergency_room },
+                          { label: t.mentalHealthOutpatient, value: plan.copays_display.mental_health_outpatient },
+                          { label: t.genericDrugs, value: plan.copays_display.generic_drugs },
+                        ].map((item) => (
+                          <div key={item.label} style={{ background: "#F8FAFC", borderRadius: 8, padding: "10px 12px" }}>
+                            <div style={{ fontSize: 10, color: "#64748B", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.3 }}>{item.label}</div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: item.value ? "#1E293B" : "#94A3B8", marginTop: 4, lineHeight: 1.35 }}>
+                              {item.value ?? "—"}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 16, color: "#334155", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.planFeatures}</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {[
+                          { label: t.dentalChild, covered: plan.dental_coverage.child },
+                          { label: t.dentalAdult, covered: plan.dental_coverage.adult },
+                        ].map((item) => (
+                          <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+                            <span style={{
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                              width: 22, height: 22, borderRadius: "50%",
+                              background: item.covered ? "rgba(13,148,136,0.12)" : "rgba(239,68,68,0.12)",
+                              color: item.covered ? "#0D9488" : "#ef4444",
+                              fontSize: 13, fontWeight: 900, flexShrink: 0,
+                            }}>
+                              {item.covered ? "✓" : "✗"}
+                            </span>
+                            <span style={{ color: "#1E293B", fontWeight: 600 }}>{item.label}</span>
+                          </div>
+                        ))}
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 16, color: "#334155", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.yearCost}</div>
                       <div style={S.g3}>
@@ -1488,13 +1519,45 @@ export default function QuoterPage() {
                 </div>
               </div>
 
-              {/* Copays */}
-              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5 }}>Copays</div>
-              <div style={S.g4}>
-                <div style={S.stat}><div style={S.statL}>{t.pcp}</div><div style={{ ...S.statV, fontSize: 15 }}>{plan.pcp ? `$${plan.pcp}` : "—"}</div></div>
-                <div style={S.stat}><div style={S.statL}>{t.specialist}</div><div style={{ ...S.statV, fontSize: 15 }}>{plan.specialist ? `$${plan.specialist}` : "—"}</div></div>
-                <div style={S.stat}><div style={S.statL}>{t.rx}</div><div style={{ ...S.statV, fontSize: 15 }}>{plan.genericRx ? `$${plan.genericRx}` : "—"}</div></div>
-                <div style={S.stat}><div style={S.statL}>{t.er}</div><div style={{ ...S.statV, fontSize: 15 }}>{plan.er ? `$${plan.er}` : "—"}</div></div>
+              {/* You Pay */}
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.youPay}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+                {[
+                  { label: t.pcpFull, value: plan.copays_display.primary_care },
+                  { label: t.specialistFull, value: plan.copays_display.specialist },
+                  { label: t.urgentCare, value: plan.copays_display.urgent_care },
+                  { label: t.emergencyRoom, value: plan.copays_display.emergency_room },
+                  { label: t.mentalHealthOutpatient, value: plan.copays_display.mental_health_outpatient },
+                  { label: t.genericDrugs, value: plan.copays_display.generic_drugs },
+                ].map((item) => (
+                  <div key={item.label} style={{ background: "#F8FAFC", borderRadius: 8, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 10, color: "#64748B", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.3 }}>{item.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: item.value ? "#1E293B" : "#94A3B8", marginTop: 4, lineHeight: 1.35 }}>
+                      {item.value ?? "—"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Plan Features */}
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10, marginTop: 20, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5 }}>{t.planFeatures}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                  { label: t.dentalChild, covered: plan.dental_coverage.child },
+                  { label: t.dentalAdult, covered: plan.dental_coverage.adult },
+                ].map((item) => (
+                  <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      width: 22, height: 22, borderRadius: "50%",
+                      background: item.covered ? "rgba(13,148,136,0.12)" : "rgba(239,68,68,0.12)",
+                      color: item.covered ? "#0D9488" : "#ef4444",
+                      fontSize: 13, fontWeight: 900, flexShrink: 0,
+                    }}>
+                      {item.covered ? "✓" : "✗"}
+                    </span>
+                    <span style={{ color: "#1E293B", fontWeight: 600 }}>{item.label}</span>
+                  </div>
+                ))}
               </div>
 
               {/* Annual Cost Estimates */}

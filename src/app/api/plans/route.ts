@@ -141,6 +141,45 @@ function mapCMSPlan(p: any, householdSize: number): any {
   const genericRx = copay("Generic Drugs");
   const er = copay("Emergency Room");
 
+  // Display strings — read straight from CMS so we don't reinvent formatting.
+  // Bronze/Silver plans usually have coinsurance for ER/Urgent Care; Gold/Plat
+  // mix flat copays and coinsurance. CMS already produces a user-friendly
+  // string per cost_sharing entry — surface that, fall back to null.
+  const benefits: any[] = p.benefits || [];
+  const findDisplay = (targetNames: string[]): string | null => {
+    const lc = new Set(targetNames.map((s) => s.toLowerCase()));
+    const b = benefits.find(
+      (x: any) => x?.covered === true && typeof x?.name === "string" && lc.has(x.name.toLowerCase())
+    );
+    if (!b) return null;
+    const cs =
+      (b.cost_sharings || []).find((c: any) =>
+        c?.network_tier?.toLowerCase()?.includes("in-network")
+      ) ?? b.cost_sharings?.[0];
+    const s = cs?.display_string;
+    return typeof s === "string" && s.trim() ? s.trim() : null;
+  };
+  const copays_display = {
+    primary_care: findDisplay(["Primary Care Visit to Treat an Injury or Illness"]),
+    specialist: findDisplay(["Specialist Visit"]),
+    // CMS uses inconsistent capitalization across plans; cover both.
+    urgent_care: findDisplay(["Urgent Care Centers Or Facilities", "Urgent Care Centers or Facilities"]),
+    emergency_room: findDisplay(["Emergency Room Services"]),
+    mental_health_outpatient: findDisplay(["Mental/Behavioral Health Outpatient Services"]),
+    generic_drugs: findDisplay(["Generic Drugs"]),
+  };
+
+  // Dental coverage — match any benefit name containing both "dental" and the
+  // audience word, covered:true. Spans 6 known CMS variants
+  // (Basic/Major/Routine/Check-Up × Adult/Child).
+  const hasDental = (audience: "child" | "adult"): boolean =>
+    benefits.some((b: any) => {
+      if (b?.covered !== true) return false;
+      const name = (b?.name || "").toLowerCase();
+      return name.includes("dental") && name.includes(audience);
+    });
+  const dental_coverage = { child: hasDental("child"), adult: hasDental("adult") };
+
   const rating = p.quality_rating?.global_rating || 0;
   const hsa = !!p.hsa_eligible;
 
@@ -167,6 +206,8 @@ function mapCMSPlan(p: any, householdSize: number): any {
     yLow,
     yMed,
     yHigh,
+    copays_display,
+    dental_coverage,
   };
 }
 

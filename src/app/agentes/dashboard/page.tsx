@@ -6,9 +6,17 @@ import { SUBSCRIPTION_PLANS, TRIAL_DAYS } from "@/lib/subscription-plans";
 import DashboardHeader from "./DashboardHeader";
 import DashboardClient from "./DashboardClient";
 import ShareCard from "./ShareCard";
+import BillingCard from "./BillingCard";
 import "../agentes.css";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string }>;
+}) {
+  const sp = await searchParams;
+  const checkoutResult = sp.checkout === "success" ? "success" : sp.checkout === "cancelled" ? "cancelled" : null;
+
   const cookieStore = await cookies();
   const supabase = createServerAuthClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
@@ -100,8 +108,48 @@ export default async function DashboardPage() {
       <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} isAdmin={["simon-dev", "delbert"].includes(agent.slug)} />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 60px" }}>
+        {checkoutResult === "success" && (
+          <div style={{
+            background: "rgba(16, 185, 129, 0.12)",
+            border: "1px solid #10b981",
+            borderRadius: 12,
+            padding: "14px 18px",
+            marginBottom: 16,
+            color: "#10b981",
+            fontWeight: 700,
+            fontSize: 14,
+          }}>
+            ✅ ¡Pago confirmado! Tu plan se activa en unos segundos. Si no ves el cambio, refrescá la página.
+          </div>
+        )}
+        {checkoutResult === "cancelled" && (
+          <div style={{
+            background: "rgba(245, 158, 11, 0.12)",
+            border: "1px solid #f59e0b",
+            borderRadius: 12,
+            padding: "14px 18px",
+            marginBottom: 16,
+            color: "#f59e0b",
+            fontWeight: 700,
+            fontSize: 14,
+          }}>
+            ⚠️ Cancelaste el pago. Tu plan actual sigue activo sin cambios.
+          </div>
+        )}
+
         {/* Hero Share Card — prominent, full-width */}
         <ShareCard slug={agent.slug} />
+
+        {/* Plan + leads usage */}
+        <BillingCard
+          plan={agent.subscription_plan}
+          status={agent.subscription_status}
+          leadsCurrent={agent.leads_count_current_month ?? 0}
+          leadsLimit={agent.leads_limit_monthly ?? 0}
+          trialEndDate={agent.trial_end_date}
+          legacyGracePeriodUntil={agent.legacy_grace_period_until}
+          hasStripeCustomer={Boolean(agent.stripe_customer_id)}
+        />
 
         {/* Agent Profile */}
         <div style={{

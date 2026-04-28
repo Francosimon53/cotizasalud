@@ -31,6 +31,26 @@ export interface Plan {
   yLow: number;
   yMed: number;
   yHigh: number;
+  // Display strings extracted from CMS benefits[].cost_sharings[].display_string.
+  // Pre-formatted by CMS — handles flat copays ("$40"), coinsurance
+  // ("40% Coinsurance after deductible"), and "No Charge After Deductible".
+  // null when the benefit isn't covered or CMS doesn't ship a display string.
+  copays_display: {
+    primary_care: string | null;
+    specialist: string | null;
+    urgent_care: string | null;
+    emergency_room: string | null;
+    mental_health_outpatient: string | null;
+    generic_drugs: string | null;
+  };
+  // Boolean flags for plan-level dental coverage. CMS only surfaces dental
+  // benefits in the search response (vision is excluded — lives behind
+  // benefits_url). Match any benefit with both "dental" + audience in the
+  // name and covered:true.
+  dental_coverage: {
+    child: boolean;
+    adult: boolean;
+  };
 }
 export interface QuoteResults {
   plans: Plan[];

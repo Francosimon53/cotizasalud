@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
+import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -14,6 +15,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { leadId, agentSlug, contactName, contactPhone, contactEmail, zipcode, county, state, householdSize, annualIncome, fplPercentage, conversationSummary, planName, isReadyToEnroll } = body;
     const slugResult = normalizeAgentSlug(agentSlug);
+    captureInvalidAgentSlug(slugResult, "app/api/notify-lead/route.ts", {
+      url: req.url,
+      referer: req.headers.get("referer"),
+      userAgent: req.headers.get("user-agent"),
+    });
     const slug = slugResult.ok
       ? slugResult.slug
       : (process.env.DEFAULT_AGENT_SLUG?.trim() || "delbert");

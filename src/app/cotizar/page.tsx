@@ -7,6 +7,7 @@ import { i18n, type Lang } from "@/lib/i18n";
 import { lookupCounties, getFPL, getFPLpct } from "@/lib/data";
 import { generateQuote } from "@/lib/plans";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
+import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 import type { County, HouseholdMember, Plan, QuoteResults, AgentBrand } from "@/lib/types";
 import CMSConsentForm, { type ConsentRecord } from "./CMSConsentForm";
 import SignaturePad from "./SignaturePad";
@@ -28,6 +29,11 @@ function parseSmartLink() {
     try { pathSlug = decodeURIComponent(pathSlug); } catch { /* invalid encoding — leave as-is, will be rejected */ }
   }
   const slugResult = normalizeAgentSlug(pathSlug || p.get("agent"));
+  captureInvalidAgentSlug(slugResult, "app/cotizar/page.tsx", {
+    url: window.location.href,
+    referer: document.referrer || null,
+    userAgent: navigator.userAgent,
+  });
   return {
     name: p.get("n") || p.get("name") || "",
     zip: p.get("z") || p.get("zip") || "",

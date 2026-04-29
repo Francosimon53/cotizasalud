@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
+import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 
 export async function GET(req: NextRequest) {
   const rawSlug = req.nextUrl.searchParams.get("slug");
@@ -8,6 +9,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing slug" }, { status: 400 });
   }
   const slugResult = normalizeAgentSlug(rawSlug);
+  captureInvalidAgentSlug(slugResult, "app/api/agents/route.ts", {
+    url: req.url,
+    referer: req.headers.get("referer"),
+    userAgent: req.headers.get("user-agent"),
+  });
   const requested = slugResult.ok
     ? slugResult.slug
     : (process.env.DEFAULT_AGENT_SLUG?.trim() || "delbert");

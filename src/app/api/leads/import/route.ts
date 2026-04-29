@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { resolveAgentFromSlug } from "@/lib/resolve-agent";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
+import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +15,11 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceClient();
     const cleanPhone = phone.replace(/\D/g, "");
     const slugResult = normalizeAgentSlug(agentSlug);
+    captureInvalidAgentSlug(slugResult, "app/api/leads/import/route.ts", {
+      url: request.url,
+      referer: request.headers.get("referer"),
+      userAgent: request.headers.get("user-agent"),
+    });
     const slug = slugResult.ok
       ? slugResult.slug
       : (process.env.DEFAULT_AGENT_SLUG?.trim() || "delbert");

@@ -6,6 +6,7 @@ import { saveLead, saveConsent, savePlanSelection } from "@/lib/save-lead";
 import { i18n, type Lang } from "@/lib/i18n";
 import { lookupCounties, getFPL, getFPLpct } from "@/lib/data";
 import { generateQuote } from "@/lib/plans";
+import { normalizeAgentSlug } from "@/lib/normalize-slug";
 import type { County, HouseholdMember, Plan, QuoteResults, AgentBrand } from "@/lib/types";
 import CMSConsentForm, { type ConsentRecord } from "./CMSConsentForm";
 import SignaturePad from "./SignaturePad";
@@ -21,13 +22,18 @@ function parseSmartLink() {
   if (typeof window === "undefined") return { name: "", zip: "", phone: "", email: "", agentSlug: "", lang: "", utm_source: "", utm_medium: "", utm_campaign: "" };
   const p = new URLSearchParams(window.location.search);
   const path = window.location.pathname;
-  const slugMatch = path.match(/\/q\/([a-zA-Z0-9_-]+)/);
+  const slugMatch = path.match(/\/q\/([^/?#]+)/);
+  let pathSlug = slugMatch?.[1] || "";
+  if (pathSlug) {
+    try { pathSlug = decodeURIComponent(pathSlug); } catch { /* invalid encoding — leave as-is, will be rejected */ }
+  }
+  const slugResult = normalizeAgentSlug(pathSlug || p.get("agent"));
   return {
     name: p.get("n") || p.get("name") || "",
     zip: p.get("z") || p.get("zip") || "",
     phone: p.get("p") || p.get("phone") || "",
     email: p.get("e") || p.get("email") || "",
-    agentSlug: slugMatch?.[1] || p.get("agent") || "",
+    agentSlug: slugResult.ok ? slugResult.slug : "",
     lang: p.get("lang") || "",
     utm_source: p.get("utm_source") || "",
     utm_medium: p.get("utm_medium") || "",

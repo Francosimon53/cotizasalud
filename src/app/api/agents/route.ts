@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { normalizeAgentSlug } from "@/lib/normalize-slug";
 
 export async function GET(req: NextRequest) {
-  let slug = req.nextUrl.searchParams.get("slug");
-  if (!slug) {
+  const rawSlug = req.nextUrl.searchParams.get("slug");
+  if (!rawSlug) {
     return NextResponse.json({ error: "Missing slug" }, { status: 400 });
   }
-
-  // Resolve "default" to DEFAULT_AGENT_SLUG env var
-  if (slug === "default") {
-    slug = process.env.DEFAULT_AGENT_SLUG || null;
-    if (!slug) return NextResponse.json({ error: "No default agent configured" }, { status: 404 });
-  }
+  const slugResult = normalizeAgentSlug(rawSlug);
+  const requested = slugResult.ok
+    ? slugResult.slug
+    : (process.env.DEFAULT_AGENT_SLUG?.trim() || "delbert");
+  // "default" is a magic value that maps to the env-configured default agent.
+  const slug = requested === "default"
+    ? (process.env.DEFAULT_AGENT_SLUG?.trim() || "delbert")
+    : requested;
 
   try {
     const supabase = createServiceClient();

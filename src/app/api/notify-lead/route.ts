@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase";
+import { normalizeAgentSlugFromRequest } from "@/lib/normalize-slug";
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -12,16 +13,17 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { leadId, agentSlug, contactName, contactPhone, contactEmail, zipcode, county, state, householdSize, annualIncome, fplPercentage, conversationSummary, planName, isReadyToEnroll } = body;
+    const normalized = normalizeAgentSlugFromRequest(agentSlug, req);
 
     // Look up agent email
     let agentEmail = "";
     let agentName = "Agent";
-    if (agentSlug) {
+    if (normalized.ok) {
       const supabase = createServiceClient();
       const { data } = await supabase
         .from("agents")
         .select("email, name")
-        .eq("slug", agentSlug)
+        .eq("slug", normalized.slug)
         .eq("is_active", true)
         .single();
       if (data?.email) {

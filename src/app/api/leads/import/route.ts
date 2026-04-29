@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { resolveAgentFromSlug } from "@/lib/resolve-agent";
+import { normalizeAgentSlugFromRequest } from "@/lib/normalize-slug";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,9 +13,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient();
     const cleanPhone = phone.replace(/\D/g, "");
+    const normalized = normalizeAgentSlugFromRequest(agentSlug, request);
     const { agent_id, agent_slug } = await resolveAgentFromSlug(
       supabase,
-      agentSlug,
+      normalized.ok ? normalized.slug : null,
       { zipcode, source: "api/leads/import POST" }
     );
 

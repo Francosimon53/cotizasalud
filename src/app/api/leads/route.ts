@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { resolveAgentFromSlug } from '@/lib/resolve-agent'
+import { normalizeAgentSlugFromRequest } from '@/lib/normalize-slug'
 
 const VALID_STATUSES = ['browsing', 'new', 'contacted', 'quoted', 'enrolled', 'lost']
 const LOST_REASONS = ['too_expensive', 'another_plan', 'got_medicaid', 'no_response', 'other']
@@ -88,9 +89,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const supabase = createServiceClient()
+    const normalized = normalizeAgentSlugFromRequest(body.agentSlug, request)
     const { agent_id, agent_slug } = await resolveAgentFromSlug(
       supabase,
-      body.agentSlug || process.env.DEFAULT_AGENT_SLUG,
+      normalized.ok ? normalized.slug : null,
       { zipcode: body.zipcode, source: 'api/leads POST' }
     )
 

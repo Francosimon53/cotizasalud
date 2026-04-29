@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { normalizeAgentSlugFromRequest } from "@/lib/normalize-slug";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { agentSlug, planHiosId, planName, messages } = body;
+    const normalized = normalizeAgentSlugFromRequest(agentSlug, request);
 
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from("ai_conversations")
       .insert({
-        agent_slug: agentSlug || process.env.DEFAULT_AGENT_SLUG || null,
+        agent_slug: normalized.ok ? normalized.slug : null,
         selected_plan_hios_id: planHiosId || null,
         selected_plan_name: planName || null,
         messages: messages || [],

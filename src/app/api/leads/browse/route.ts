@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { resolveAgentFromSlug } from "@/lib/resolve-agent";
+import { normalizeAgentSlugFromRequest } from "@/lib/normalize-slug";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const supabase = createServiceClient();
+    const normalized = normalizeAgentSlugFromRequest(body.agentSlug, request);
     const { agent_id, agent_slug } = await resolveAgentFromSlug(
       supabase,
-      body.agentSlug || process.env.DEFAULT_AGENT_SLUG,
+      normalized.ok ? normalized.slug : null,
       { zipcode: body.zipcode, source: "api/leads/browse POST" }
     );
 

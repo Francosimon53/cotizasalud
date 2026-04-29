@@ -1,16 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { normalizeAgentSlug } from "@/lib/normalize-slug";
+import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { agentSlug, planHiosId, planName, messages } = body;
+    const slugResult = normalizeAgentSlug(agentSlug);
+    captureInvalidAgentSlug(slugResult, "app/api/conversations/route.ts", {
+      url: request.url,
+      referer: request.headers.get("referer"),
+      userAgent: request.headers.get("user-agent"),
+    });
+    const slug = slugResult.ok
+      ? slugResult.slug
+      : (process.env.DEFAULT_AGENT_SLUG?.trim() || "delbert");
 
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from("ai_conversations")
       .insert({
-        agent_slug: agentSlug || process.env.DEFAULT_AGENT_SLUG || null,
+        agent_slug: slug,
         selected_plan_hios_id: planHiosId || null,
         selected_plan_name: planName || null,
         messages: messages || [],

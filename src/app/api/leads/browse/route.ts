@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { resolveAgentFromSlug } from "@/lib/resolve-agent";
+import { normalizeAgentSlug } from "@/lib/normalize-slug";
+import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const supabase = createServiceClient();
+    const slugResult = normalizeAgentSlug(body.agentSlug);
+    captureInvalidAgentSlug(slugResult, "app/api/leads/browse/route.ts", {
+      url: request.url,
+      referer: request.headers.get("referer"),
+      userAgent: request.headers.get("user-agent"),
+    });
+    const slug = slugResult.ok
+      ? slugResult.slug
+      : (process.env.DEFAULT_AGENT_SLUG?.trim() || "delbert");
     const { agent_id, agent_slug } = await resolveAgentFromSlug(
       supabase,
-      body.agentSlug || process.env.DEFAULT_AGENT_SLUG,
+      slug,
       { zipcode: body.zipcode, source: "api/leads/browse POST" }
     );
 

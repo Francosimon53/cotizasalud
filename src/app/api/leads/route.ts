@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { resolveAgentFromSlug } from '@/lib/resolve-agent'
 
 const VALID_STATUSES = ['browsing', 'new', 'contacted', 'quoted', 'enrolled', 'lost']
 const LOST_REASONS = ['too_expensive', 'another_plan', 'got_medicaid', 'no_response', 'other']
@@ -87,13 +88,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const supabase = createServiceClient()
-    const agentSlug = body.agentSlug || process.env.DEFAULT_AGENT_SLUG || null
+    const { agent_id, agent_slug } = await resolveAgentFromSlug(
+      supabase,
+      body.agentSlug || process.env.DEFAULT_AGENT_SLUG,
+      { zipcode: body.zipcode, source: 'api/leads POST' }
+    )
 
     // Save lead
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .insert({
-        agent_slug: agentSlug,
+        agent_id,
+        agent_slug,
         zipcode: body.zipcode,
         county: body.county,
         state: body.state || 'FL',
@@ -137,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     // Track page view
     await supabase.from('page_views').insert({
-      agent_slug: agentSlug,
+      agent_slug,
       page: '/cotizar',
       referrer: body.referrer || null,
       ip_address: request.headers.get('x-forwarded-for') || null,
@@ -151,7 +157,7 @@ export async function POST(request: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         leadId: lead.id,
-        agentSlug: agentSlug,
+        agentSlug: agent_slug,
         contactName: body.contactName,
         contactPhone: body.contactPhone,
         contactEmail: body.contactEmail || null,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { resolveAgentFromSlug } from "@/lib/resolve-agent";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,13 +12,18 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient();
     const cleanPhone = phone.replace(/\D/g, "");
+    const { agent_id, agent_slug } = await resolveAgentFromSlug(
+      supabase,
+      agentSlug,
+      { zipcode, source: "api/leads/import POST" }
+    );
 
-    // Check for duplicate by phone + agent
+    // Check for duplicate by phone + agent (use the trimmed slug for an accurate match)
     const { data: existing } = await supabase
       .from("leads")
       .select("id")
       .eq("contact_phone", cleanPhone)
-      .eq("agent_slug", agentSlug)
+      .eq("agent_slug", agent_slug)
       .limit(1)
       .single();
 
@@ -35,7 +41,8 @@ export async function POST(request: NextRequest) {
     const { data: lead, error } = await supabase
       .from("leads")
       .insert({
-        agent_slug: agentSlug,
+        agent_id,
+        agent_slug,
         contact_name: name,
         contact_phone: cleanPhone,
         contact_email: email || null,

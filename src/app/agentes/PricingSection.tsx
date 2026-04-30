@@ -1,7 +1,15 @@
-import Link from "next/link";
-import { SUBSCRIPTION_PLANS } from "@/lib/subscription-plans";
+"use client";
 
-const FEATURES: Record<"basic" | "pro" | "advanced", string[]> = {
+import Link from "next/link";
+import { useState, type CSSProperties } from "react";
+import {
+  PLAN_CATALOG,
+  getYearlySavings,
+  type BillingInterval,
+  type PlanTier,
+} from "@/lib/subscription-plans";
+
+const FEATURES: Record<PlanTier, string[]> = {
   basic: [
     "Hasta 50 leads por mes",
     "Dashboard completo con pipeline",
@@ -40,6 +48,8 @@ const MUTED = "#94A3B8";
 const TEXT = "#E2E8F0";
 
 export default function PricingSection() {
+  const [interval, setInterval] = useState<BillingInterval>("month");
+
   return (
     <section
       id="precios"
@@ -81,13 +91,15 @@ export default function PricingSection() {
             color: MUTED,
             textAlign: "center",
             maxWidth: 640,
-            margin: "16px auto 48px",
+            margin: "16px auto 32px",
             lineHeight: 1.5,
           }}
         >
           Empezás con <strong style={{ color: TEXT }}>14 días de prueba gratis</strong> con los límites del plan
           Pro (200 leads). Después elegís el plan que mejor se ajuste a tu volumen. Sin permanencia.
         </p>
+
+        <BillingToggle value={interval} onChange={setInterval} />
 
         <div
           style={{
@@ -99,7 +111,9 @@ export default function PricingSection() {
           }}
         >
           {CARDS.map(({ id, popular }) => {
-            const plan = SUBSCRIPTION_PLANS[id];
+            const plan = PLAN_CATALOG[id];
+            const amount = plan.prices[interval].amount_usd;
+            const unitLabel = interval === "year" ? "/año" : "/mes";
             return (
               <div
                 key={id}
@@ -148,9 +162,9 @@ export default function PricingSection() {
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 8 }}>
                   <span style={{ fontSize: 44, fontWeight: 900, color: TEXT, letterSpacing: -1 }}>
-                    ${plan.price_usd}
+                    ${amount}
                   </span>
-                  <span style={{ fontSize: 16, color: MUTED }}>/mes</span>
+                  <span style={{ fontSize: 16, color: MUTED }}>{unitLabel}</span>
                 </div>
                 <div
                   style={{
@@ -158,10 +172,21 @@ export default function PricingSection() {
                     color: ACCENT,
                     fontWeight: 700,
                     marginTop: 4,
-                    marginBottom: 24,
+                    minHeight: 18,
                   }}
                 >
                   Hasta {plan.leads_limit} leads/mes
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: ACCENT,
+                    fontWeight: 700,
+                    minHeight: 16,
+                    marginBottom: 18,
+                  }}
+                >
+                  {interval === "year" ? `Ahorrás $${getYearlySavings(id)}/año` : " "}
                 </div>
 
                 <ul
@@ -194,7 +219,7 @@ export default function PricingSection() {
                 </ul>
 
                 <Link
-                  href="/agentes/registro"
+                  href={`/agentes/registro?plan=${id}&interval=${interval}`}
                   style={{
                     display: "block",
                     textAlign: "center",
@@ -229,5 +254,59 @@ export default function PricingSection() {
         </p>
       </div>
     </section>
+  );
+}
+
+interface BillingToggleProps {
+  value: BillingInterval;
+  onChange: (next: BillingInterval) => void;
+}
+
+function BillingToggle({ value, onChange }: BillingToggleProps) {
+  const wrapper: CSSProperties = {
+    display: "inline-flex",
+    background: PANEL,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 999,
+    padding: 4,
+    margin: "0 auto 36px",
+    gap: 4,
+  };
+  const baseBtn: CSSProperties = {
+    padding: "8px 18px",
+    borderRadius: 999,
+    border: "none",
+    background: "transparent",
+    color: MUTED,
+    fontWeight: 700,
+    fontSize: 13,
+    cursor: "pointer",
+    transition: "background 150ms, color 150ms",
+  };
+  const active: CSSProperties = { background: ACCENT, color: "#0F172A" };
+
+  return (
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      <div style={wrapper} role="tablist" aria-label="Frecuencia de facturación">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={value === "month"}
+          onClick={() => onChange("month")}
+          style={{ ...baseBtn, ...(value === "month" ? active : {}) }}
+        >
+          Mensual
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={value === "year"}
+          onClick={() => onChange("year")}
+          style={{ ...baseBtn, ...(value === "year" ? active : {}) }}
+        >
+          Anual <span style={{ opacity: 0.85, fontWeight: 600 }}>(ahorrás 2 meses)</span>
+        </button>
+      </div>
+    </div>
   );
 }

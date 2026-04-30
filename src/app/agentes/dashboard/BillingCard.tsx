@@ -1,9 +1,20 @@
-import { SUBSCRIPTION_PLANS, type SubscriptionPlan, type SubscriptionStatus } from "@/lib/subscription-plans";
+"use client";
+
+import { useState, type CSSProperties } from "react";
+import {
+  PLAN_CATALOG,
+  getYearlySavings,
+  type BillingInterval,
+  type PlanTier,
+  type SubscriptionPlan,
+  type SubscriptionStatus,
+} from "@/lib/subscription-plans";
 import { CheckoutButton, PortalButton } from "../StripeButtons";
 
 interface Props {
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
+  billingInterval: BillingInterval;
   leadsCurrent: number;
   leadsLimit: number;
   trialEndDate: string | null;
@@ -11,10 +22,9 @@ interface Props {
   hasStripeCustomer: boolean;
 }
 
-type PaidPlan = "basic" | "pro" | "advanced";
-const ALL_PAID_PLANS: readonly PaidPlan[] = ["basic", "pro", "advanced"] as const;
+const ALL_PAID_PLANS: readonly PlanTier[] = ["basic", "pro", "advanced"] as const;
 
-const PLAN_FEATURES: Record<PaidPlan, string[]> = {
+const PLAN_FEATURES: Record<PlanTier, string[]> = {
   basic: [
     "Hasta 50 leads/mes",
     "Dashboard + página compartible",
@@ -41,6 +51,9 @@ const STATUS_BADGE: Record<SubscriptionStatus, { label: string; color: string }>
 
 const ACCENT = "#10b981";
 const CYAN = "#06b6d4";
+const PANEL_BG = "#1E293B";
+const BORDER_COLOR = "#334155";
+const MUTED = "#94A3B8";
 
 function daysUntil(iso: string | null): number | null {
   if (!iso) return null;
@@ -53,14 +66,19 @@ function formatDateEs(iso: string | null): string | null {
   return new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
 }
 
-// The plan whose mini-card should be highlighted as "current" (or null = no highlight, e.g. plain trial).
-function effectivePlanForHighlight(plan: SubscriptionPlan): PaidPlan | null {
+// Maps a SubscriptionPlan to the paid tier whose card should be highlighted
+// as "current". legacy_early_adopter agents get Pro highlighted (they receive
+// Pro-tier limits during their grace period). Returns null when no card
+// should highlight (e.g. plain trial).
+function effectivePlanForHighlight(plan: SubscriptionPlan): PlanTier | null {
   if (plan === "basic" || plan === "pro" || plan === "advanced") return plan;
   if (plan === "legacy_early_adopter") return "pro";
   return null;
 }
 
 export default function BillingCard(props: Props) {
+  const [selectedInterval, setSelectedInterval] = useState<BillingInterval>(props.billingInterval);
+
   const usagePct = props.leadsLimit > 0 ? Math.min(100, Math.round((props.leadsCurrent / props.leadsLimit) * 100)) : 0;
   const usageColor = usagePct >= 90 ? "#ef4444" : usagePct >= 70 ? "#f59e0b" : ACCENT;
   const statusInfo = STATUS_BADGE[props.status];
@@ -72,10 +90,10 @@ export default function BillingCard(props: Props) {
   return (
     <div
       style={{
-        background: "#1E293B",
+        background: PANEL_BG,
         borderRadius: 16,
         padding: 24,
-        border: "1px solid #334155",
+        border: `1px solid ${BORDER_COLOR}`,
         marginBottom: 20,
       }}
     >
@@ -90,7 +108,7 @@ export default function BillingCard(props: Props) {
         }}
       >
         <div>
-          <div style={{ fontSize: 10, color: "#94A3B8", textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 10, color: MUTED, textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>
             Plan actual
           </div>
           <div
@@ -105,7 +123,12 @@ export default function BillingCard(props: Props) {
               flexWrap: "wrap",
             }}
           >
-            {SUBSCRIPTION_PLANS[props.plan].name}
+            {PLAN_CATALOG[props.plan].name}
+            {highlightedPlan && (
+              <span style={{ fontSize: 12, color: MUTED, fontWeight: 600 }}>
+                · {props.billingInterval === "year" ? "Anual" : "Mensual"}
+              </span>
+            )}
             <span
               style={{
                 fontSize: 10,
@@ -122,7 +145,7 @@ export default function BillingCard(props: Props) {
             </span>
           </div>
           {trialDaysLeft !== null && (
-            <div style={{ fontSize: 12, color: trialDaysLeft <= 3 ? "#ef4444" : "#94A3B8", marginTop: 6 }}>
+            <div style={{ fontSize: 12, color: trialDaysLeft <= 3 ? "#ef4444" : MUTED, marginTop: 6 }}>
               Termina la prueba en{" "}
               <strong>
                 {trialDaysLeft} {trialDaysLeft === 1 ? "día" : "días"}
@@ -132,7 +155,7 @@ export default function BillingCard(props: Props) {
         </div>
 
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#94A3B8", marginBottom: 6 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: MUTED, marginBottom: 6 }}>
             <span>Leads este mes</span>
             <span style={{ fontWeight: 800, color: "#E2E8F0" }}>
               {props.leadsCurrent} / {props.leadsLimit}
@@ -164,6 +187,8 @@ export default function BillingCard(props: Props) {
         </div>
       )}
 
+      <BillingToggle value={selectedInterval} onChange={setSelectedInterval} />
+
       {/* 3 plan mini-cards */}
       <div
         style={{
@@ -174,14 +199,16 @@ export default function BillingCard(props: Props) {
         }}
       >
         {ALL_PAID_PLANS.map((p) => {
-          const planData = SUBSCRIPTION_PLANS[p];
-          const isCurrent = highlightedPlan === p;
+          const planData = PLAN_CATALOG[p];
+          const amount = planData.prices[selectedInterval].amount_usd;
+          const isCurrent = highlightedPlan === p && props.billingInterval === selectedInterval;
           return (
             <PlanMiniCard
               key={p}
               planId={p}
+              interval={selectedInterval}
               name={planData.name}
-              priceUsd={planData.price_usd}
+              priceUsd={amount}
               leadsLimit={planData.leads_limit}
               features={PLAN_FEATURES[p]}
               isCurrent={isCurrent}
@@ -198,8 +225,8 @@ export default function BillingCard(props: Props) {
             label="Administrar pago"
             style={{
               background: "transparent",
-              color: "#94A3B8",
-              border: "1px solid #334155",
+              color: MUTED,
+              border: `1px solid ${BORDER_COLOR}`,
               borderRadius: 10,
               padding: "10px 22px",
               fontWeight: 700,
@@ -213,7 +240,8 @@ export default function BillingCard(props: Props) {
 }
 
 interface PlanMiniCardProps {
-  planId: PaidPlan;
+  planId: PlanTier;
+  interval: BillingInterval;
   name: string;
   priceUsd: number;
   leadsLimit: number;
@@ -223,11 +251,15 @@ interface PlanMiniCardProps {
 }
 
 function PlanMiniCard(props: PlanMiniCardProps) {
+  const unitLabel = props.interval === "year" ? "/año" : "/mes";
+  const savings = props.interval === "year" ? getYearlySavings(props.planId) : 0;
+  const intervalLabel = props.interval === "year" ? "anual" : "mensual";
+
   return (
     <div
       style={{
         background: "#0F172A",
-        border: props.isCurrent ? `2px solid ${ACCENT}` : "1px solid #334155",
+        border: props.isCurrent ? `2px solid ${ACCENT}` : `1px solid ${BORDER_COLOR}`,
         borderRadius: 12,
         padding: 16,
         position: "relative",
@@ -257,15 +289,18 @@ function PlanMiniCard(props: PlanMiniCardProps) {
         </div>
       )}
 
-      <div style={{ fontSize: 13, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <div style={{ fontSize: 13, color: MUTED, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
         {props.name}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 4 }}>
         <span style={{ fontSize: 28, fontWeight: 900, color: "#E2E8F0", letterSpacing: -0.5 }}>${props.priceUsd}</span>
-        <span style={{ fontSize: 12, color: "#94A3B8" }}>/mes</span>
+        <span style={{ fontSize: 12, color: MUTED }}>{unitLabel}</span>
       </div>
-      <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2, marginBottom: 12 }}>
+      <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2, minHeight: 14 }}>
         {props.leadsLimit} leads/mes
+      </div>
+      <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, minHeight: 14, marginBottom: 12 }}>
+        {savings > 0 ? `Ahorrás $${savings}/año` : " "}
       </div>
 
       <ul
@@ -309,12 +344,13 @@ function PlanMiniCard(props: PlanMiniCardProps) {
         ) : (
           <CheckoutButton
             plan={props.planId}
-            label={`Cambiar a ${props.name}`}
+            interval={props.interval}
+            label={`Cambiar a ${props.name} ${intervalLabel}`}
             style={{
               width: "100%",
               background: "transparent",
               color: "#E2E8F0",
-              border: "1px solid #334155",
+              border: `1px solid ${BORDER_COLOR}`,
               borderRadius: 8,
               padding: "10px 14px",
               fontWeight: 700,
@@ -322,6 +358,59 @@ function PlanMiniCard(props: PlanMiniCardProps) {
             }}
           />
         )}
+      </div>
+    </div>
+  );
+}
+
+interface BillingToggleProps {
+  value: BillingInterval;
+  onChange: (next: BillingInterval) => void;
+}
+
+function BillingToggle({ value, onChange }: BillingToggleProps) {
+  const wrapper: CSSProperties = {
+    display: "inline-flex",
+    background: "#0F172A",
+    border: `1px solid ${BORDER_COLOR}`,
+    borderRadius: 999,
+    padding: 4,
+    gap: 4,
+  };
+  const baseBtn: CSSProperties = {
+    padding: "6px 14px",
+    borderRadius: 999,
+    border: "none",
+    background: "transparent",
+    color: MUTED,
+    fontWeight: 700,
+    fontSize: 12,
+    cursor: "pointer",
+    transition: "background 150ms, color 150ms",
+  };
+  const active: CSSProperties = { background: ACCENT, color: "#0F172A" };
+
+  return (
+    <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+      <div style={wrapper} role="tablist" aria-label="Frecuencia de facturación">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={value === "month"}
+          onClick={() => onChange("month")}
+          style={{ ...baseBtn, ...(value === "month" ? active : {}) }}
+        >
+          Mensual
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={value === "year"}
+          onClick={() => onChange("year")}
+          style={{ ...baseBtn, ...(value === "year" ? active : {}) }}
+        >
+          Anual <span style={{ opacity: 0.85, fontWeight: 600 }}>(2 meses gratis)</span>
+        </button>
       </div>
     </div>
   );

@@ -204,7 +204,7 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
   return (
     <div style={{ fontFamily: "'Satoshi', -apple-system, sans-serif", minHeight: "100vh", background: "#0F172A", color: "#E2E8F0" }}>
       {modal && (
-        <StatusModal leadId={lead.id} leadName={lead.contact_name || "Lead"} currentStatus={lead.status} newStatus={modal.newStatus} onClose={() => setModal(null)} onSaved={handleStatusSaved} />
+        <StatusModal leadId={lead.id} leadName={lead.contact_name || "Contacto"} currentStatus={lead.status} newStatus={modal.newStatus} onClose={() => setModal(null)} onSaved={handleStatusSaved} />
       )}
 
       {/* Delete confirmation */}
@@ -212,7 +212,7 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowDeleteConfirm(false)}>
           <div style={{ background: "#1E293B", borderRadius: 16, padding: 28, border: "1px solid rgba(239,68,68,0.3)", width: "100%", maxWidth: 400, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginBottom: 8 }}>¿Eliminar este lead?</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginBottom: 8 }}>¿Eliminar este contacto?</div>
             <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 24 }}>Esta acción no se puede deshacer.</div>
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#94A3B8", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
@@ -442,7 +442,7 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
 
         {/* Delete */}
         <div style={{ textAlign: "center", marginTop: 20 }}>
-          <button onClick={() => setShowDeleteConfirm(true)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "10px 20px" }}>🗑️ Eliminar lead</button>
+          <button onClick={() => setShowDeleteConfirm(true)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: "10px 20px" }}>🗑️ Eliminar contacto</button>
         </div>
       </div>
     </div>

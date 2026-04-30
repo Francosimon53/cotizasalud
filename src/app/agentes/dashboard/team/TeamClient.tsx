@@ -53,7 +53,7 @@ export default function TeamClient({ agents, totalLeads, totalEnrolled, totalRev
 
       {/* Platform Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
-        <div style={cardStyle}><div style={{ fontSize: 28, fontWeight: 900, color: "#f0f1f5" }}>{totalLeads}</div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase" }}>Total Leads</div></div>
+        <div style={cardStyle}><div style={{ fontSize: 28, fontWeight: 900, color: "#f0f1f5" }}>{totalLeads}</div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase" }}>Total Contactos</div></div>
         <div style={cardStyle}><div style={{ fontSize: 28, fontWeight: 900, color: "#10b981" }}>{totalEnrolled}</div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase" }}>Inscritos</div></div>
         <div style={cardStyle}><div style={{ fontSize: 28, fontWeight: 900, color: "#8b5cf6" }}>{totalLeads > 0 ? Math.round((totalEnrolled / totalLeads) * 100) : 0}%</div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase" }}>Conversión</div></div>
         <div style={cardStyle}><div style={{ fontSize: 28, fontWeight: 900, color: "#f59e0b" }}>${totalRevenue.toLocaleString()}</div><div style={{ fontSize: 10, color: "#5a5e72", fontWeight: 700, textTransform: "uppercase" }}>Ingreso/mes</div></div>
@@ -66,7 +66,7 @@ export default function TeamClient({ agents, totalLeads, totalEnrolled, totalRev
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                {["Agente", "NPN", "Leads", "Inscritos", "Conv.", "Ingreso", "Estado", ""].map((h) => (
+                {["Agente", "NPN", "Contactos", "Inscritos", "Conv.", "Ingreso", "Estado", ""].map((h) => (
                   <th key={h} style={{ padding: "8px 14px", fontSize: 10, fontWeight: 700, color: "#5a5e72", textTransform: "uppercase", textAlign: "left", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>{h}</th>
                 ))}
               </tr>

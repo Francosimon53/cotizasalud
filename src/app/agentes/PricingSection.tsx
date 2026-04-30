@@ -11,14 +11,14 @@ import {
 
 const FEATURES: Record<PlanTier, string[]> = {
   basic: [
-    "Hasta 50 leads por mes",
+    "Hasta 50 contactos por mes",
     "Dashboard completo con pipeline",
     "Página pública compartible",
     "Exportación a CSV",
     "Soporte por email",
   ],
   pro: [
-    "Hasta 200 leads por mes",
+    "Hasta 200 contactos por mes",
     "Todo lo del plan Básico",
     "Notificaciones automáticas por WhatsApp",
     "AI Advisor para explicar planes",
@@ -26,10 +26,10 @@ const FEATURES: Record<PlanTier, string[]> = {
     "Soporte prioritario",
   ],
   advanced: [
-    "Hasta 500 leads por mes",
+    "Hasta 500 contactos por mes",
     "Todo lo del plan Pro",
     "Múltiples agentes en una agencia",
-    "Importación masiva de leads",
+    "Importación masiva de contactos",
     "Recordatorios de renovación automáticos",
     "Soporte dedicado",
   ],
@@ -96,7 +96,7 @@ export default function PricingSection() {
           }}
         >
           Empezás con <strong style={{ color: TEXT }}>14 días de prueba gratis</strong> con los límites del plan
-          Pro (200 leads). Después elegís el plan que mejor se ajuste a tu volumen. Sin permanencia.
+          Pro (200 contactos). Después elegís el plan que mejor se ajuste a tu volumen. Sin permanencia.
         </p>
 
         <BillingToggle value={interval} onChange={setInterval} />
@@ -175,7 +175,7 @@ export default function PricingSection() {
                     minHeight: 18,
                   }}
                 >
-                  Hasta {plan.leads_limit} leads/mes
+                  Hasta {plan.leads_limit} contactos/mes
                 </div>
                 <div
                   style={{

@@ -26,17 +26,17 @@ const ALL_PAID_PLANS: readonly PlanTier[] = ["basic", "pro", "advanced"] as cons
 
 const PLAN_FEATURES: Record<PlanTier, string[]> = {
   basic: [
-    "Hasta 50 leads/mes",
+    "Hasta 50 contactos/mes",
     "Dashboard + página compartible",
     "Exportación CSV",
   ],
   pro: [
-    "Hasta 200 leads/mes",
+    "Hasta 200 contactos/mes",
     "Notificaciones WhatsApp",
     "AI Advisor + reportes",
   ],
   advanced: [
-    "Hasta 500 leads/mes",
+    "Hasta 500 contactos/mes",
     "Múltiples agentes",
     "Importación masiva + renovaciones",
   ],
@@ -156,7 +156,7 @@ export default function BillingCard(props: Props) {
 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: MUTED, marginBottom: 6 }}>
-            <span>Leads este mes</span>
+            <span>Contactos este mes</span>
             <span style={{ fontWeight: 800, color: "#E2E8F0" }}>
               {props.leadsCurrent} / {props.leadsLimit}
             </span>
@@ -297,7 +297,7 @@ function PlanMiniCard(props: PlanMiniCardProps) {
         <span style={{ fontSize: 12, color: MUTED }}>{unitLabel}</span>
       </div>
       <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2, minHeight: 14 }}>
-        {props.leadsLimit} leads/mes
+        {props.leadsLimit} contactos/mes
       </div>
       <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, minHeight: 14, marginBottom: 12 }}>
         {savings > 0 ? `Ahorrás $${savings}/año` : " "}

@@ -1073,11 +1073,11 @@ export default function AgentesPage() {
           <div className="ag-bento-card ag-reveal">
             <div className="ag-bento-icon purple">🔗</div>
             <h3>Links Personalizados</h3>
-            <p>Cada agente tiene su URL única. Comparte tu link y tus prospectos cotizan directamente — el lead llega a tu pipeline automáticamente.</p>
+            <p>Cada agente tiene su URL única. Comparte tu link y tus prospectos cotizan directamente — el contacto llega a tu pipeline automáticamente.</p>
           </div>
           <div className="ag-bento-card ag-reveal">
             <div className="ag-bento-icon amber">📊</div>
-            <h3>Dashboard de Leads</h3>
+            <h3>Dashboard de Contactos</h3>
             <p>Ve quién cotizó, qué plan eligió, y si firmó el consent. Pipeline visual para que no se te escape ningún prospecto.</p>
           </div>
           <div className="ag-bento-card wide ag-reveal">

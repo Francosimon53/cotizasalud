@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+import * as Sentry from "@sentry/nextjs";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe-client";
 import { createServiceClient } from "@/lib/supabase";
-import { planFromPriceId } from "@/lib/stripe-config";
-import { SUBSCRIPTION_PLANS, type SubscriptionStatus } from "@/lib/subscription-plans";
+import {
+  PLAN_CATALOG,
+  getTierFromPriceId,
+  type SubscriptionStatus,
+} from "@/lib/subscription-plans";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -46,7 +50,7 @@ async function syncSubscriptionToAgent(subscription: Stripe.Subscription) {
 
   const item = subscription.items.data[0];
   const priceId = item?.price.id ?? null;
-  const plan = planFromPriceId(priceId);
+  const lookup = getTierFromPriceId(priceId);
 
   const update: Record<string, unknown> = {
     subscription_status: mapStripeStatus(subscription.status),
@@ -56,9 +60,21 @@ async function syncSubscriptionToAgent(subscription: Stripe.Subscription) {
     stripe_price_id: priceId,
   };
 
-  if (plan) {
-    update.subscription_plan = plan;
-    update.leads_limit_monthly = SUBSCRIPTION_PLANS[plan].leads_limit;
+  if (lookup) {
+    update.subscription_plan = lookup.tier;
+    update.billing_interval = lookup.interval;
+    update.leads_limit_monthly = PLAN_CATALOG[lookup.tier].leads_limit;
+  } else if (priceId) {
+    // Unknown price ID: don't crash the webhook (Stripe would retry and we'd
+    // block real subscription updates). Surface it for ops to investigate.
+    Sentry.captureMessage("Unknown stripe price_id in webhook", {
+      level: "warning",
+      extra: {
+        price_id: priceId,
+        customer_id: customerId,
+        subscription_id: subscription.id,
+      },
+    });
   }
 
   const { error } = await db.from("agents").update(update).eq("stripe_customer_id", customerId);

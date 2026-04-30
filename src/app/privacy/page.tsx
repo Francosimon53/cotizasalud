@@ -1,5 +1,6 @@
 "use client";
 import LegalLayout from "@/components/legal/LegalLayout";
+import DataTable from "@/components/legal/DataTable";
 
 function Section({ id, children }) {
   return <section id={id} className="mb-10 scroll-mt-24">{children}</section>;
@@ -32,30 +33,6 @@ function ListItem({ bold, children }: { bold?: string; children: React.ReactNode
     </div>
   );
 }
-function DataTable({ headers, rows }) {
-  return (
-    <div className="overflow-x-auto my-4">
-      <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
-        <thead>
-          <tr className="bg-slate-50">
-            {headers.map((h, i) => (
-              <th key={i} className="px-4 py-2.5 text-left font-medium text-slate-700 border-b border-slate-200">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
-              {row.map((cell, j) => (
-                <td key={j} className="px-4 py-2.5 text-slate-600 border-b border-slate-100">{cell}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 const CONTENT = {
   en: [
@@ -80,6 +57,21 @@ const CONTENT = {
           />
           <H3>1.2 Information Collected Automatically</H3>
           <P>We automatically collect device type, browser, operating system, IP address and approximate location, pages visited and features used, and cookies for platform functionality and analytics.</P>
+          <H3>1.3 Agent Account Information</H3>
+          <P>When a licensed insurance agent registers for a paid subscription, EnrollSalud collects additional account information beyond what is described in Sections 1.1 and 1.2:</P>
+          <DataTable
+            headers={["Data Type", "Purpose", "Required?"]}
+            rows={[
+              ["Full name and email address", "Account identification, login, support communication", "Yes"],
+              ["Mobile phone number", "WhatsApp notifications about account activity (new contacts, plan limits, billing)", "Yes"],
+              ["National Producer Number (NPN)", "Verification of licensure status", "Yes"],
+              ["State(s) of license", "Regional plan availability and routing", "Yes"],
+              ["Profile photo (optional)", "Display on the agent's public quote page", "No"],
+              ["Stripe customer ID and payment method (last 4 digits, brand, expiration)", "Subscription billing", "Yes"],
+              ["IP address and login timestamps", "Security monitoring and fraud prevention", "Auto"],
+            ]}
+          />
+          <P>Payment card numbers and bank account details are NEVER stored by EnrollSalud. All payment data is collected and stored by Stripe, Inc., our PCI-DSS-compliant payment processor. EnrollSalud only receives a tokenized customer ID and metadata about the payment method.</P>
         </>
       ),
     },
@@ -189,15 +181,54 @@ const CONTENT = {
       ),
     },
     {
+      id: "subprocessors",
+      title: "11. Subprocessors",
+      content: (
+        <>
+          <P>EnrollSalud relies on the following third-party service providers (&quot;Subprocessors&quot;) to operate the platform. Each Subprocessor is contractually bound by confidentiality and data-protection obligations. The list below is current as of the &quot;Last Updated&quot; date and may change with at least thirty (30) days&apos; notice posted to this page.</P>
+          <DataTable
+            headers={["Subprocessor", "Purpose", "Data Categories", "Location"]}
+            rows={[
+              ["Vercel, Inc.", "Application hosting, CDN, edge functions", "All data in transit", "United States"],
+              ["Supabase, Inc.", "Database, authentication, file storage", "Account data, lead data, consent records", "United States"],
+              ["Stripe, Inc.", "Payment processing, billing portal", "Agent name, email, payment method", "United States"],
+              ["Resend, Inc.", "Transactional email delivery", "Agent email, message content", "United States"],
+              ["Twilio, Inc.", "WhatsApp notifications to agents", "Agent phone number, message content", "United States"],
+              ["Anthropic, PBC", "AI Plan Advisor (Claude API)", "Anonymized cotizador inputs (no PII)", "United States"],
+              ["Centers for Medicare & Medicaid Services (CMS)", "Real-time plan availability and pricing", "Anonymized household data (no PII)", "United States (Federal)"],
+              ["HealthSherpa, Inc.", "Optional deep-link enrollment for licensed agents", "Agent NPN, lead consent record", "United States"],
+            ]}
+          />
+          <P>EnrollSalud does NOT transfer agent or consumer personal data outside of the United States. EnrollSalud does NOT sell, rent, or share data with advertising networks, data brokers, marketing partners, or any third party not listed above.</P>
+        </>
+      ),
+    },
+    {
+      id: "agents-capture",
+      title: "12. Agents' Capture of Consumer Data",
+      content: (
+        <>
+          <H3>12.1 Agent&apos;s Role</H3>
+          <P>When a consumer cotizes through an agent&apos;s personalized link (e.g., enrollsalud.com/q/[agent-slug]), the agent becomes the primary recipient of the consumer&apos;s contact information and quote data. EnrollSalud acts as a service provider that hosts the platform and routes data on behalf of the agent.</P>
+          <H3>12.2 Agent&apos;s Independent Communications</H3>
+          <P>Once a consumer&apos;s contact data is captured, the agent may use the agent&apos;s own channels (personal WhatsApp, SMS, phone, email) to follow up with the consumer outside of the EnrollSalud platform. Communications sent through the agent&apos;s own channels are NOT processed, monitored, retained, or stored by EnrollSalud, and are governed by the agent&apos;s own privacy practices and applicable law.</P>
+          <H3>12.3 Consumer Rights Toward the Agent</H3>
+          <P>Consumers seeking to exercise data rights (access, deletion, correction, opt-out) regarding communications received from an agent should contact the agent directly. EnrollSalud will assist consumers in identifying the agent of record upon request, but cannot delete data held by the agent outside the platform.</P>
+          <H3>12.4 Consumer Rights Toward EnrollSalud</H3>
+          <P>Consumers may exercise data rights regarding data stored by EnrollSalud (cotizador inputs, consent records, lead history within the platform) at any time by contacting <a href="mailto:info@enrollsalud.com" className="text-teal-600 hover:underline">info@enrollsalud.com</a>. See Section 8 of this Policy.</P>
+        </>
+      ),
+    },
+    {
       id: "changes",
-      title: "11. Changes to This Policy",
+      title: "13. Changes to This Policy",
       content: (
         <P>We may update this Privacy Policy periodically to reflect changes in our practices or legal requirements. The updated policy will be posted on this page with the revised date. We encourage you to review this page regularly.</P>
       ),
     },
     {
       id: "contact",
-      title: "12. Contact Information",
+      title: "14. Contact Information",
       content: (
         <>
           <P>If you have questions about this Privacy Policy or wish to exercise your data rights, contact us:</P>
@@ -230,6 +261,21 @@ const CONTENT = {
           />
           <H3>1.2 Información Recopilada Automáticamente</H3>
           <P>Recopilamos automáticamente tipo de dispositivo, navegador, sistema operativo, dirección IP y ubicación aproximada, páginas visitadas y funciones utilizadas, y cookies para funcionalidad y análisis de la plataforma.</P>
+          <H3>1.3 Información de Cuenta del Agente</H3>
+          <P>Cuando un agente de seguros licenciado se registra para una suscripción paga, EnrollSalud recopila información de cuenta adicional más allá de lo descrito en las Secciones 1.1 y 1.2:</P>
+          <DataTable
+            headers={["Tipo de Dato", "Propósito", "¿Requerido?"]}
+            rows={[
+              ["Nombre completo y dirección de email", "Identificación de cuenta, inicio de sesión, comunicación de soporte", "Sí"],
+              ["Número de teléfono móvil", "Notificaciones de WhatsApp sobre actividad de la cuenta (nuevos contactos, límites de plan, facturación)", "Sí"],
+              ["Número Nacional de Productor (NPN)", "Verificación del estado de licenciatura", "Sí"],
+              ["Estado(s) de licencia", "Disponibilidad regional de planes y enrutamiento", "Sí"],
+              ["Foto de perfil (opcional)", "Visualización en la página pública de cotización del agente", "No"],
+              ["Stripe customer ID y método de pago (últimos 4 dígitos, marca, vencimiento)", "Facturación de suscripción", "Sí"],
+              ["Dirección IP y marcas de tiempo de inicio de sesión", "Monitoreo de seguridad y prevención de fraude", "Auto"],
+            ]}
+          />
+          <P>EnrollSalud NUNCA almacena números de tarjetas de pago ni detalles de cuentas bancarias. Todos los datos de pago son recopilados y almacenados por Stripe, Inc., nuestro procesador de pagos certificado PCI-DSS. EnrollSalud solo recibe un customer ID tokenizado y metadatos sobre el método de pago.</P>
         </>
       ),
     },
@@ -339,15 +385,54 @@ const CONTENT = {
       ),
     },
     {
+      id: "subprocessors",
+      title: "11. Subencargados del Tratamiento",
+      content: (
+        <>
+          <P>EnrollSalud se apoya en los siguientes proveedores de servicios externos (&quot;Subencargados&quot;) para operar la plataforma. Cada Subencargado está contractualmente sujeto a obligaciones de confidencialidad y protección de datos. La lista siguiente está vigente a la fecha de &quot;Última actualización&quot; y puede modificarse con al menos treinta (30) días de aviso previo publicado en esta página.</P>
+          <DataTable
+            headers={["Subencargado", "Propósito", "Categorías de Datos", "Ubicación"]}
+            rows={[
+              ["Vercel, Inc.", "Alojamiento de la aplicación, CDN, edge functions", "Todos los datos en tránsito", "Estados Unidos"],
+              ["Supabase, Inc.", "Base de datos, autenticación, almacenamiento de archivos", "Datos de cuenta, datos de contactos, registros de consentimiento", "Estados Unidos"],
+              ["Stripe, Inc.", "Procesamiento de pagos, portal de facturación", "Nombre del agente, email, método de pago", "Estados Unidos"],
+              ["Resend, Inc.", "Entrega de emails transaccionales", "Email del agente, contenido del mensaje", "Estados Unidos"],
+              ["Twilio, Inc.", "Notificaciones de WhatsApp a agentes", "Número de teléfono del agente, contenido del mensaje", "Estados Unidos"],
+              ["Anthropic, PBC", "Asesor de Planes con IA (API de Claude)", "Datos del cotizador anonimizados (sin PII)", "Estados Unidos"],
+              ["Centers for Medicare & Medicaid Services (CMS)", "Disponibilidad y precios de planes en tiempo real", "Datos del hogar anonimizados (sin PII)", "Estados Unidos (Federal)"],
+              ["HealthSherpa, Inc.", "Inscripción opcional vía deep-link para agentes licenciados", "NPN del agente, registro de consentimiento del contacto", "Estados Unidos"],
+            ]}
+          />
+          <P>EnrollSalud NO transfiere datos personales del agente ni del consumidor fuera de los Estados Unidos. EnrollSalud NO vende, alquila ni comparte datos con redes publicitarias, data brokers, socios de marketing, ni con ningún tercero no listado anteriormente.</P>
+        </>
+      ),
+    },
+    {
+      id: "agents-capture",
+      title: "12. Captura de Datos del Consumidor por parte de Agentes",
+      content: (
+        <>
+          <H3>12.1 Rol del Agente</H3>
+          <P>Cuando un consumidor cotiza a través del link personalizado de un agente (por ejemplo, enrollsalud.com/q/[agent-slug]), el agente se convierte en el receptor primario de la información de contacto y los datos de cotización del consumidor. EnrollSalud actúa como un proveedor de servicios que aloja la plataforma y enruta los datos en nombre del agente.</P>
+          <H3>12.2 Comunicaciones Independientes del Agente</H3>
+          <P>Una vez capturados los datos de contacto del consumidor, el agente puede utilizar sus propios canales (WhatsApp personal, SMS, teléfono, email) para hacer seguimiento al consumidor fuera de la plataforma EnrollSalud. Las comunicaciones enviadas a través de los canales propios del agente NO son procesadas, monitoreadas, retenidas ni almacenadas por EnrollSalud, y se rigen por las prácticas de privacidad propias del agente y por la ley aplicable.</P>
+          <H3>12.3 Derechos del Consumidor frente al Agente</H3>
+          <P>Los consumidores que deseen ejercer derechos sobre sus datos (acceso, eliminación, corrección, exclusión) respecto de las comunicaciones recibidas de un agente deben contactar al agente directamente. EnrollSalud asistirá a los consumidores en la identificación del agente de registro a solicitud, pero no puede eliminar datos en posesión del agente fuera de la plataforma.</P>
+          <H3>12.4 Derechos del Consumidor frente a EnrollSalud</H3>
+          <P>Los consumidores pueden ejercer sus derechos respecto de los datos almacenados por EnrollSalud (datos del cotizador, registros de consentimiento, historial de contactos dentro de la plataforma) en cualquier momento contactando a <a href="mailto:info@enrollsalud.com" className="text-teal-600 hover:underline">info@enrollsalud.com</a>. Vea la Sección 8 de esta Política.</P>
+        </>
+      ),
+    },
+    {
       id: "changes",
-      title: "11. Cambios a Esta Política",
+      title: "13. Cambios a Esta Política",
       content: (
         <P>Podemos actualizar esta Política de Privacidad periódicamente para reflejar cambios en nuestras prácticas o requisitos legales. La política actualizada se publicará en esta página con la fecha revisada. Le recomendamos revisar esta página regularmente.</P>
       ),
     },
     {
       id: "contact",
-      title: "12. Información de Contacto",
+      title: "14. Información de Contacto",
       content: (
         <>
           <P>Si tiene preguntas sobre esta Política de Privacidad o desea ejercer sus derechos de datos, contáctenos:</P>

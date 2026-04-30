@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { z } from "zod";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
 import { stripe } from "@/lib/stripe-client";
-import { STRIPE_PRICE_IDS, PAID_PLANS, type PaidPlan } from "@/lib/stripe-config";
+import { getPriceId, PAID_PLANS, BILLING_INTERVALS } from "@/lib/subscription-plans";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,6 +14,11 @@ const NO_STORE_HEADERS = {
   "CDN-Cache-Control": "no-store",
   "Vercel-CDN-Cache-Control": "no-store",
 } as const;
+
+const BodySchema = z.object({
+  plan: z.enum(PAID_PLANS as readonly [string, ...string[]]),
+  interval: z.enum(BILLING_INTERVALS as readonly [string, ...string[]]),
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,15 +33,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = (await request.json().catch(() => null)) as { plan?: unknown } | null;
-    const plan = body?.plan;
-    if (typeof plan !== "string" || !(PAID_PLANS as readonly string[]).includes(plan)) {
+    const rawBody = await request.json().catch(() => null);
+    const parsed = BodySchema.safeParse(rawBody);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid plan. Must be one of: basic, pro, advanced" },
+        {
+          error: "Invalid body. Expected { plan: 'basic'|'pro'|'advanced', interval: 'month'|'year' }",
+          details: parsed.error.flatten().fieldErrors,
+        },
         { status: 400, headers: NO_STORE_HEADERS }
       );
     }
-    const paidPlan = plan as PaidPlan;
+    const { plan, interval } = parsed.data as {
+      plan: (typeof PAID_PLANS)[number];
+      interval: (typeof BILLING_INTERVALS)[number];
+    };
+
+    const priceId = getPriceId(plan, interval);
 
     const db = createServiceClient();
 
@@ -75,12 +89,12 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: STRIPE_PRICE_IDS[paidPlan], quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/agentes/dashboard?checkout=success`,
       cancel_url: `${origin}/agentes/dashboard?checkout=cancelled`,
-      metadata: { agent_id: agent.id, plan: paidPlan },
+      metadata: { agent_id: agent.id, plan, interval },
       subscription_data: {
-        metadata: { agent_id: agent.id, plan: paidPlan },
+        metadata: { agent_id: agent.id, plan, interval },
       },
     });
 

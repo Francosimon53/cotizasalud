@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
+import type { BillingInterval, PlanTier } from "@/lib/subscription-plans";
 
 interface CheckoutButtonProps {
-  plan: "basic" | "pro" | "advanced";
+  plan: PlanTier;
+  interval: BillingInterval;
   label: string;
   style?: CSSProperties;
   className?: string;
 }
 
-export function CheckoutButton({ plan, label, style, className }: CheckoutButtonProps) {
+export function CheckoutButton({ plan, interval, label, style, className }: CheckoutButtonProps) {
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {
@@ -19,7 +21,7 @@ export function CheckoutButton({ plan, label, style, className }: CheckoutButton
       const res = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, interval }),
       });
       const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (!res.ok || !data.url) {

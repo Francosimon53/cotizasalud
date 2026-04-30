@@ -144,6 +144,7 @@ export default async function DashboardPage({
         <BillingCard
           plan={agent.subscription_plan}
           status={agent.subscription_status}
+          billingInterval={agent.billing_interval ?? "month"}
           leadsCurrent={agent.leads_count_current_month ?? 0}
           leadsLimit={agent.leads_limit_monthly ?? 0}
           trialEndDate={agent.trial_end_date}

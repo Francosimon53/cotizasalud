@@ -179,7 +179,7 @@ export default function ShareClient({ slug, agentName }: Props) {
 
       <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>🚀 Tu kit para compartir</h1>
       <p style={{ fontSize: 14, color: "#5a5e72", marginBottom: 24 }}>
-        Link personal, QR imprimible, mensajes listos y tracking por canal. Tus leads entran directo a tu dashboard.
+        Link personal, QR imprimible, mensajes listos y tracking por canal. Tus contactos entran directo a tu dashboard.
       </p>
 
       {/* 1. SMART LINK HERO */}

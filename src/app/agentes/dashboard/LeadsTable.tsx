@@ -106,7 +106,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
 
   const handleStatusSelect = (lead: Lead, newStatus: string) => {
     if (newStatus === lead.status) return;
-    setModal({ leadId: lead.id, leadName: lead.contact_name || "Lead", currentStatus: lead.status, newStatus });
+    setModal({ leadId: lead.id, leadName: lead.contact_name || "Contacto", currentStatus: lead.status, newStatus });
   };
 
   const handleSaved = (leadId: string, newStatus: string) => {
@@ -293,7 +293,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
           <div style={{ background: "#1E293B", borderRadius: 16, padding: 28, border: "1px solid rgba(239,68,68,0.3)", width: "100%", maxWidth: 400, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginBottom: 8 }}>
-              {deleteTarget.length === 1 ? "¿Eliminar este lead?" : `¿Eliminar ${deleteTarget.length} leads?`}
+              {deleteTarget.length === 1 ? "¿Eliminar este contacto?" : `¿Eliminar ${deleteTarget.length} contactos?`}
             </div>
             <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 24, lineHeight: 1.5 }}>Esta acción no se puede deshacer.</div>
             <div style={{ display: "flex", gap: 10 }}>
@@ -326,7 +326,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
         {/* Filters */}
         <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: "#E2E8F0", marginRight: "auto" }}>
-            Leads
+            Contactos
             <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600, marginLeft: 8 }}>{filtered.length}/{leads.length}</span>
           </div>
           {selected.size > 0 && (
@@ -347,7 +347,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
 
         {filtered.length === 0 ? (
           <div style={{ padding: "40px 24px", textAlign: "center", color: "#94A3B8", fontSize: 14 }}>
-            {leads.length === 0 ? "Sin leads todavía" : "Sin resultados"}
+            {leads.length === 0 ? "Sin contactos todavía" : "Sin resultados"}
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>

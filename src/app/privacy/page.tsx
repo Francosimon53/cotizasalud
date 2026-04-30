@@ -151,7 +151,7 @@ const CONTENT = {
         <>
           <P>We retain your personal information only for as long as necessary to fulfill the purposes described in this policy, or as required by law.</P>
           <ListItem bold="Consent records:">Retained for a minimum of 10 years per CMS requirements (45 CFR 155.220(c)(3)(i)(E)).</ListItem>
-          <ListItem bold="Lead information:">Retained for the duration of the applicable enrollment period plus 3 years, unless you request earlier deletion.</ListItem>
+          <ListItem bold="Contact information:">Retained for the duration of the applicable enrollment period plus 3 years, unless you request earlier deletion.</ListItem>
           <ListItem bold="AI query logs:">Anonymized after 90 days; fully deleted after 1 year.</ListItem>
           <P>You may request deletion of your data at any time by contacting us (see Your Rights below).</P>
         </>
@@ -301,7 +301,7 @@ const CONTENT = {
         <>
           <P>Retenemos su información personal solo el tiempo necesario para cumplir con los propósitos descritos en esta política, o según lo requiera la ley.</P>
           <ListItem bold="Registros de consentimiento:">Retenidos por un mínimo de 10 años según requisitos de CMS (45 CFR 155.220(c)(3)(i)(E)).</ListItem>
-          <ListItem bold="Información de leads:">Retenida durante el período de inscripción aplicable más 3 años, a menos que solicite su eliminación anticipada.</ListItem>
+          <ListItem bold="Información de contactos:">Retenida durante el período de inscripción aplicable más 3 años, a menos que solicite su eliminación anticipada.</ListItem>
           <ListItem bold="Registros de consultas IA:">Anonimizados después de 90 días; eliminados completamente después de 1 año.</ListItem>
           <P>Puede solicitar la eliminación de sus datos en cualquier momento contactándonos (ver Sus Derechos a continuación).</P>
         </>

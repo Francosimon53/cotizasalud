@@ -183,7 +183,7 @@ export default function HomePage() {
             <div className="audience-card agent reveal">
               <span className="tag">Para Agentes & Brokers</span>
               <h3>Tu cotizador con tu marca en minutos</h3>
-              <ul><li>Etiqueta privada: tu logo, tu nombre, tus colores</li><li>Smart links para WhatsApp, SMS, email, redes</li><li>Captura leads automáticamente con notificaciones</li><li>Dashboard con analytics de conversión</li><li>Tú conservas 100% de tus comisiones</li></ul>
+              <ul><li>Etiqueta privada: tu logo, tu nombre, tus colores</li><li>Smart links para WhatsApp, SMS, email, redes</li><li>Captura contactos automáticamente con notificaciones</li><li>Dashboard con analytics de conversión</li><li>Tú conservas 100% de tus comisiones</li></ul>
               <Link href="/agentes" className="cta">Ver Plataforma →</Link>
             </div>
           </div>

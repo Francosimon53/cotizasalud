@@ -168,7 +168,7 @@ const CONTENT = {
           <ListItem>Request deletion of your information</ListItem>
           <ListItem>Opt out of non-essential communications</ListItem>
           <ListItem>Withdraw consent for data processing at any time</ListItem>
-          <P>To exercise these rights, contact us at <a href="mailto:francosimon@hotmail.com" className="text-teal-600 hover:underline">francosimon@hotmail.com</a>.</P>
+          <P>To exercise these rights, contact us at <a href="mailto:info@enrollsalud.com" className="text-teal-600 hover:underline">info@enrollsalud.com</a>.</P>
         </>
       ),
     },
@@ -201,7 +201,7 @@ const CONTENT = {
       content: (
         <>
           <P>If you have questions about this Privacy Policy or wish to exercise your data rights, contact us:</P>
-          <ListItem bold="Email:"><a href="mailto:francosimon@hotmail.com" className="text-teal-600 hover:underline">francosimon@hotmail.com</a></ListItem>
+          <ListItem bold="Email:"><a href="mailto:info@enrollsalud.com" className="text-teal-600 hover:underline">info@enrollsalud.com</a></ListItem>
           <ListItem bold="Entity:">FPI Enterprises, Inc.</ListItem>
           <ListItem bold="Location:">Ave María, FL</ListItem>
         </>
@@ -318,7 +318,7 @@ const CONTENT = {
           <ListItem>Solicitar la eliminación de su información</ListItem>
           <ListItem>Optar por no recibir comunicaciones no esenciales</ListItem>
           <ListItem>Retirar el consentimiento para el procesamiento de datos en cualquier momento</ListItem>
-          <P>Para ejercer estos derechos, contáctenos en <a href="mailto:francosimon@hotmail.com" className="text-teal-600 hover:underline">francosimon@hotmail.com</a>.</P>
+          <P>Para ejercer estos derechos, contáctenos en <a href="mailto:info@enrollsalud.com" className="text-teal-600 hover:underline">info@enrollsalud.com</a>.</P>
         </>
       ),
     },
@@ -351,7 +351,7 @@ const CONTENT = {
       content: (
         <>
           <P>Si tiene preguntas sobre esta Política de Privacidad o desea ejercer sus derechos de datos, contáctenos:</P>
-          <ListItem bold="Email:"><a href="mailto:francosimon@hotmail.com" className="text-teal-600 hover:underline">francosimon@hotmail.com</a></ListItem>
+          <ListItem bold="Email:"><a href="mailto:info@enrollsalud.com" className="text-teal-600 hover:underline">info@enrollsalud.com</a></ListItem>
           <ListItem bold="Entidad:">FPI Enterprises, Inc.</ListItem>
           <ListItem bold="Ubicación:">Ave María, FL</ListItem>
         </>
@@ -362,10 +362,9 @@ const CONTENT = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalLayout titleEn="Privacy Policy" titleEs="Política de Privacidad">
+    <LegalLayout titleEn="Privacy Policy" titleEs="Política de Privacidad" lastUpdated="April 30, 2026">
       {(lang) => (
         <div>
-          <p className="text-xs text-slate-400 mb-6 font-mono">{lang === "en" ? "Last updated: April 13, 2026" : "Última actualización: 13 de abril de 2026"}</p>
           {CONTENT[lang].map((section) => (
             <Section key={section.id} id={section.id}>
               <H2>{section.title}</H2>

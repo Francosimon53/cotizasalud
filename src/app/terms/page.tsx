@@ -37,7 +37,7 @@ function ListItem({ bold, children }: { bold?: string; children: React.ReactNode
 
 const CONTENT = {
   en: {
-    effectiveDate: "Effective Date: [INSERT DATE]",
+    effectiveDate: "Effective Date: April 30, 2026",
     sections: [
       {
         id: "acceptance",
@@ -137,7 +137,7 @@ const CONTENT = {
     ],
   },
   es: {
-    effectiveDate: "Fecha Efectiva: [INSERTAR FECHA]",
+    effectiveDate: "Fecha de vigencia: 30 de abril de 2026",
     sections: [
       {
         id: "acceptance",
@@ -240,7 +240,7 @@ const CONTENT = {
 
 export default function TermsOfServicePage() {
   return (
-    <LegalLayout titleEn="Terms of Service" titleEs="Términos de Servicio">
+    <LegalLayout titleEn="Terms of Service" titleEs="Términos de Servicio" lastUpdated="April 30, 2026">
       {(lang) => {
         const data = CONTENT[lang];
         return (

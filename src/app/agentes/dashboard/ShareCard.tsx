@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function ShareCard({ slug }: { slug: string }) {
-  const router = useRouter();
   const [copied, setCopied] = useState(false);
   const url = `https://www.enrollsalud.com/q/${slug}`;
 
@@ -38,24 +36,12 @@ export default function ShareCard({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button onClick={handleCopy} style={{
-          padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800,
-          border: "none", cursor: "pointer", fontFamily: "inherit",
-          background: copied ? "#059669" : "#10b981",
-          color: "#000", transition: "all .2s", whiteSpace: "nowrap",
-        }}>{copied ? "¡Copiado!" : "📋 Copiar link"}</button>
-        <button onClick={() => router.push("/agentes/dashboard/share")} style={{
-          padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800,
-          border: "1.5px solid rgba(16,185,129,0.4)", cursor: "pointer", fontFamily: "inherit",
-          background: "transparent", color: "#10b981", whiteSpace: "nowrap",
-        }}>📣 Compartir</button>
-        <button onClick={() => router.push("/agentes/dashboard/share")} style={{
-          padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800,
-          border: "1.5px solid rgba(255,255,255,0.15)", cursor: "pointer", fontFamily: "inherit",
-          background: "transparent", color: "#E2E8F0", whiteSpace: "nowrap",
-        }}>📱 Ver QR</button>
-      </div>
+      <button onClick={handleCopy} style={{
+        padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800,
+        border: "none", cursor: "pointer", fontFamily: "inherit",
+        background: copied ? "#059669" : "#10b981",
+        color: "#000", transition: "all .2s", whiteSpace: "nowrap",
+      }}>{copied ? "¡Copiado!" : "📋 Copiar link"}</button>
     </div>
   );
 }

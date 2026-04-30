@@ -6,6 +6,7 @@ import { SUBSCRIPTION_PLANS, TRIAL_DAYS } from "@/lib/subscription-plans";
 import DashboardHeader from "./DashboardHeader";
 import DashboardClient from "./DashboardClient";
 import ShareCard from "./ShareCard";
+import DistributionKitCard from "./DistributionKitCard";
 import BillingCard from "./BillingCard";
 import "../agentes.css";
 
@@ -139,6 +140,9 @@ export default async function DashboardPage({
 
         {/* Hero Share Card — prominent, full-width */}
         <ShareCard slug={agent.slug} />
+
+        {/* Distribution kit — entry point to /share with QR, WhatsApp scripts, channel tracking */}
+        <DistributionKitCard />
 
         {/* Plan + leads usage */}
         <BillingCard

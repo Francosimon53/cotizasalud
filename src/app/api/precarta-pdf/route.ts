@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { jsPDF } from "jspdf";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0, must-revalidate",
+  "CDN-Cache-Control": "no-store",
+  "Vercel-CDN-Cache-Control": "no-store",
+} as const;
+
 function fmtDate(iso: string): string {
   if (!iso) return "N/A";
   const d = new Date(iso);
@@ -128,12 +137,18 @@ function buildPdf(
 // GET — agent dashboard: generate pre-carta PDF from lead data
 export async function GET(request: NextRequest) {
   const leadId = request.nextUrl.searchParams.get("leadId");
-  if (!leadId) return NextResponse.json({ error: "leadId required" }, { status: 400 });
+  if (!leadId) return NextResponse.json(
+    { error: "leadId required" },
+    { status: 400, headers: NO_STORE_HEADERS }
+  );
 
   try {
     const supabase = createServiceClient();
     const { data: lead, error } = await supabase.from("leads").select("*").eq("id", leadId).single();
-    if (error || !lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    if (error || !lead) return NextResponse.json(
+      { error: "Lead not found" },
+      { status: 404, headers: NO_STORE_HEADERS }
+    );
 
     const { data: agent } = await supabase.from("agents").select("name, npn, phone").eq("slug", lead.agent_slug).single();
 
@@ -157,11 +172,15 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="PreCarta_${clientName.replace(/\s+/g, "_")}_${lead.created_at.split("T")[0]}.pdf"`,
+        ...NO_STORE_HEADERS,
       },
     });
   } catch (err) {
     console.error("Pre-carta PDF GET error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500, headers: NO_STORE_HEADERS }
+    );
   }
 }
 
@@ -171,7 +190,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { clientName, clientDob, agentName, agentNPN, agentPhone, signatureDataUrl, signedAt } = body;
 
-    if (!clientName) return NextResponse.json({ error: "clientName required" }, { status: 400 });
+    if (!clientName) return NextResponse.json(
+      { error: "clientName required" },
+      { status: 400, headers: NO_STORE_HEADERS }
+    );
 
     const signedDate = signedAt
       ? new Date(signedAt).toLocaleString("es-US", { dateStyle: "long", timeStyle: "medium", timeZone: "America/New_York" })
@@ -200,9 +222,15 @@ export async function POST(request: NextRequest) {
 
     const pdfBase64 = pdfBuffer.toString("base64");
 
-    return NextResponse.json({ success: true, pdfBase64, storageUrl: publicUrl, fileName });
+    return NextResponse.json(
+      { success: true, pdfBase64, storageUrl: publicUrl, fileName },
+      { headers: NO_STORE_HEADERS }
+    );
   } catch (err) {
     console.error("Pre-carta PDF POST error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500, headers: NO_STORE_HEADERS }
+    );
   }
 }

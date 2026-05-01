@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { resolveAgentFromSlug } from '@/lib/resolve-agent'
 import { normalizeAgentSlug } from '@/lib/normalize-slug'
 import { captureInvalidAgentSlug } from '@/lib/slug-logging'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -111,6 +112,14 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  if (rateLimit(`leads:${ip}`, { max: 5, windowMs: 60_000 }).limited) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: NO_STORE_HEADERS }
+    )
+  }
+
   try {
     const body = await request.json()
     const supabase = createServiceClient()

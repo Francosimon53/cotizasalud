@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  if (rateLimit(`ai-log:${ip}`, { max: 20, windowMs: 60_000 }).limited) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   try {
     const body = await request.json()
     const supabase = createServiceClient()

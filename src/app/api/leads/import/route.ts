@@ -1,40 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
-import { resolveAgentFromSlug } from "@/lib/resolve-agent";
-import { normalizeAgentSlug } from "@/lib/normalize-slug";
-import { captureInvalidAgentSlug } from "@/lib/slug-logging";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  // Auth: derive identity from the session cookie. The body's agent_slug,
+  // if present, is intentionally ignored — accepting it would let any
+  // authenticated agent inject leads under another agent's identity.
+  const cookieStore = await cookies();
+  const supabase = createServerAuthClient(cookieStore);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  const db = createServiceClient();
+  const { data: agent } = await db
+    .from("agents")
+    .select("id, slug, is_active")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (!agent) {
+    return NextResponse.json(
+      { error: "No agent profile linked to this account" },
+      { status: 403 }
+    );
+  }
+  if (agent.is_active === false) {
+    return NextResponse.json(
+      { error: "Agent account is inactive" },
+      { status: 403 }
+    );
+  }
+
+  // Rate limit by authenticated user, not IP — multiple agents may share an IP.
+  if (
+    rateLimit(`import:${user.id}`, { max: 10, windowMs: 60 * 60_000 }).limited
+  ) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
-    const { name, phone, email, planName, premium, effectiveDate, status, agentSlug, zipcode } = await request.json();
+    // agent_slug from body is intentionally ignored; identity is derived from auth
+    const { name, phone, email, planName, premium, effectiveDate, status, zipcode } =
+      await request.json();
 
     if (!name || !phone) {
-      return NextResponse.json({ error: "Name and phone required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Name and phone required" },
+        { status: 400 }
+      );
     }
 
-    const supabase = createServiceClient();
-    const cleanPhone = phone.replace(/\D/g, "");
-    const slugResult = normalizeAgentSlug(agentSlug);
-    captureInvalidAgentSlug(slugResult, "app/api/leads/import/route.ts", {
-      url: request.url,
-      referer: request.headers.get("referer"),
-      userAgent: request.headers.get("user-agent"),
-    });
-    const slug = slugResult.ok
-      ? slugResult.slug
-      : (process.env.DEFAULT_AGENT_SLUG?.trim() || "delbert");
-    const { agent_id, agent_slug } = await resolveAgentFromSlug(
-      supabase,
-      slug,
-      { zipcode, source: "api/leads/import POST" }
-    );
+    const cleanPhone = String(phone).replace(/\D/g, "");
 
-    // Check for duplicate by phone + agent (use the trimmed slug for an accurate match)
-    const { data: existing } = await supabase
+    // Dedupe by phone + authenticated agent_slug
+    const { data: existing } = await db
       .from("leads")
       .select("id")
       .eq("contact_phone", cleanPhone)
-      .eq("agent_slug", agent_slug)
+      .eq("agent_slug", agent.slug)
       .limit(1)
       .single();
 
@@ -42,29 +74,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ skipped: true, reason: "duplicate" });
     }
 
-    // Parse dates
-    const enrollDate = effectiveDate ? new Date(effectiveDate).toISOString().split("T")[0] : null;
-    const renewDate = enrollDate ? new Date(new Date(enrollDate).getTime() + 365 * 86400000).toISOString().split("T")[0] : null;
+    const enrollDate = effectiveDate
+      ? new Date(effectiveDate).toISOString().split("T")[0]
+      : null;
+    const renewDate = enrollDate
+      ? new Date(new Date(enrollDate).getTime() + 365 * 86400000)
+          .toISOString()
+          .split("T")[0]
+      : null;
 
-    // Derive status
-    const leadStatus = (status?.toLowerCase().includes("active") || status?.toLowerCase().includes("enrolled")) ? "enrolled" : "new";
+    const leadStatus =
+      status?.toLowerCase().includes("active") ||
+      status?.toLowerCase().includes("enrolled")
+        ? "enrolled"
+        : "new";
 
-    const { data: lead, error } = await supabase
+    const { data: lead, error } = await db
       .from("leads")
       .insert({
-        agent_id,
-        agent_slug,
+        agent_id: agent.id,
+        agent_slug: agent.slug,
         contact_name: name,
         contact_phone: cleanPhone,
         contact_email: email || null,
         selected_plan_name: planName || null,
-        selected_premium: premium ? parseFloat(premium.replace(/[$,]/g, "")) : null,
+        selected_premium: premium
+          ? parseFloat(String(premium).replace(/[$,]/g, ""))
+          : null,
         enrollment_date: enrollDate,
         renewal_date: renewDate,
         status: leadStatus,
-        enrolled_at: leadStatus === "enrolled" ? new Date().toISOString() : null,
-        first_name: name.split(" ")[0] || name,
-        last_name: name.split(" ").slice(1).join(" ") || "",
+        enrolled_at:
+          leadStatus === "enrolled" ? new Date().toISOString() : null,
+        first_name: String(name).split(" ")[0] || name,
+        last_name: String(name).split(" ").slice(1).join(" ") || "",
         zipcode: zipcode || "",
         county: "",
         state: "FL",
@@ -80,9 +123,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Insert failed" }, { status: 500 });
     }
 
-    // Create renewal reminder if we have a renewal date
     if (renewDate && lead) {
-      await supabase.from("renewal_reminders").insert({
+      await db.from("renewal_reminders").insert({
         lead_id: lead.id,
         renewal_date: renewDate,
       });

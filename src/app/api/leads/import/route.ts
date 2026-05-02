@@ -1,44 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
 import { rateLimit } from "@/lib/rate-limit";
+import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
 
 export async function POST(request: NextRequest) {
-  // Auth: derive identity from the session cookie. The body's agent_slug,
-  // if present, is intentionally ignored — accepting it would let any
-  // authenticated agent inject leads under another agent's identity.
-  const cookieStore = await cookies();
-  const supabase = createServerAuthClient(cookieStore);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 }
-    );
-  }
-
-  const db = createServiceClient();
-  const { data: agent } = await db
-    .from("agents")
-    .select("id, slug, is_active")
-    .eq("auth_user_id", user.id)
-    .single();
-
-  if (!agent) {
-    return NextResponse.json(
-      { error: "No agent profile linked to this account" },
-      { status: 403 }
-    );
-  }
-  if (agent.is_active === false) {
-    return NextResponse.json(
-      { error: "Agent account is inactive" },
-      { status: 403 }
-    );
-  }
+  // Auth: derive identity from the session cookie via the canonical helper.
+  // The body's agent_slug, if present, is intentionally ignored — accepting
+  // it would let any authenticated agent inject leads under another agent's
+  // identity.
+  const auth = await requireAuthenticatedAgent();
+  if (auth instanceof NextResponse) return auth;
+  const { agent, user } = auth;
 
   // Rate limit by authenticated user, not IP — multiple agents may share an IP.
   if (
@@ -46,6 +18,8 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
+
+  const db = createServiceClient();
 
   try {
     // agent_slug from body is intentionally ignored; identity is derived from auth

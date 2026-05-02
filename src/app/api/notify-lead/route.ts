@@ -3,8 +3,54 @@ import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
 import { captureInvalidAgentSlug } from "@/lib/slug-logging";
+import { rateLimit } from "@/lib/rate-limit";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const LEAD_RECENCY_MS = 10 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
+  // Rate limit by IP first — abuse should be rejected before any I/O.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (rateLimit(`notify-lead:${ip}`, { max: 5, windowMs: 60_000 }).limited) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  // Parse and validate body before doing any DB work.
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const leadId = typeof body.leadId === "string" ? body.leadId : null;
+  if (!leadId) {
+    return NextResponse.json({ error: "Missing leadId" }, { status: 400 });
+  }
+  if (!UUID_RE.test(leadId)) {
+    return NextResponse.json({ error: "Invalid leadId format" }, { status: 400 });
+  }
+
+  // Verify the lead exists AND was created recently. The cotizar flow
+  // POSTs here within seconds of creating the lead; older leads being
+  // notified-about are almost certainly an attacker spoofing a known UUID.
+  // Use a vague 400 for both not-found and stale, to avoid existence leaks.
+  const supabase = createServiceClient();
+  const { data: leadRow, error: leadErr } = await supabase
+    .from("leads")
+    .select("id, created_at")
+    .eq("id", leadId)
+    .single();
+
+  if (leadErr || !leadRow) {
+    return NextResponse.json({ error: "Invalid lead reference" }, { status: 400 });
+  }
+
+  const createdAtMs = new Date(leadRow.created_at).getTime();
+  if (!Number.isFinite(createdAtMs) || Date.now() - createdAtMs > LEAD_RECENCY_MS) {
+    return NextResponse.json({ error: "Invalid lead reference" }, { status: 400 });
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn("RESEND_API_KEY not configured — skipping lead notification");
@@ -12,8 +58,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { leadId, agentSlug, contactName, contactPhone, contactEmail, zipcode, county, state, householdSize, annualIncome, fplPercentage, conversationSummary, planName, isReadyToEnroll } = body;
+    const { agentSlug, contactName, contactPhone, contactEmail, zipcode, county, state, householdSize, annualIncome, fplPercentage, conversationSummary, planName, isReadyToEnroll } = body as Record<string, any>;
     const slugResult = normalizeAgentSlug(agentSlug);
     captureInvalidAgentSlug(slugResult, "app/api/notify-lead/route.ts", {
       url: req.url,
@@ -28,7 +73,6 @@ export async function POST(req: NextRequest) {
     let agentEmail = "";
     let agentName = "Agent";
     {
-      const supabase = createServiceClient();
       const { data } = await supabase
         .from("agents")
         .select("email, name")

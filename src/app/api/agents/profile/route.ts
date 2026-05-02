@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
+import { escapeHtml } from "@/lib/security/escape-html";
+import { sanitizePlainText } from "@/lib/security/sanitize-plain-text";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -72,10 +74,20 @@ export async function PATCH(request: NextRequest) {
         try {
           const { Resend } = await import("resend");
           const resend = new Resend(apiKey);
+          // All values are agent-controlled (the agent submits their own
+          // profile). Escape every interpolation in the HTML body and
+          // strip control chars from the subject line.
+          const safeName = escapeHtml(name);
+          const safeNpn = escapeHtml(npnTrim);
+          const safeEmail = emailTrim ? escapeHtml(emailTrim) : "—";
+          const safePhone = escapeHtml(phoneTrim);
           await resend.emails.send({
             from: "EnrollSalud <notifications@enrollsalud.com>",
             to: "francosimon@hotmail.com",
-            subject: `🆕 Nuevo agente registrado: ${name} — NPN: ${npnTrim}`,
+            subject: sanitizePlainText(
+              `🆕 Nuevo agente registrado: ${name} — NPN: ${npnTrim}`,
+              { maxLength: 200 }
+            ),
             html: `
         <div style="font-family: -apple-system, sans-serif; max-width: 500px; margin: 0 auto;">
           <div style="background: #8b5cf6; padding: 16px 20px; border-radius: 10px 10px 0 0;">
@@ -83,10 +95,10 @@ export async function PATCH(request: NextRequest) {
           </div>
           <div style="background: #fff; border: 1px solid #e5e7eb; border-top: none; padding: 20px; border-radius: 0 0 10px 10px;">
             <table style="width: 100%; font-size: 14px;">
-              <tr><td style="padding: 6px 0; color: #6b7280;">Nombre</td><td style="padding: 6px 0; font-weight: 700;">${name}</td></tr>
-              <tr><td style="padding: 6px 0; color: #6b7280;">NPN</td><td style="padding: 6px 0; font-weight: 700;">${npnTrim}</td></tr>
-              <tr><td style="padding: 6px 0; color: #6b7280;">Email</td><td style="padding: 6px 0;">${emailTrim || "—"}</td></tr>
-              <tr><td style="padding: 6px 0; color: #6b7280;">Teléfono</td><td style="padding: 6px 0;">${phoneTrim}</td></tr>
+              <tr><td style="padding: 6px 0; color: #6b7280;">Nombre</td><td style="padding: 6px 0; font-weight: 700;">${safeName}</td></tr>
+              <tr><td style="padding: 6px 0; color: #6b7280;">NPN</td><td style="padding: 6px 0; font-weight: 700;">${safeNpn}</td></tr>
+              <tr><td style="padding: 6px 0; color: #6b7280;">Email</td><td style="padding: 6px 0;">${safeEmail}</td></tr>
+              <tr><td style="padding: 6px 0; color: #6b7280;">Teléfono</td><td style="padding: 6px 0;">${safePhone}</td></tr>
             </table>
           </div>
         </div>

@@ -12,11 +12,13 @@ vi.mock("@/lib/slug-logging", () => ({
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(() => ({ limited: false })),
 }));
+// Hoisted spy so tests can inspect the html/subject that was sent.
+const { sendSpy } = vi.hoisted(() => ({
+  sendSpy: vi.fn(async () => ({ data: { id: "msg-1" }, error: null })),
+}));
 vi.mock("resend", () => ({
   Resend: class {
-    emails = {
-      send: async () => ({ data: { id: "msg-1" }, error: null }),
-    };
+    emails = { send: sendSpy };
   },
 }));
 
@@ -180,5 +182,75 @@ describe("POST /api/notify-lead — body parsing", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toMatch(/invalid request body/i);
+  });
+});
+
+describe("POST /api/notify-lead — HTML escaping (PR F)", () => {
+  it("escapes XSS payloads in user-controlled fields before sending", async () => {
+    const recentCreatedAt = new Date(Date.now() - 30_000).toISOString();
+    installDb({
+      lead: { id: VALID_UUID, created_at: recentCreatedAt },
+      agent: { email: "agent@example.com", name: "Alice" },
+    });
+    sendSpy.mockClear();
+
+    const xss = `<script>alert('pwn')</script>`;
+    const res = await POST(
+      makeRequest({
+        leadId: VALID_UUID,
+        agentSlug: "alice",
+        contactName: xss,
+        contactPhone: "239<555>1234",
+        contactEmail: "<a href='evil'>m@x</a>",
+        zipcode: "33914",
+        county: "Lee",
+        state: "FL",
+        householdSize: 1,
+        annualIncome: 28000,
+        fplPercentage: 130,
+        conversationSummary: `</td><td>injected</td><td>`,
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    const sent = (sendSpy.mock.calls[0] as unknown as Array<{ html: string; subject: string }>)[0];
+
+    // Body must contain the escaped versions, never the raw tags.
+    expect(sent.html).toContain("&lt;script&gt;alert(&#39;pwn&#39;)&lt;/script&gt;");
+    expect(sent.html).not.toContain("<script>alert");
+    expect(sent.html).toContain("239&lt;555&gt;1234");
+    expect(sent.html).toContain("&lt;a href=&#39;evil&#39;&gt;m@x&lt;/a&gt;");
+    expect(sent.html).toContain("&lt;/td&gt;&lt;td&gt;injected");
+    expect(sent.html).not.toContain("</td><td>injected");
+  });
+
+  it("strips control chars from the subject line so headers can't be injected", async () => {
+    const recentCreatedAt = new Date(Date.now() - 30_000).toISOString();
+    installDb({
+      lead: { id: VALID_UUID, created_at: recentCreatedAt },
+      agent: { email: "agent@example.com", name: "Alice" },
+    });
+    sendSpy.mockClear();
+
+    await POST(
+      makeRequest({
+        leadId: VALID_UUID,
+        agentSlug: "alice",
+        contactName: "Maria\r\nBcc: attacker@evil.com",
+        contactPhone: "1234567890",
+        zipcode: "33914",
+        county: "Lee",
+        state: "FL",
+        householdSize: 1,
+        annualIncome: 28000,
+        fplPercentage: 130,
+      })
+    );
+
+    const sent = (sendSpy.mock.calls[0] as unknown as Array<{ html: string; subject: string }>)[0];
+    expect(sent.subject).not.toContain("\r");
+    expect(sent.subject).not.toContain("\n");
+    expect(sent.subject).toContain("MariaBcc: attacker@evil.com");
   });
 });

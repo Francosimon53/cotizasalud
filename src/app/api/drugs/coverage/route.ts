@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 const CMS_BASE = "https://marketplace.api.healthcare.gov/api/v1";
 
 export async function GET(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (rateLimit(`drugs-coverage:${ip}`, { max: 50, windowMs: 60_000 }).limited) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const drugs = req.nextUrl.searchParams.get("drugs");
   const planids = req.nextUrl.searchParams.get("planids");
   const year = req.nextUrl.searchParams.get("year") || "2026";

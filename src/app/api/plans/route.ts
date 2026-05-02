@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getFPLpct } from "@/lib/data";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Freshness is non-negotiable for the cotizador — every response must match CMS live data.
 export const dynamic = "force-dynamic";
@@ -233,6 +234,14 @@ function computeGlobalAPTC(plans: Array<{ premium: number; aptc: number }>): num
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (rateLimit(`plans:${ip}`, { max: 10, windowMs: 60_000 }).limited) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: NO_STORE_HEADERS }
+    );
+  }
+
   try {
     const body = await req.json();
     const { zipcode, countyfips, state, income, household } = body;

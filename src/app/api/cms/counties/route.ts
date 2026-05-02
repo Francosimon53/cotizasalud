@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 const CMS_URL = "https://marketplace.api.healthcare.gov/api/v1/counties/by/zip";
 
 export async function GET(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (rateLimit(`cms-counties:${ip}`, { max: 30, windowMs: 60_000 }).limited) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const zip = req.nextUrl.searchParams.get("zip");
     if (!zip || !/^\d{5}$/.test(zip)) {

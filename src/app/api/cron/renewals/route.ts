@@ -49,23 +49,39 @@ export async function GET(request: NextRequest) {
     await supabase.from("renewal_reminders").update({ reminder_60_sent: true }).eq("id", r.id);
     results.reminders_60++;
 
-    // Send WhatsApp if Twilio configured
-    if (process.env.TWILIO_ACCOUNT_SID) {
+    // Send WhatsApp if Twilio configured. Inlined from the former
+    // /api/notifications/whatsapp route (deleted) so the Twilio send is
+    // not exposed as a public-callable endpoint.
+    const sid = process.env.TWILIO_ACCOUNT_SID;
+    const token = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_WHATSAPP_NUMBER;
+    if (sid && token && fromNumber) {
       try {
-        const origin = request.nextUrl.origin;
-        await fetch(`${origin}/api/notifications/whatsapp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: lead.contact_phone,
-            clientName: lead.contact_name,
-            agentName: agent?.name || "Tu agente",
-            agentPhone: agent?.phone || "",
-            planName: lead.selected_plan_name || "tu plan actual",
-            leadId: r.lead_id,
-          }),
+        const cleanPhone = String(lead.contact_phone).replace(/\D/g, "");
+        const whatsappTo = `whatsapp:+${cleanPhone.length === 10 ? "1" : ""}${cleanPhone}`;
+        const whatsappFrom = `whatsapp:${fromNumber}`;
+        const clientName = lead.contact_name;
+        const agentName = agent?.name || "Tu agente";
+        const agentPhone = agent?.phone || "";
+        const planName = lead.selected_plan_name || "tu plan actual";
+        const message = `Hola ${clientName}, soy ${agentName}, tu agente de seguros de salud en EnrollSalud. Vi que te interesa el plan ${planName} por $?/mes. ¿Tienes unos minutos para que hablemos sobre tu cobertura? Puedes llamarme al ${agentPhone} o responder este mensaje.`;
+
+        const twilio = (await import("twilio")).default;
+        const client = twilio(sid, token);
+        await client.messages.create({
+          body: message,
+          from: whatsappFrom,
+          to: whatsappTo,
         });
-      } catch {}
+
+        await supabase.from("lead_activity").insert({
+          lead_id: r.lead_id,
+          action: "whatsapp_sent",
+          note: `WhatsApp automático enviado: "${message.slice(0, 100)}..."`,
+        });
+      } catch (err) {
+        console.error("Twilio WhatsApp error in cron:", err);
+      }
     }
   }
 

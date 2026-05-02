@@ -94,29 +94,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PATCH(request: NextRequest) {
-  try {
-    const { leadId, selectedPlan, selectedPlanId } = await request.json();
-    if (!leadId) return NextResponse.json(
-      { error: "Missing leadId" },
-      { status: 400, headers: NO_STORE_HEADERS }
-    );
-
-    const supabase = createServiceClient();
-    const update: Record<string, unknown> = {};
-    if (selectedPlan) update.selected_plan = selectedPlan;
-    if (selectedPlanId) update.selected_plan_name = selectedPlan;
-
-    if (Object.keys(update).length > 0) {
-      await supabase.from("leads").update(update).eq("id", leadId);
-    }
-
-    return NextResponse.json({ success: true }, { headers: NO_STORE_HEADERS });
-  } catch (err) {
-    console.error("Browse PATCH error:", err);
-    return NextResponse.json(
-      { error: "Server error" },
-      { status: 500, headers: NO_STORE_HEADERS }
-    );
-  }
-}

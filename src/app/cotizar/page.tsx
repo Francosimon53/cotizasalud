@@ -515,8 +515,8 @@ export default function QuoterPage() {
     try {
       if (leadId) {
         // UPDATE existing browsing lead with contact info
-        await fetch("/api/leads", {
-          method: "PATCH",
+        await fetch(`/api/leads/${leadId}/contact-upgrade`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             leadId,

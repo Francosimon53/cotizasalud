@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { createServiceClient } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret (Vercel sends this header)
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    // Allow if no CRON_SECRET is set (dev mode)
-    if (process.env.CRON_SECRET) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // Fail closed: if CRON_SECRET is not configured, refuse to run rather
+  // than fall through to an open endpoint that triggers Twilio/DB writes.
+  const expectedSecret = process.env.CRON_SECRET;
+  if (!expectedSecret) {
+    console.error("CRON_SECRET not configured — refusing to run cron");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
+
+  const authHeader = request.headers.get("authorization") ?? "";
+  const expectedHeader = `Bearer ${expectedSecret}`;
+  // Constant-time comparison; pre-check length to avoid throwing on
+  // mismatched buffer sizes and to keep the comparison time-independent.
+  const headerBuf = Buffer.from(authHeader);
+  const expectedBuf = Buffer.from(expectedHeader);
+  if (
+    headerBuf.length !== expectedBuf.length ||
+    !timingSafeEqual(headerBuf, expectedBuf)
+  ) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createServiceClient();

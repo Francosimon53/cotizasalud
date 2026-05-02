@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
 import { jsPDF } from "jspdf";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,10 @@ function fmtCurrency(n: number | null | undefined): string {
 }
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuthenticatedAgent();
+  if (auth instanceof NextResponse) return auth;
+  const callerAgent = auth.agent;
+
   const { id } = await params;
   try {
     const supabase = createServiceClient();
@@ -33,6 +38,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       { error: "Lead not found" },
       { status: 404, headers: NO_STORE_HEADERS }
     );
+
+    if (lead.agent_id !== callerAgent.id) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403, headers: NO_STORE_HEADERS }
+      );
+    }
 
     const { data: agent } = await supabase.from("agents").select("name, npn, agency_name, phone").eq("slug", lead.agent_slug).single();
 

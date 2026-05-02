@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,6 +12,10 @@ const NO_STORE_HEADERS = {
 } as const;
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuthenticatedAgent();
+  if (auth instanceof NextResponse) return auth;
+  const { agent } = auth;
+
   const { id } = await params;
   try {
     const supabase = createServiceClient();
@@ -25,6 +30,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json(
         { error: "Lead not found" },
         { status: 404, headers: NO_STORE_HEADERS }
+      );
+    }
+
+    if (lead.agent_id !== agent.id) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403, headers: NO_STORE_HEADERS }
       );
     }
 
@@ -48,9 +60,34 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuthenticatedAgent();
+  if (auth instanceof NextResponse) return auth;
+  const { agent } = auth;
+
   const { id } = await params;
   try {
     const supabase = createServiceClient();
+
+    const { data: lead, error: fetchError } = await supabase
+      .from("leads")
+      .select("agent_id")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !lead) {
+      return NextResponse.json(
+        { error: "Lead not found" },
+        { status: 404, headers: NO_STORE_HEADERS }
+      );
+    }
+
+    if (lead.agent_id !== agent.id) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403, headers: NO_STORE_HEADERS }
+      );
+    }
+
     await supabase.from("lead_activity").delete().eq("lead_id", id);
     const { error } = await supabase.from("leads").delete().eq("id", id);
     if (error) {

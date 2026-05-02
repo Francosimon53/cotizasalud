@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { createServiceClient } from "@/lib/supabase";
+import { sanitizePlainText } from "@/lib/security/sanitize-plain-text";
 
 export async function GET(request: NextRequest) {
   // Fail closed: if CRON_SECRET is not configured, refuse to run rather
@@ -73,10 +74,14 @@ export async function GET(request: NextRequest) {
         const cleanPhone = String(lead.contact_phone).replace(/\D/g, "");
         const whatsappTo = `whatsapp:+${cleanPhone.length === 10 ? "1" : ""}${cleanPhone}`;
         const whatsappFrom = `whatsapp:${fromNumber}`;
-        const clientName = lead.contact_name;
-        const agentName = agent?.name || "Tu agente";
-        const agentPhone = agent?.phone || "";
-        const planName = lead.selected_plan_name || "tu plan actual";
+        // Strip control chars and apply per-field length caps. WhatsApp does
+        // not render HTML, so the threat model here is URL injection inside
+        // user-controlled name fields, message-splitting via CR/LF, and
+        // unbounded length blowing past Twilio limits.
+        const clientName = sanitizePlainText(lead.contact_name, { maxLength: 100 });
+        const agentName = sanitizePlainText(agent?.name || "Tu agente", { maxLength: 100 });
+        const agentPhone = sanitizePlainText(agent?.phone || "", { maxLength: 30 });
+        const planName = sanitizePlainText(lead.selected_plan_name || "tu plan actual", { maxLength: 100 });
         const message = `Hola ${clientName}, soy ${agentName}, tu agente de seguros de salud en EnrollSalud. Vi que te interesa el plan ${planName} por $?/mes. ¿Tienes unos minutos para que hablemos sobre tu cobertura? Puedes llamarme al ${agentPhone} o responder este mensaje.`;
 
         const twilio = (await import("twilio")).default;

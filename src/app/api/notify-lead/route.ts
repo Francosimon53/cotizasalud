@@ -4,6 +4,8 @@ import { createServiceClient } from "@/lib/supabase";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
 import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 import { rateLimit } from "@/lib/rate-limit";
+import { escapeHtml } from "@/lib/security/escape-html";
+import { sanitizePlainText } from "@/lib/security/sanitize-plain-text";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LEAD_RECENCY_MS = 10 * 60 * 1000;
@@ -91,13 +93,36 @@ export async function POST(req: NextRequest) {
       agentName = "EnrollSalud";
     }
 
+    // All user-controlled / agent-controlled values are interpolated through
+    // escapeHtml() in the body, sanitizePlainText() in the subject, and
+    // encodeURIComponent() inside URL params. See PR description for the
+    // field-by-field cobertura matrix.
+    const safeAgentName = escapeHtml(agentName);
+    const safeContactName = escapeHtml(contactName);
+    const safeContactPhone = escapeHtml(contactPhone);
+    const safeContactEmail = escapeHtml(contactEmail);
+    const safeCounty = escapeHtml(county);
+    const safeState = escapeHtml(state);
+    const safeZipcode = escapeHtml(zipcode);
+    const safeHouseholdSize = escapeHtml(householdSize);
+    const safeIncomeDisplay = escapeHtml(Number(annualIncome).toLocaleString());
+    const safeFplPercentage = escapeHtml(fplPercentage);
+    const safeConversationSummary = escapeHtml(conversationSummary);
+    const safeLeadId = escapeHtml(leadId);
+
     const resend = new Resend(apiKey);
     const { error } = await resend.emails.send({
       from: "EnrollSalud <notifications@enrollsalud.com>",
       to: agentEmail,
       subject: isReadyToEnroll
-        ? `🔥 Cliente LISTO para enrollment — ${contactName} quiere ${planName || "plan del Marketplace"}`
-        : `Nuevo Contacto: ${contactName} — ${county}, ${state}`,
+        ? sanitizePlainText(
+            `🔥 Cliente LISTO para enrollment — ${contactName} quiere ${planName || "plan del Marketplace"}`,
+            { maxLength: 200 }
+          )
+        : sanitizePlainText(
+            `Nuevo Contacto: ${contactName} — ${county}, ${state}`,
+            { maxLength: 200 }
+          ),
       html: `
         <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: #10b981; padding: 20px; border-radius: 12px 12px 0 0;">
@@ -105,34 +130,39 @@ export async function POST(req: NextRequest) {
             <p style="color: rgba(255,255,255,0.8); margin: 4px 0 0; font-size: 14px;">EnrollSalud Marketplace</p>
           </div>
           <div style="background: #fff; border: 1px solid #e5e7eb; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
-            <p style="margin: 0 0 16px; color: #374151;">Hola ${agentName},</p>
+            <p style="margin: 0 0 16px; color: #374151;">Hola ${safeAgentName},</p>
             <p style="margin: 0 0 16px; color: #374151;">Acabás de recibir un nuevo contacto a través de tu cotizador EnrollSalud:</p>
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Nombre</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">${contactName}</td></tr>
-              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Teléfono</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;"><a href="tel:${contactPhone}" style="color: #10b981;">${contactPhone}</a></td></tr>
-              ${contactEmail ? `<tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Email</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;"><a href="mailto:${contactEmail}" style="color: #10b981;">${contactEmail}</a></td></tr>` : ""}
-              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Ubicación</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">${county}, ${state} ${zipcode}</td></tr>
-              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Hogar</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">${householdSize} miembro${householdSize > 1 ? "s" : ""}</td></tr>
-              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Ingreso</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">$${Number(annualIncome).toLocaleString()}/año (${fplPercentage}% FPL)</td></tr>
+              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Nombre</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">${safeContactName}</td></tr>
+              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Teléfono</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;"><a href="tel:${safeContactPhone}" style="color: #10b981;">${safeContactPhone}</a></td></tr>
+              ${contactEmail ? `<tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Email</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;"><a href="mailto:${safeContactEmail}" style="color: #10b981;">${safeContactEmail}</a></td></tr>` : ""}
+              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Ubicación</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">${safeCounty}, ${safeState} ${safeZipcode}</td></tr>
+              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Hogar</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">${safeHouseholdSize} miembro${householdSize > 1 ? "s" : ""}</td></tr>
+              <tr><td style="padding: 8px 0; color: #6b7280; font-size: 13px; border-bottom: 1px solid #f3f4f6;">Ingreso</td><td style="padding: 8px 0; font-weight: 600; color: #111827; border-bottom: 1px solid #f3f4f6;">$${safeIncomeDisplay}/año (${safeFplPercentage}% FPL)</td></tr>
             </table>
             ${conversationSummary ? `
             <div style="margin: 16px 0; padding: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px;">
               <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.5px;">Resumen de la Conversación con IA</p>
-              <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.6;">${conversationSummary}</p>
+              <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.6;">${safeConversationSummary}</p>
             </div>` : ""}
             ${(() => {
               const cleanPhone = String(contactPhone).replace(/\D/g, "");
               const waPhone = cleanPhone.length === 10 ? `1${cleanPhone}` : cleanPhone;
-              const waMsg = encodeURIComponent(`Hola ${contactName}, soy ${agentName} tu agente de seguros de salud. Recibí tu interés en un plan del Marketplace. ¿Tienes unos minutos para hablar sobre tu cobertura?`);
+              // contactName/agentName feed into encodeURIComponent so HTML
+              // escaping is unnecessary here — but we sanitize control chars
+              // first to keep the URL well-formed.
+              const waMsg = encodeURIComponent(
+                `Hola ${sanitizePlainText(contactName, { maxLength: 100 })}, soy ${sanitizePlainText(agentName, { maxLength: 100 })} tu agente de seguros de salud. Recibí tu interés en un plan del Marketplace. ¿Tienes unos minutos para hablar sobre tu cobertura?`
+              );
               return `
             <div style="margin: 20px 0 0; text-align: center;">
-              <a href="https://wa.me/${waPhone}?text=${waMsg}" style="display: inline-block; padding: 14px 28px; background: #25D366; color: #fff; font-size: 16px; font-weight: 800; border-radius: 10px; text-decoration: none;">
+              <a href="https://wa.me/${escapeHtml(waPhone)}?text=${escapeHtml(waMsg)}" style="display: inline-block; padding: 14px 28px; background: #25D366; color: #fff; font-size: 16px; font-weight: 800; border-radius: 10px; text-decoration: none;">
                 💬 Enviar WhatsApp al Cliente
               </a>
               <p style="margin: 8px 0 0; font-size: 12px; color: #9ca3af;">Toca el botón para abrir WhatsApp con mensaje pre-escrito</p>
             </div>`;
             })()}
-            ${leadId ? `<p style="margin: 16px 0 0; font-size: 12px; color: #9ca3af;">Contacto ID: ${leadId}</p>` : ""}
+            ${leadId ? `<p style="margin: 16px 0 0; font-size: 12px; color: #9ca3af;">Contacto ID: ${safeLeadId}</p>` : ""}
           </div>
         </div>
       `,

@@ -4,6 +4,9 @@ import { resolveAgentFromSlug } from '@/lib/resolve-agent'
 import { normalizeAgentSlug } from '@/lib/normalize-slug'
 import { captureInvalidAgentSlug } from '@/lib/slug-logging'
 import { rateLimit } from '@/lib/rate-limit'
+import { requireAuthenticatedAgent } from '@/lib/auth/require-agent'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -24,13 +27,27 @@ const STATUS_TIMESTAMP: Record<string, string> = {
 }
 
 export async function PATCH(request: NextRequest) {
+  // CRM-only: anonymous cotizar contact-upgrade flow now lives in
+  // /api/leads/[id]/contact-upgrade (public, anti-spoofing). This handler
+  // requires an authenticated agent and verifies ownership before touching
+  // the row.
+  const auth = await requireAuthenticatedAgent()
+  if (auth instanceof NextResponse) return auth
+  const { agent } = auth
+
   try {
     const body = await request.json()
     const { leadId, status, note, lostReason, nextFollowupDate, contactName, contactPhone, contactEmail, firstName, lastName } = body
 
-    if (!leadId || !status || !VALID_STATUSES.includes(status)) {
+    if (!leadId || typeof leadId !== 'string' || !UUID_RE.test(leadId)) {
       return NextResponse.json(
-        { error: 'Invalid leadId or status' },
+        { error: 'Invalid leadId' },
+        { status: 400, headers: NO_STORE_HEADERS }
+      )
+    }
+    if (!status || !VALID_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status' },
         { status: 400, headers: NO_STORE_HEADERS }
       )
     }
@@ -51,9 +68,27 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = createServiceClient()
 
-    // Get current status for activity log
-    const { data: current } = await supabase.from('leads').select('status').eq('id', leadId).single()
-    const fromStatus = current?.status || 'unknown'
+    // Fetch existing row for ownership check + activity-log from-status.
+    const { data: current, error: fetchError } = await supabase
+      .from('leads')
+      .select('agent_id, status')
+      .eq('id', leadId)
+      .single()
+
+    if (fetchError || !current) {
+      return NextResponse.json(
+        { error: 'Lead not found' },
+        { status: 404, headers: NO_STORE_HEADERS }
+      )
+    }
+    if (current.agent_id !== agent.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403, headers: NO_STORE_HEADERS }
+      )
+    }
+
+    const fromStatus = current.status || 'unknown'
 
     // Build update payload
     const update: Record<string, unknown> = { status }

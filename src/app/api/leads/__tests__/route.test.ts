@@ -15,10 +15,15 @@ vi.mock("@/lib/slug-logging", () => ({
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(() => ({ limited: false })),
 }));
+vi.mock("@/lib/auth/require-agent", () => ({
+  requireAuthenticatedAgent: vi.fn(),
+}));
 
-import { POST } from "../route";
+import { PATCH, POST } from "../route";
 import { createServiceClient } from "@/lib/supabase";
 import { rateLimit } from "@/lib/rate-limit";
+import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
+import { NextResponse } from "next/server";
 
 function makeRequest(body: unknown, ip = "203.0.113.1") {
   return {
@@ -86,5 +91,147 @@ describe("POST /api/leads — rate limiting", () => {
     const body = await limited.json();
     expect(body.error).toMatch(/too many/i);
     expect(rateLimit).toHaveBeenCalledWith("leads:203.0.113.1", { max: 5, windowMs: 60_000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /api/leads — auth + ownership
+// ---------------------------------------------------------------------------
+
+const VALID_UUID = "11111111-2222-3333-4444-555555555555";
+
+function setAuthOk(agent: { id: string; slug: string; is_active?: boolean }) {
+  (requireAuthenticatedAgent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    agent,
+    user: { id: "user-1" },
+  });
+}
+
+function setAuthError(status: number, message: string) {
+  (requireAuthenticatedAgent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+    NextResponse.json({ error: message }, { status })
+  );
+}
+
+function installPatchDb(opts: {
+  lead?: { agent_id: string; status: string } | null;
+  updateError?: unknown;
+}) {
+  const { lead = null, updateError = null } = opts;
+  const updateCalls: Array<{ payload: Record<string, unknown> }> = [];
+  const insertCalls: Array<{ table: string; payload: Record<string, unknown> }> = [];
+
+  const db = {
+    from: vi.fn((table: string) => {
+      if (table === "leads") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: async () => ({
+                data: lead,
+                error: lead ? null : { code: "PGRST116" },
+              }),
+            }),
+          }),
+          update: (payload: Record<string, unknown>) => {
+            updateCalls.push({ payload });
+            return {
+              eq: async () => ({ data: null, error: updateError }),
+            };
+          },
+        };
+      }
+      if (table === "lead_activity") {
+        return {
+          insert: (payload: Record<string, unknown>) => {
+            insertCalls.push({ table: "lead_activity", payload });
+            return Promise.resolve({ data: null, error: null });
+          },
+        };
+      }
+      return {};
+    }),
+    _updateCalls: updateCalls,
+    _insertCalls: insertCalls,
+  };
+
+  (createServiceClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue(db);
+  return db;
+}
+
+describe("PATCH /api/leads — auth + ownership", () => {
+  it("returns 401 when no auth user is present", async () => {
+    setAuthError(401, "Authentication required");
+
+    const res = await PATCH(
+      makeRequest({ leadId: VALID_UUID, status: "contacted", note: "x" })
+    );
+
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when the auth user has no linked agent", async () => {
+    setAuthError(403, "No agent profile linked to this account");
+
+    const res = await PATCH(
+      makeRequest({ leadId: VALID_UUID, status: "contacted", note: "x" })
+    );
+
+    expect(res.status).toBe(403);
+  });
+
+  it("returns 400 when leadId is malformed", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+
+    const res = await PATCH(
+      makeRequest({ leadId: "not-a-uuid", status: "contacted", note: "x" })
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/invalid leadid/i);
+  });
+
+  it("returns 404 when the lead does not exist", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    installPatchDb({ lead: null });
+
+    const res = await PATCH(
+      makeRequest({ leadId: VALID_UUID, status: "contacted", note: "x" })
+    );
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 403 (NOT 404) and does NOT update when ownership mismatches (anti-IDOR)", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    const db = installPatchDb({
+      lead: { agent_id: "victim-agent", status: "new" },
+    });
+
+    const res = await PATCH(
+      makeRequest({ leadId: VALID_UUID, status: "contacted", note: "Reached" })
+    );
+
+    expect(res.status).toBe(403);
+    expect(db._updateCalls).toHaveLength(0);
+    expect(db._insertCalls).toHaveLength(0);
+  });
+
+  it("updates the lead when ownership matches", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    const db = installPatchDb({
+      lead: { agent_id: "a1", status: "new" },
+    });
+
+    const res = await PATCH(
+      makeRequest({ leadId: VALID_UUID, status: "contacted", note: "Reached" })
+    );
+
+    expect(res.status).toBe(200);
+    expect(db._updateCalls).toHaveLength(1);
+    expect(db._updateCalls[0].payload.status).toBe("contacted");
+    expect(db._insertCalls).toHaveLength(1);
+    expect(db._insertCalls[0].table).toBe("lead_activity");
   });
 });

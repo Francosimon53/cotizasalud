@@ -5,7 +5,7 @@ const CMS_BASE = "https://marketplace.api.healthcare.gov/api/v1";
 
 export async function GET(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (rateLimit(ip, { max: 30, windowMs: 60_000 }).limited) {
+  if (rateLimit(`providers-search:${ip}`, { max: 30, windowMs: 60_000 }).limited) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 

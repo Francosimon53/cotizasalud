@@ -16,7 +16,10 @@ function fmtDate(iso: string): string {
   if (!iso) return "N/A";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("es-US", { day: "numeric", month: "long", year: "numeric" });
+  // Date-only values (YYYY-MM-DD) parse as UTC midnight; render in UTC so the
+  // displayed day matches the date that was actually picked/stored, rather
+  // than shifting back a day in negative-offset timezones.
+  return d.toLocaleDateString("es-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
 function fmtCurrency(n: number | null | undefined): string {

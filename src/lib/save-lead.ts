@@ -79,7 +79,19 @@ export async function saveConsent(data: {
   }
 }
 
-export async function savePlanSelection(leadId: string, plan: any): Promise<void> {
+export interface SelectedPlanPayload {
+  id?: string
+  name?: string
+  issuer?: string
+  metal?: string
+  premium?: number
+  afterSubsidy?: number
+  deductible?: number
+  oopMax?: number
+  effectiveDate?: string
+}
+
+export async function savePlanSelection(leadId: string, plan: SelectedPlanPayload): Promise<void> {
   try {
     await fetch('/api/plan-select', {
       method: 'POST',

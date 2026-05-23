@@ -46,6 +46,9 @@ export default function LeadDetailClient({ lead: initialLead, activity: initialA
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [planForm, setPlanForm] = useState({ name: "", issuer: "", premium: "", deductible: "", oopMax: "", effectiveDate: "" });
 
   const currentStatusCfg = STATUSES.find((s) => s.value === lead.status) || STATUSES[0];
 
@@ -125,6 +128,49 @@ export default function LeadDetailClient({ lead: initialLead, activity: initialA
     setDeleting(true);
     await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
     router.push("/agentes/dashboard");
+  };
+
+  const openPlanForm = () => {
+    setPlanForm({
+      name: planName || "",
+      issuer: planObj?.issuer || "",
+      premium: planPremium != null ? String(planPremium) : "",
+      deductible: planDeductible != null ? String(planDeductible) : "",
+      oopMax: planOopMax != null ? String(planOopMax) : "",
+      effectiveDate: planObj?.effectiveDate || "",
+    });
+    setShowPlanForm(true);
+  };
+
+  const handleSavePlan = async () => {
+    setSavingPlan(true);
+    const toNum = (v: string) => (v.trim() === "" ? null : Number(v));
+    const res = await fetch(`/api/leads/${lead.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan: {
+          name: planForm.name.trim() || null,
+          issuer: planForm.issuer.trim() || null,
+          premium: toNum(planForm.premium),
+          deductible: toNum(planForm.deductible),
+          oopMax: toNum(planForm.oopMax),
+          effectiveDate: planForm.effectiveDate || null,
+        },
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const sp = data.selected_plan || {};
+      setLead((prev: any) => ({
+        ...prev,
+        selected_plan: sp,
+        selected_plan_name: sp.name ?? null,
+        selected_premium: sp.afterSubsidy ?? sp.premium ?? null,
+      }));
+      setShowPlanForm(false);
+    }
+    setSavingPlan(false);
   };
 
   const copyText = async (text: string, label: string) => {
@@ -222,6 +268,49 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
         </div>
       )}
 
+      {/* Plan entry / edit form */}
+      {showPlanForm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => !savingPlan && setShowPlanForm(false)}>
+          <div style={{ background: "#1E293B", borderRadius: 16, padding: 28, border: "1px solid #334155", width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginBottom: 18 }}>{planName ? "Editar plan" : "Agregar plan"}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={statLabel}>Nombre del plan</label>
+                <input value={planForm.name} onChange={(e) => setPlanForm((p) => ({ ...p, name: e.target.value }))} style={{ ...inputStyle, marginTop: 4 }} placeholder="Ej. Florida Blue Gold 1234" />
+              </div>
+              <div>
+                <label style={statLabel}>Aseguradora</label>
+                <input value={planForm.issuer} onChange={(e) => setPlanForm((p) => ({ ...p, issuer: e.target.value }))} style={{ ...inputStyle, marginTop: 4 }} placeholder="Ej. Florida Blue" />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={statLabel}>Prima mensual ($)</label>
+                  <input type="number" inputMode="decimal" value={planForm.premium} onChange={(e) => setPlanForm((p) => ({ ...p, premium: e.target.value }))} style={{ ...inputStyle, marginTop: 4 }} placeholder="0" />
+                </div>
+                <div>
+                  <label style={statLabel}>Deducible ($)</label>
+                  <input type="number" inputMode="decimal" value={planForm.deductible} onChange={(e) => setPlanForm((p) => ({ ...p, deductible: e.target.value }))} style={{ ...inputStyle, marginTop: 4 }} placeholder="0" />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={statLabel}>Gasto máx. de bolsillo ($)</label>
+                  <input type="number" inputMode="decimal" value={planForm.oopMax} onChange={(e) => setPlanForm((p) => ({ ...p, oopMax: e.target.value }))} style={{ ...inputStyle, marginTop: 4 }} placeholder="0" />
+                </div>
+                <div>
+                  <label style={statLabel}>Fecha de vigencia</label>
+                  <input type="date" value={planForm.effectiveDate} onChange={(e) => setPlanForm((p) => ({ ...p, effectiveDate: e.target.value }))} style={{ ...inputStyle, marginTop: 4 }} />
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+              <button onClick={() => setShowPlanForm(false)} disabled={savingPlan} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#94A3B8", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
+              <button onClick={handleSavePlan} disabled={savingPlan} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "none", background: "#3B82F6", color: "#fff", fontSize: 14, fontWeight: 800, cursor: savingPlan ? "default" : "pointer", fontFamily: "inherit" }}>{savingPlan ? "Guardando..." : "Guardar plan"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header style={{ background: "rgba(8,9,13,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 50 }}>
         <button onClick={() => router.push("/agentes/dashboard")} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#94A3B8", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Dashboard</button>
@@ -296,6 +385,9 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
           <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
             🏥 Plan Seleccionado
             {metalInfo && <span style={{ padding: "2px 10px", borderRadius: 6, fontSize: 11, fontWeight: 900, color: "#000", background: metalInfo.color }}>{metalInfo.label}</span>}
+            <button onClick={openPlanForm} style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(59,130,246,0.4)", background: "rgba(59,130,246,0.1)", color: "#3B82F6", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+              {planName ? "✏️ Editar plan" : "+ Agregar plan"}
+            </button>
           </div>
           {planName ? (
             <>

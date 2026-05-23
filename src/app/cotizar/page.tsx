@@ -47,6 +47,16 @@ function parseSmartLink() {
   };
 }
 
+// Default plan effective date: 1st of next month when on/before the 15th,
+// otherwise the 1st of the month after. Returns an ISO date (YYYY-MM-DD).
+function defaultEffectiveDate(): string {
+  const now = new Date();
+  const eff = now.getDate() <= 15
+    ? new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    : new Date(now.getFullYear(), now.getMonth() + 2, 1);
+  return eff.toISOString().split("T")[0];
+}
+
 // ==================== SMALL COMPONENTS ====================
 function Stars({ n }: { n: number }) {
   return (
@@ -644,6 +654,7 @@ export default function QuoterPage() {
           id: plan.id, name: plan.name, issuer: plan.issuer,
           metal: plan.metal, premium: plan.premium,
           afterSubsidy: plan.afterSubsidy, deductible: plan.deductible,
+          oopMax: plan.oopMax, effectiveDate: defaultEffectiveDate(),
         });
       } catch (err) {
         console.error('Failed to save plan selection:', err);
@@ -1256,13 +1267,7 @@ export default function QuoterPage() {
             agentNPN={agentBrand?.npn}
             agentPhone={agentBrand?.phone}
             selectedPlan={selectedPlanData || undefined}
-            effectiveDate={(() => {
-              const now = new Date();
-              const eff = now.getDate() <= 15
-                ? new Date(now.getFullYear(), now.getMonth() + 1, 1)
-                : new Date(now.getFullYear(), now.getMonth() + 2, 1);
-              return eff.toISOString().split("T")[0];
-            })()}
+            effectiveDate={defaultEffectiveDate()}
             lang={lang}
             t={t}
             onConsent={handleConsent}

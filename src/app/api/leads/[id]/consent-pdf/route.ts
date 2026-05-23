@@ -20,7 +20,7 @@ function fmtDate(iso: string): string {
 }
 
 function fmtCurrency(n: number | null | undefined): string {
-  if (n == null || n === 0) return "N/A";
+  if (n == null) return "N/A";
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -68,7 +68,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const deductible = fmtCurrency(consent?.plan_deductible ?? sp.deductible);
     const maxOop = fmtCurrency(consent?.plan_max_oop ?? sp.oopMax);
     const incomeDisplay = fmtCurrency(lead.annual_income);
-    const effectiveDate = consent?.effective_date ? fmtDate(consent.effective_date) : "N/A";
+    const effectiveSource = consent?.effective_date ?? sp.effectiveDate;
+    const effectiveDate = effectiveSource ? fmtDate(effectiveSource) : "N/A";
 
     const clientDob = lead.dob ? fmtDate(lead.dob) : "N/A";
     const clientPhone = lead.contact_phone || "N/A";

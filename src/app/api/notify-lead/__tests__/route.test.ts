@@ -24,11 +24,14 @@ vi.mock("resend", () => ({
 
 import { POST } from "../route";
 import { createServiceClient } from "@/lib/supabase";
+import { hashLeadToken } from "@/lib/lead-token";
 import { rateLimit } from "@/lib/rate-limit";
 
 const VALID_UUID = "11111111-2222-3333-4444-555555555555";
+const CLIENT_TOKEN = "test-client-token";
+const CLIENT_TOKEN_HASH = hashLeadToken(CLIENT_TOKEN);
 
-function makeRequest(body: unknown, ip = "203.0.113.10"): any {
+function makeRequest(body: unknown, ip = "203.0.113.10", token: string | null = CLIENT_TOKEN): any {
   return {
     json: async () => body,
     headers: {
@@ -36,6 +39,7 @@ function makeRequest(body: unknown, ip = "203.0.113.10"): any {
         const n = name.toLowerCase();
         if (n === "x-forwarded-for") return ip;
         if (n === "user-agent") return "test-agent";
+        if (n === "x-lead-token") return token;
         if (n === "referer") return null;
         return null;
       },
@@ -57,10 +61,11 @@ function makeBadJsonRequest(ip = "203.0.113.10"): any {
 }
 
 function installDb(opts: {
-  lead?: { id: string; created_at: string } | null;
+  lead?: { id: string; created_at: string; client_token_hash?: string | null } | null;
   agent?: { email: string; name: string } | null;
 }) {
-  const { lead = null, agent = null } = opts;
+  const { lead: leadOpt = null, agent = null } = opts;
+  const lead = leadOpt ? { client_token_hash: CLIENT_TOKEN_HASH, ...leadOpt } : null;
   const db = {
     from: vi.fn((table: string) => {
       if (table === "leads") {
@@ -135,8 +140,8 @@ describe("POST /api/notify-lead", () => {
     expect(body.error).toMatch(/invalid lead reference/i);
   });
 
-  it("returns 400 (vague) when the lead is older than the recency window (anti-spoofing)", async () => {
-    const staleCreatedAt = new Date(Date.now() - 11 * 60 * 1000).toISOString();
+  it("returns 400 (vague) when the lead is older than 72h, even with a valid token (anti-spoofing)", async () => {
+    const staleCreatedAt = new Date(Date.now() - 73 * 60 * 60 * 1000).toISOString();
     installDb({ lead: { id: VALID_UUID, created_at: staleCreatedAt } });
 
     const res = await POST(makeRequest({ leadId: VALID_UUID }));
@@ -144,7 +149,55 @@ describe("POST /api/notify-lead", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toMatch(/invalid lead reference/i);
+    expect(sendSpy).not.toHaveBeenCalled();
   });
+
+  it("sends the notification for a slow client: 20-minute-old lead with a valid token (old 10-min window is gone)", async () => {
+    const slowCreatedAt = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+    installDb({
+      lead: { id: VALID_UUID, created_at: slowCreatedAt },
+      agent: { email: "agent@example.com", name: "Alice" },
+    });
+
+    const res = await POST(
+      makeRequest({
+        leadId: VALID_UUID,
+        agentSlug: "alice",
+        contactName: "Maria",
+        contactPhone: "2395551234",
+        zipcode: "33914",
+        county: "Lee",
+        state: "FL",
+        householdSize: 2,
+        annualIncome: 28000,
+        fplPercentage: 130,
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["missing", null],
+    ["wrong", "some-other-token"],
+  ])(
+    "returns 400 (vague) and does NOT send the email when x-lead-token is %s",
+    async (_label, token) => {
+      const recentCreatedAt = new Date(Date.now() - 30_000).toISOString();
+      installDb({
+        lead: { id: VALID_UUID, created_at: recentCreatedAt },
+        agent: { email: "agent@example.com", name: "Alice" },
+      });
+
+      const res = await POST(makeRequest({ leadId: VALID_UUID }, "203.0.113.10", token));
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toMatch(/invalid lead reference/i);
+      expect(sendSpy).not.toHaveBeenCalled();
+    }
+  );
 
   it("sends the notification when the lead exists and is recent", async () => {
     const recentCreatedAt = new Date(Date.now() - 30_000).toISOString();

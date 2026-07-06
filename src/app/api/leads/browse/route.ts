@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { generateLeadToken, hashLeadToken } from "@/lib/lead-token";
 import { resolveAgentFromSlug } from "@/lib/resolve-agent";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
 import { captureInvalidAgentSlug } from "@/lib/slug-logging";
@@ -41,11 +42,16 @@ export async function POST(request: NextRequest) {
       { zipcode: body.zipcode, source: "api/leads/browse POST" }
     );
 
+    // Capability token: returned once to this browser; only the hash is
+    // stored. Later cotizar writes must present it in x-lead-token.
+    const clientToken = generateLeadToken();
+
     const { data: lead, error } = await supabase
       .from("leads")
       .insert({
         agent_id,
         agent_slug,
+        client_token_hash: hashLeadToken(clientToken),
         zipcode: body.zipcode || "",
         county: body.county || "",
         state: body.state || "FL",
@@ -84,7 +90,10 @@ export async function POST(request: NextRequest) {
       user_agent: request.headers.get("user-agent") || null,
     });
 
-    return NextResponse.json({ success: true, leadId: lead.id }, { headers: NO_STORE_HEADERS });
+    return NextResponse.json(
+      { success: true, leadId: lead.id, clientToken },
+      { headers: NO_STORE_HEADERS }
+    );
   } catch (err) {
     console.error("Browse API error:", err);
     return NextResponse.json(

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { verifyLeadToken } from '@/lib/lead-token'
 import { rateLimit } from '@/lib/rate-limit'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+// Defense in depth behind the capability token (see contact-upgrade).
+const LEAD_TOKEN_MAX_AGE_MS = 72 * 60 * 60 * 1000
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -12,10 +17,36 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const supabase = createServiceClient()
 
+    // leadId is optional in this contract (a consent can stand alone), but
+    // when present the caller must hold the lead's capability token — same
+    // check and same vague 400 as plan-select / contact-upgrade, so a consent
+    // can't be attached to someone else's lead.
+    const leadId = typeof body.leadId === 'string' && body.leadId ? body.leadId : null
+    if (leadId) {
+      if (!UUID_RE.test(leadId)) {
+        return NextResponse.json({ error: 'Invalid lead reference' }, { status: 400 })
+      }
+      const { data: lead, error: leadErr } = await supabase
+        .from('leads')
+        .select('id, created_at, client_token_hash')
+        .eq('id', leadId)
+        .single()
+      if (leadErr || !lead) {
+        return NextResponse.json({ error: 'Invalid lead reference' }, { status: 400 })
+      }
+      if (!verifyLeadToken(request.headers.get('x-lead-token'), lead.client_token_hash)) {
+        return NextResponse.json({ error: 'Invalid lead reference' }, { status: 400 })
+      }
+      const createdAtMs = new Date(lead.created_at).getTime()
+      if (!Number.isFinite(createdAtMs) || Date.now() - createdAtMs > LEAD_TOKEN_MAX_AGE_MS) {
+        return NextResponse.json({ error: 'Invalid lead reference' }, { status: 400 })
+      }
+    }
+
     const { data, error } = await supabase
       .from('consents')
       .insert({
-        lead_id: body.leadId || null,
+        lead_id: leadId,
         consumer_name: body.consumerName,
         consumer_phone: body.consumerPhone || null,
         consumer_email: body.consumerEmail || null,

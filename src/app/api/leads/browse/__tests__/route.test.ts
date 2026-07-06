@@ -18,6 +18,7 @@ vi.mock("@/lib/rate-limit", () => ({
 
 import { POST } from "../route";
 import { createServiceClient } from "@/lib/supabase";
+import { hashLeadToken } from "@/lib/lead-token";
 import { rateLimit } from "@/lib/rate-limit";
 
 function makeRequest(body: unknown, ip = "203.0.113.2") {
@@ -36,15 +37,19 @@ function makeRequest(body: unknown, ip = "203.0.113.2") {
 }
 
 function installSuccessDb() {
+  const insertCalls: Array<Record<string, unknown>> = [];
   const db = {
     from: vi.fn((table: string) => {
       if (table === "leads") {
         return {
-          insert: () => ({
-            select: () => ({
-              single: async () => ({ data: { id: "lead-1" }, error: null }),
-            }),
-          }),
+          insert: (payload: Record<string, unknown>) => {
+            insertCalls.push(payload);
+            return {
+              select: () => ({
+                single: async () => ({ data: { id: "lead-1" }, error: null }),
+              }),
+            };
+          },
         };
       }
       if (table === "page_views") {
@@ -52,6 +57,7 @@ function installSuccessDb() {
       }
       return {};
     }),
+    _insertCalls: insertCalls,
   };
   (createServiceClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue(db);
   return db;
@@ -83,5 +89,25 @@ describe("POST /api/leads/browse — rate limiting", () => {
     const body = await limited.json();
     expect(body.error).toMatch(/too many/i);
     expect(rateLimit).toHaveBeenCalledWith("leads-browse:203.0.113.2", { max: 5, windowMs: 60_000 });
+  });
+});
+
+describe("POST /api/leads/browse — capability token issuance", () => {
+  it("returns a clientToken and stores only its SHA-256 on the lead", async () => {
+    const db = installSuccessDb();
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
+
+    const res = await POST(makeRequest({ zipcode: "33914", agentSlug: "test" }));
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.leadId).toBe("lead-1");
+    expect(typeof body.clientToken).toBe("string");
+    expect(body.clientToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+
+    expect(db._insertCalls).toHaveLength(1);
+    expect(db._insertCalls[0].client_token_hash).toBe(hashLeadToken(body.clientToken));
+    // The raw token must never be persisted.
+    expect(Object.values(db._insertCalls[0])).not.toContain(body.clientToken);
   });
 });

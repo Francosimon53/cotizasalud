@@ -21,6 +21,7 @@ vi.mock("@/lib/auth/require-agent", () => ({
 
 import { PATCH, POST } from "../route";
 import { createServiceClient } from "@/lib/supabase";
+import { hashLeadToken } from "@/lib/lead-token";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
 import { NextResponse } from "next/server";
@@ -43,15 +44,19 @@ function makeRequest(body: unknown, ip = "203.0.113.1") {
 }
 
 function installSuccessDb() {
+  const insertCalls: Array<Record<string, unknown>> = [];
   const db = {
     from: vi.fn((table: string) => {
       if (table === "leads") {
         return {
-          insert: () => ({
-            select: () => ({
-              single: async () => ({ data: { id: "lead-1" }, error: null }),
-            }),
-          }),
+          insert: (payload: Record<string, unknown>) => {
+            insertCalls.push(payload);
+            return {
+              select: () => ({
+                single: async () => ({ data: { id: "lead-1" }, error: null }),
+              }),
+            };
+          },
         };
       }
       if (table === "page_views") {
@@ -59,6 +64,7 @@ function installSuccessDb() {
       }
       return {};
     }),
+    _insertCalls: insertCalls,
   };
   (createServiceClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue(db);
   return db;
@@ -91,6 +97,41 @@ describe("POST /api/leads — rate limiting", () => {
     const body = await limited.json();
     expect(body.error).toMatch(/too many/i);
     expect(rateLimit).toHaveBeenCalledWith("leads:203.0.113.1", { max: 5, windowMs: 60_000 });
+  });
+});
+
+describe("POST /api/leads — capability token issuance", () => {
+  it("returns a clientToken, stores only its SHA-256, and forwards the token to notify-lead", async () => {
+    const db = installSuccessDb();
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
+    const fetchSpy = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await POST(
+      makeRequest({
+        zipcode: "33914",
+        county: "Lee",
+        contactName: "Maria Lopez",
+        contactPhone: "2395551234",
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.leadId).toBe("lead-1");
+    expect(typeof body.clientToken).toBe("string");
+    expect(body.clientToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+
+    expect(db._insertCalls).toHaveLength(1);
+    expect(db._insertCalls[0].client_token_hash).toBe(hashLeadToken(body.clientToken));
+    expect(Object.values(db._insertCalls[0])).not.toContain(body.clientToken);
+
+    // The internal notify-lead call must carry the token, since notify-lead
+    // now requires it.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [notifyUrl, notifyInit] = fetchSpy.mock.calls[0] as unknown as [string, RequestInit];
+    expect(notifyUrl).toContain("/api/notify-lead");
+    expect((notifyInit.headers as Record<string, string>)["x-lead-token"]).toBe(body.clientToken);
   });
 });
 

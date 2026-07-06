@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { generateLeadToken, hashLeadToken } from '@/lib/lead-token'
 import { resolveAgentFromSlug } from '@/lib/resolve-agent'
 import { normalizeAgentSlug } from '@/lib/normalize-slug'
 import { captureInvalidAgentSlug } from '@/lib/slug-logging'
@@ -173,12 +174,17 @@ export async function POST(request: NextRequest) {
       { zipcode: body.zipcode, source: 'api/leads POST' }
     )
 
+    // Capability token: returned once to this browser; only the hash is
+    // stored. Later cotizar writes must present it in x-lead-token.
+    const clientToken = generateLeadToken()
+
     // Save lead
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .insert({
         agent_id,
         agent_slug,
+        client_token_hash: hashLeadToken(clientToken),
         zipcode: body.zipcode,
         county: body.county,
         state: body.state || 'FL',
@@ -236,7 +242,9 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get('origin') || request.nextUrl.origin
     fetch(`${origin}/api/notify-lead`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // notify-lead requires the capability token; this server-side call is
+      // on behalf of the browser that just created the lead.
+      headers: { 'Content-Type': 'application/json', 'x-lead-token': clientToken },
       body: JSON.stringify({
         leadId: lead.id,
         agentSlug: agent_slug,
@@ -252,7 +260,10 @@ export async function POST(request: NextRequest) {
       }),
     }).catch((err) => console.error('Lead notification failed:', err))
 
-    return NextResponse.json({ success: true, leadId: lead.id }, { headers: NO_STORE_HEADERS })
+    return NextResponse.json(
+      { success: true, leadId: lead.id, clientToken },
+      { headers: NO_STORE_HEADERS }
+    )
   } catch (err) {
     console.error('API error:', err)
     return NextResponse.json(

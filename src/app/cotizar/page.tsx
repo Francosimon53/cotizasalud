@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
-import { saveLead, saveConsent, savePlanSelection } from "@/lib/save-lead";
+import { saveLead, saveConsent, savePlanSelection, postLeadWrite } from "@/lib/save-lead";
 import { i18n, type Lang } from "@/lib/i18n";
 import { lookupCounties, getFPL, getFPLpct } from "@/lib/data";
 import { generateQuote } from "@/lib/plans";
@@ -45,6 +45,34 @@ function parseSmartLink() {
     utm_medium: p.get("utm_medium") || "",
     utm_campaign: p.get("utm_campaign") || "",
   };
+}
+
+// ==================== LEAD SESSION (leadId + capability token) ====================
+// The write token returned by /api/leads/browse / POST /api/leads is kept in
+// React state and mirrored in sessionStorage so an accidental reload within
+// the same tab doesn't orphan the lead's write capability.
+const LEAD_SESSION_KEY = "cotizar_lead_session";
+
+function persistLeadSession(leadId: string | null, token: string | null) {
+  try {
+    if (leadId && token) {
+      sessionStorage.setItem(LEAD_SESSION_KEY, JSON.stringify({ leadId, token }));
+    } else {
+      sessionStorage.removeItem(LEAD_SESSION_KEY);
+    }
+  } catch { /* storage unavailable (private mode) — state alone still works */ }
+}
+
+function readLeadSession(): { leadId: string; token: string } | null {
+  try {
+    const raw = sessionStorage.getItem(LEAD_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.leadId === "string" && typeof parsed?.token === "string") {
+      return { leadId: parsed.leadId, token: parsed.token };
+    }
+  } catch { /* corrupted or unavailable — treat as absent */ }
+  return null;
 }
 
 // Default plan effective date: 1st of next month when on/before the 15th,
@@ -266,6 +294,12 @@ export default function QuoterPage() {
   const [leadPhone, setLeadPhone] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [clientToken, setClientToken] = useState<string | null>(null);
+  const [contactSaved, setContactSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [consentFormKey, setConsentFormKey] = useState(0);
+  const [aiConversationId, setAiConversationId] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState("");
   const [leadLang, setLeadLang] = useState("es");
   const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
@@ -314,6 +348,14 @@ export default function QuoterPage() {
   useEffect(() => {
     const params = parseSmartLink();
     setUrlParams(params);
+    // Restore the lead write session (leadId + capability token) after an
+    // accidental reload in the same tab. A fresh quote still creates a new
+    // lead because browseLeadCreated is not restored.
+    const stored = readLeadSession();
+    if (stored) {
+      setLeadId(stored.leadId);
+      setClientToken(stored.token);
+    }
     if (params.lang === "en" || params.lang === "es") setLang(params.lang);
     if (params.name) {
       const parts = decodeURIComponent(params.name).split(" ");
@@ -453,6 +495,19 @@ export default function QuoterPage() {
 
   const browseLeadCreated = useRef(false);
 
+  const showSaveError = () =>
+    setSaveError(
+      lang === "es"
+        ? "No pudimos guardar tu información. Por favor, inténtalo de nuevo."
+        : "We couldn't save your information. Please try again."
+    );
+
+  const adoptLeadSession = (id: string | null, token: string | null) => {
+    setLeadId(id);
+    setClientToken(token);
+    persistLeadSession(id, token);
+  };
+
   const doSearch = async () => {
     if (!county) return;
     setLoading(true);
@@ -483,36 +538,32 @@ export default function QuoterPage() {
       setIsMockData(true);
       setResults(generateQuote(county, house, Number(income)));
     }
-    // Create browsing lead BEFORE showing plans
+    // Create browsing lead BEFORE showing plans. A failure here is not shown
+    // to the client (they haven't typed contact data yet and the submitLead
+    // fallback creates a complete lead later); postLeadWrite retries once and
+    // reports the failure to Sentry.
     if (!browseLeadCreated.current) {
       browseLeadCreated.current = true;
-      try {
-        const browseRes = await fetch("/api/leads/browse", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agentSlug: urlParams.agentSlug || "delbert",
-            zipcode: zip,
-            county: county?.name || "",
-            state: county?.state || "FL",
-            householdSize: house.length,
-            annualIncome: Number(income),
-            fplPercentage: getFPLpct(Number(income), house.length),
-            ages: house.map((h) => h.age).join(","),
-            genders: house.map((h) => h.gender).join(","),
-            householdDobs: house.map((h) => h.dob || "").join(","),
-            householdMembers: house,
-            usesTobacco: house.some((h) => h.tobacco),
-            language: lang,
-            utmSource: urlParams.utm_source || undefined,
-            utmMedium: urlParams.utm_medium || undefined,
-            utmCampaign: urlParams.utm_campaign || undefined,
-          }),
-        });
-        const browseData = await browseRes.json();
-        if (browseData.leadId) setLeadId(browseData.leadId);
-      } catch (e) {
-        console.error("Browse lead error:", e);
+      const browseRes = await postLeadWrite("/api/leads/browse", {
+        agentSlug: urlParams.agentSlug || "delbert",
+        zipcode: zip,
+        county: county?.name || "",
+        state: county?.state || "FL",
+        householdSize: house.length,
+        annualIncome: Number(income),
+        fplPercentage: getFPLpct(Number(income), house.length),
+        ages: house.map((h) => h.age).join(","),
+        genders: house.map((h) => h.gender).join(","),
+        householdDobs: house.map((h) => h.dob || "").join(","),
+        householdMembers: house,
+        usesTobacco: house.some((h) => h.tobacco),
+        language: lang,
+        utmSource: urlParams.utm_source || undefined,
+        utmMedium: urlParams.utm_medium || undefined,
+        utmCampaign: urlParams.utm_campaign || undefined,
+      });
+      if (browseRes.ok && browseRes.json?.leadId) {
+        adoptLeadSession(browseRes.json.leadId, browseRes.json.clientToken || null);
       }
     }
 
@@ -522,72 +573,23 @@ export default function QuoterPage() {
 
   const submitLead = async () => {
     setLoading(true);
-    try {
-      if (leadId) {
-        // UPDATE existing browsing lead with contact info
-        await fetch(`/api/leads/${leadId}/contact-upgrade`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            leadId,
-            status: "new",
-            note: "Cliente proporcionó datos de contacto",
-            contactName: leadName,
-            contactPhone: leadPhone,
-            contactEmail: leadEmail,
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            dob: house[0]?.dob || "",
-            streetAddress: streetAddress.trim(),
-            city: city.trim(),
-            stateForm,
-            aptNumber: aptNumber.trim(),
-            currentInsurance,
-            currentInsuranceName: currentInsuranceName.trim(),
-            contactPreference: contactPreference.join(","),
-            bestCallTime,
-            householdDobs: house.map((h) => h.dob || "").join(","),
-            householdMembers: house,
-            genders: house.map((h) => h.gender).join(","),
-            signatureData,
-            consentTimestamp: new Date().toISOString(),
-          }),
-        });
-        // Send notification email
-        const origin = window.location.origin;
-        fetch(`${origin}/api/notify-lead`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            leadId,
-            agentSlug: urlParams.agentSlug || undefined,
-            contactName: leadName,
-            contactPhone: leadPhone,
-            contactEmail: leadEmail || undefined,
-            zipcode: zip,
-            county: county?.name || "",
-            state: county?.state || "FL",
-            householdSize: house.length,
-            annualIncome: Number(income),
-            fplPercentage: getFPLpct(Number(income), house.length),
-          }),
-        }).catch(() => {});
-      } else {
-        // Fallback: create new lead if no browsing lead exists
-        const result = await saveLead({
-          agentSlug: urlParams.agentSlug || undefined,
-          zipcode: zip,
-          county: county?.name || '',
-          state: county?.state || 'FL',
-          householdSize: house.length,
-          annualIncome: Number(income),
-          fplPercentage: getFPLpct(Number(income), house.length),
-          ages: house.map((h: any) => h.age).join(','),
-          usesTobacco: house.some((h: any) => h.tobacco),
-          language: lang,
+    setSaveError(null);
+
+    let saved = false;
+
+    // 1) Preferred path: upgrade the existing browsing lead with contact info.
+    if (leadId && clientToken) {
+      const upgradeRes = await postLeadWrite(
+        `/api/leads/${leadId}/contact-upgrade`,
+        {
+          leadId,
+          status: "new",
+          note: "Cliente proporcionó datos de contacto",
           contactName: leadName,
           contactPhone: leadPhone,
-          contactEmail: leadEmail || undefined,
+          contactEmail: leadEmail,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
           dob: house[0]?.dob || "",
           streetAddress: streetAddress.trim(),
           city: city.trim(),
@@ -602,25 +604,108 @@ export default function QuoterPage() {
           genders: house.map((h) => h.gender).join(","),
           signatureData,
           consentTimestamp: new Date().toISOString(),
-          utmSource: urlParams.utm_source || undefined,
-          utmMedium: urlParams.utm_medium || undefined,
-          utmCampaign: urlParams.utm_campaign || undefined,
-        });
-        if (result.leadId) setLeadId(result.leadId);
+        },
+        { leadToken: clientToken, leadId }
+      );
+      saved = upgradeRes.ok;
+
+      if (saved) {
+        // Notification email to the agent. Not user-blocking: postLeadWrite
+        // retries and reports to Sentry on failure.
+        postLeadWrite(
+          "/api/notify-lead",
+          {
+            leadId,
+            agentSlug: urlParams.agentSlug || undefined,
+            contactName: leadName,
+            contactPhone: leadPhone,
+            contactEmail: leadEmail || undefined,
+            zipcode: zip,
+            county: county?.name || "",
+            state: county?.state || "FL",
+            householdSize: house.length,
+            annualIncome: Number(income),
+            fplPercentage: getFPLpct(Number(income), house.length),
+            conversationSummary: aiSummary || undefined,
+          },
+          { leadToken: clientToken, leadId }
+        );
+        // Link the AI advisor conversation to the lead (existing PATCH contract).
+        if (aiConversationId) {
+          fetch("/api/conversations", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ conversationId: aiConversationId, leadId }),
+          }).catch((err) => console.error("Failed to link AI conversation:", err));
+        }
       }
-    } catch (err) {
-      console.error('Failed to save lead:', err);
     }
+
+    // 2) Fallback: create a complete lead. Covers both "browse lead was never
+    // created" and "contact-upgrade rejected" (e.g. pre-token legacy lead) so
+    // the client's data always reaches the CRM. POST /api/leads sends its own
+    // agent notification server-side.
+    if (!saved) {
+      const result = await saveLead({
+        agentSlug: urlParams.agentSlug || undefined,
+        zipcode: zip,
+        county: county?.name || '',
+        state: county?.state || 'FL',
+        householdSize: house.length,
+        annualIncome: Number(income),
+        fplPercentage: getFPLpct(Number(income), house.length),
+        ages: house.map((h: any) => h.age).join(','),
+        usesTobacco: house.some((h: any) => h.tobacco),
+        language: lang,
+        contactName: leadName,
+        contactPhone: leadPhone,
+        contactEmail: leadEmail || undefined,
+        dob: house[0]?.dob || "",
+        streetAddress: streetAddress.trim(),
+        city: city.trim(),
+        stateForm,
+        aptNumber: aptNumber.trim(),
+        currentInsurance,
+        currentInsuranceName: currentInsuranceName.trim(),
+        contactPreference: contactPreference.join(","),
+        bestCallTime,
+        householdDobs: house.map((h) => h.dob || "").join(","),
+        householdMembers: house,
+        genders: house.map((h) => h.gender).join(","),
+        signatureData,
+        consentTimestamp: new Date().toISOString(),
+        utmSource: urlParams.utm_source || undefined,
+        utmMedium: urlParams.utm_medium || undefined,
+        utmCampaign: urlParams.utm_campaign || undefined,
+      });
+      if (result.success && result.leadId) {
+        // Note: the fallback lead is created with status "new", so plan-select
+        // (whitelist browsing/quoted) can't attach the plan here — the plan
+        // still reaches the agent through the consent record, which carries
+        // the plan details and now links lead_id.
+        adoptLeadSession(result.leadId, result.clientToken || null);
+        saved = true;
+      }
+    }
+
     setLoading(false);
+
+    if (!saved) {
+      // Both paths failed after retries (already reported to Sentry). Keep
+      // the client on the form so pressing "Continuar" tries again.
+      showSaveError();
+      return;
+    }
+
+    setContactSaved(true);
     setConsent(true);
     setStep(45); // Go to CMS consent form
   };
 
   const handleConsent = async (record: ConsentRecord) => {
-    setConsentRecord(record);
-    setConsent(true);
-    try {
-      await saveConsent({
+    setSaveError(null);
+    const result = await saveConsent(
+      {
         leadId: leadId || undefined,
         consumerName: record.consumerName,
         consumerPhone: record.consumerPhone,
@@ -637,28 +722,44 @@ export default function QuoterPage() {
         planDeductible: record.planDeductible,
         planMaxOop: record.planMaxOop,
         effectiveDate: record.effectiveDate,
-      });
-    } catch (err) {
-      console.error('Failed to save consent:', err);
+      },
+      clientToken
+    );
+
+    if (!result.success) {
+      // Failed after retry (already in Sentry). Remount the consent form so
+      // its submit button re-enables and the client can sign again.
+      showSaveError();
+      setConsentFormKey((k) => k + 1);
+      return;
     }
+
+    setConsentRecord(record);
+    setConsent(true);
     setStep(6); // Go to confirm after consent
   };
 
   const selectPlan = async (plan: Plan) => {
+    setSaveError(null);
     setSelectedPlanId(plan.id);
     setSelectedPlanData({ name: plan.name, issuer: plan.issuer, metal: plan.metal, premium: plan.premium, afterSubsidy: plan.afterSubsidy, deductible: plan.deductible, oopMax: plan.oopMax });
-    // Track plan view on browsing lead
-    if (leadId) {
-      try {
-        await savePlanSelection(leadId, {
+    // Track plan selection on the browsing/quoted lead. Once the contact
+    // upgrade ran the lead is "new" and plan-select's status whitelist would
+    // reject it, so skip the write (the confirm email carries the final plan).
+    if (leadId && clientToken && !contactSaved) {
+      const ok = await savePlanSelection(
+        leadId,
+        {
           id: plan.id, name: plan.name, issuer: plan.issuer,
           metal: plan.metal, premium: plan.premium,
           afterSubsidy: plan.afterSubsidy, deductible: plan.deductible,
           oopMax: plan.oopMax, effectiveDate: defaultEffectiveDate(),
-        });
-      } catch (err) {
-        console.error('Failed to save plan selection:', err);
-      }
+        },
+        clientToken
+      );
+      // Non-blocking: the client can keep going; the failure is already in
+      // Sentry and the banner tells them something didn't save.
+      if (!ok) showSaveError();
     }
     // If no contact info yet, go to lead capture form first
     if (!contactFormValid) {
@@ -668,13 +769,43 @@ export default function QuoterPage() {
     }
   };
 
-  const confirmPlan = () => {
-    // Production: PATCH /api/leads/{id} with confirmed plan
-    // Trigger URGENT notification to agent
+  const confirmPlan = async () => {
+    // Final confirmation: the plan itself was persisted by plan-select while
+    // the lead was still in the public funnel; here we fire the URGENT
+    // notification to the agent (existing notify-lead contract) with the plan
+    // the client confirmed and the AI conversation summary if there is one.
+    if (leadId && clientToken) {
+      postLeadWrite(
+        "/api/notify-lead",
+        {
+          leadId,
+          agentSlug: urlParams.agentSlug || undefined,
+          contactName: leadName,
+          contactPhone: leadPhone,
+          contactEmail: leadEmail || undefined,
+          zipcode: zip,
+          county: county?.name || "",
+          state: county?.state || "FL",
+          householdSize: house.length,
+          annualIncome: Number(income),
+          fplPercentage: getFPLpct(Number(income), house.length),
+          planName: selectedPlanData?.name || undefined,
+          isReadyToEnroll: true,
+          conversationSummary: aiSummary || undefined,
+        },
+        { leadToken: clientToken, leadId }
+      );
+    }
     setStep(7); // Step 7 = thank you
   };
 
   const resetAll = () => {
+    // A second quote in the same session must create a fresh lead: drop the
+    // lead id, its capability token and the created flag.
+    setLeadId(null); setClientToken(null); persistLeadSession(null, null);
+    browseLeadCreated.current = false;
+    setContactSaved(false); setSaveError(null);
+    setAiConversationId(null); setAiSummary("");
     setStep(preCartaSigned ? 1 : 0); setResults(null); setSelectedPlanId(null); setSelectedPlanData(null); setIsMockData(false);
     setConsent(false); setConsentRecord(null); setLeadPhone(""); setLeadEmail("");
     setStreetAddress(""); setCity(""); setStateForm("FL"); setAptNumber("");
@@ -861,6 +992,13 @@ export default function QuoterPage() {
 
       {/* Content */}
       <div style={S.wrap}>
+        {/* Save-error banner: a lead write failed after the automatic retry */}
+        {saveError && (
+          <div role="alert" style={{ background: "rgba(239,68,68,0.08)", border: "1.5px solid rgba(239,68,68,0.4)", borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 13, color: "#DC2626", lineHeight: 1.5, textAlign: "center" }}>
+            ⚠️ {saveError}
+          </div>
+        )}
+
         {/* Step 0: Pre-Carta */}
         {step === 0 && (
           <PreCarta
@@ -1258,6 +1396,7 @@ export default function QuoterPage() {
         {/* Step 4.5: CMS Consent Form */}
         {step === 45 && !consentRecord && (
           <CMSConsentForm
+            key={consentFormKey}
             consumerName={leadName}
             consumerPhone={leadPhone}
             consumerEmail={leadEmail}
@@ -1463,10 +1602,30 @@ export default function QuoterPage() {
                         doctorNetworkStatus={selectedDoctor ? (doctorNetwork[plan.id] || null) : null}
                         agentSlug={urlParams.agentSlug || undefined}
                         allPlans={results?.plans || []}
-                        onReadyToEnroll={(convId, summary) => {
+                        onReadyToEnroll={async (convId, summary) => {
                           // Pre-select the plan and go to lead capture
                           setSelectedPlanId(plan.id);
                           setSelectedPlanData({ name: plan.name, issuer: plan.issuer, metal: plan.metal, premium: plan.premium, afterSubsidy: plan.afterSubsidy, deductible: plan.deductible, oopMax: plan.oopMax });
+                          // Keep the advisor context: the conversation gets
+                          // linked to the lead after contact-upgrade and the
+                          // summary rides along in the agent notification.
+                          setAiConversationId(convId);
+                          setAiSummary(summary);
+                          // Persist the plan the advisor pre-selected — this
+                          // path used to skip savePlanSelection entirely.
+                          if (leadId && clientToken && !contactSaved) {
+                            const ok = await savePlanSelection(
+                              leadId,
+                              {
+                                id: plan.id, name: plan.name, issuer: plan.issuer,
+                                metal: plan.metal, premium: plan.premium,
+                                afterSubsidy: plan.afterSubsidy, deductible: plan.deductible,
+                                oopMax: plan.oopMax, effectiveDate: defaultEffectiveDate(),
+                              },
+                              clientToken
+                            );
+                            if (!ok) showSaveError();
+                          }
                           setStep(4);
                         }}
                       />

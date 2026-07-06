@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { verifyLeadToken } from '@/lib/lead-token'
 import { rateLimit } from '@/lib/rate-limit'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const LEAD_RECENCY_MS = 10 * 60 * 1000
+// Defense in depth behind the capability token (see contact-upgrade).
+const LEAD_TOKEN_MAX_AGE_MS = 72 * 60 * 60 * 1000
 const ELIGIBLE_PRIOR_STATUSES = ['browsing', 'quoted'] as const
 
 // Public endpoint: anonymous cotizar marks the plan they're viewing on the
-// lead they just created. Same defense layers as /api/leads/[id]/contact-upgrade
-// — rate limit, UUID, lead existence + recency, status whitelist, atomic
-// UPDATE WHERE status IN (...).
+// lead they created. Same defense layers as /api/leads/[id]/contact-upgrade
+// — rate limit, UUID, lead existence, capability token (x-lead-token), 72h
+// max lead age, status whitelist, atomic UPDATE WHERE status IN (...).
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
   if (rateLimit(`plan-select:${ip}`, { max: 5, windowMs: 60_000 }).limited) {
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
   const supabase = createServiceClient()
   const { data: lead, error: leadErr } = await supabase
     .from('leads')
-    .select('id, created_at, status')
+    .select('id, created_at, status, client_token_hash')
     .eq('id', leadId)
     .single()
 
@@ -44,8 +46,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid lead reference' }, { status: 400 })
   }
 
+  // Capability token check — same vague 400 as every other failure.
+  if (!verifyLeadToken(request.headers.get('x-lead-token'), lead.client_token_hash)) {
+    return NextResponse.json({ error: 'Invalid lead reference' }, { status: 400 })
+  }
+
   const createdAtMs = new Date(lead.created_at).getTime()
-  if (!Number.isFinite(createdAtMs) || Date.now() - createdAtMs > LEAD_RECENCY_MS) {
+  if (!Number.isFinite(createdAtMs) || Date.now() - createdAtMs > LEAD_TOKEN_MAX_AGE_MS) {
     return NextResponse.json({ error: 'Invalid lead reference' }, { status: 400 })
   }
 

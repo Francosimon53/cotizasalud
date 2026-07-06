@@ -9,26 +9,40 @@ vi.mock("@/lib/rate-limit", () => ({
 
 import { POST } from "../route";
 import { createServiceClient } from "@/lib/supabase";
+import { hashLeadToken } from "@/lib/lead-token";
 import { rateLimit } from "@/lib/rate-limit";
 
 const VALID_UUID = "11111111-2222-3333-4444-555555555555";
+const CLIENT_TOKEN = "test-client-token";
+const CLIENT_TOKEN_HASH = hashLeadToken(CLIENT_TOKEN);
 
-function makeRequest(body: unknown, ip = "203.0.113.30"): any {
+function makeRequest(body: unknown, ip = "203.0.113.30", token: string | null = CLIENT_TOKEN): any {
   return {
     json: async () => body,
     headers: {
-      get: (name: string) => (name.toLowerCase() === "x-forwarded-for" ? ip : null),
+      get: (name: string) => {
+        const n = name.toLowerCase();
+        if (n === "x-forwarded-for") return ip;
+        if (n === "x-lead-token") return token;
+        return null;
+      },
     },
   };
 }
 
 interface DbOpts {
-  lead?: { id: string; created_at: string; status: string } | null;
+  lead?: {
+    id: string;
+    created_at: string;
+    status: string;
+    client_token_hash?: string | null;
+  } | null;
   updateRows?: Array<{ id: string }>;
 }
 
 function installDb(opts: DbOpts) {
-  const { lead = null, updateRows = [{ id: VALID_UUID }] } = opts;
+  const { lead: leadOpt = null, updateRows = [{ id: VALID_UUID }] } = opts;
+  const lead = leadOpt ? { client_token_hash: CLIENT_TOKEN_HASH, ...leadOpt } : null;
   const updateCalls: Array<{ payload: Record<string, unknown> }> = [];
 
   const db = {
@@ -60,7 +74,10 @@ function installDb(opts: DbOpts) {
 }
 
 const recentTs = () => new Date(Date.now() - 30_000).toISOString();
-const staleTs = () => new Date(Date.now() - 11 * 60 * 1000).toISOString();
+// A client who spends 20 minutes comparing plans — must be ACCEPTED now that
+// the 10-minute window is gone.
+const slowClientTs = () => new Date(Date.now() - 20 * 60 * 1000).toISOString();
+const staleTs = () => new Date(Date.now() - 73 * 60 * 60 * 1000).toISOString();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -80,12 +97,42 @@ describe("POST /api/plan-select", () => {
     expect(body.error).toMatch(/plan/i);
   });
 
-  it("returns 400 when the lead is older than the recency window", async () => {
-    installDb({ lead: { id: VALID_UUID, created_at: staleTs(), status: "browsing" } });
+  it("returns 400 when the lead is older than 72h, even with a valid token", async () => {
+    const db = installDb({ lead: { id: VALID_UUID, created_at: staleTs(), status: "browsing" } });
 
     const res = await POST(makeRequest({ leadId: VALID_UUID, plan: { name: "X" } }));
 
     expect(res.status).toBe(400);
+    expect(db._updateCalls).toHaveLength(0);
+  });
+
+  it("accepts a slow client: 20-minute-old lead with a valid token (old 10-min window is gone)", async () => {
+    const db = installDb({
+      lead: { id: VALID_UUID, created_at: slowClientTs(), status: "browsing" },
+    });
+
+    const res = await POST(makeRequest({ leadId: VALID_UUID, plan: { name: "X" } }));
+
+    expect(res.status).toBe(200);
+    expect(db._updateCalls).toHaveLength(1);
+  });
+
+  it.each([
+    ["missing", null],
+    ["wrong", "some-other-token"],
+  ])("returns 400 (vague) and does NOT update when x-lead-token is %s", async (_label, token) => {
+    const db = installDb({
+      lead: { id: VALID_UUID, created_at: recentTs(), status: "browsing" },
+    });
+
+    const res = await POST(
+      makeRequest({ leadId: VALID_UUID, plan: { name: "X" } }, "203.0.113.30", token)
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/invalid lead reference/i);
+    expect(db._updateCalls).toHaveLength(0);
   });
 
   it("transitions a lead from 'browsing' to 'quoted' on the happy path", async () => {

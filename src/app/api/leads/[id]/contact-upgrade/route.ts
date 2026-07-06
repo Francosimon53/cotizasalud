@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { verifyLeadToken } from "@/lib/lead-token";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -12,14 +13,18 @@ const NO_STORE_HEADERS = {
 } as const;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const LEAD_RECENCY_MS = 10 * 60 * 1000;
+// Defense in depth behind the capability token: long enough that a client who
+// spends an afternoon (or comes back next day) never loses data, short enough
+// that a leaked token eventually dies.
+const LEAD_TOKEN_MAX_AGE_MS = 72 * 60 * 60 * 1000;
 const ELIGIBLE_PRIOR_STATUSES = ["browsing", "quoted"] as const;
 
-// Public endpoint for the anonymous cotizar flow: upgrades a freshly-created
-// browse-stage lead to "new" with the consumer's contact info. Defense in
-// layers — IP rate limit, UUID validation, lead existence + recency window,
-// status whitelist (lead must still be in the public funnel), and an atomic
-// UPDATE WHERE clause to defeat the race between status-check and write.
+// Public endpoint for the anonymous cotizar flow: upgrades a browse-stage
+// lead to "new" with the consumer's contact info. Defense in layers — IP rate
+// limit, UUID validation, lead existence, capability token (x-lead-token must
+// hash-match client_token_hash), 72h max lead age, status whitelist (lead must
+// still be in the public funnel), and an atomic UPDATE WHERE clause to defeat
+// the race between status-check and write.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -53,7 +58,7 @@ export async function POST(
   const supabase = createServiceClient();
   const { data: lead, error: leadErr } = await supabase
     .from("leads")
-    .select("id, created_at, status")
+    .select("id, created_at, status, client_token_hash")
     .eq("id", id)
     .single();
 
@@ -64,8 +69,17 @@ export async function POST(
     );
   }
 
+  // Capability token check — same vague 400 as every other failure so an
+  // attacker can't tell which layer rejected them.
+  if (!verifyLeadToken(request.headers.get("x-lead-token"), lead.client_token_hash)) {
+    return NextResponse.json(
+      { error: "Invalid lead reference" },
+      { status: 400, headers: NO_STORE_HEADERS }
+    );
+  }
+
   const createdAtMs = new Date(lead.created_at).getTime();
-  if (!Number.isFinite(createdAtMs) || Date.now() - createdAtMs > LEAD_RECENCY_MS) {
+  if (!Number.isFinite(createdAtMs) || Date.now() - createdAtMs > LEAD_TOKEN_MAX_AGE_MS) {
     return NextResponse.json(
       { error: "Invalid lead reference" },
       { status: 400, headers: NO_STORE_HEADERS }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase";
+import { verifyLeadToken } from "@/lib/lead-token";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
 import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 import { rateLimit } from "@/lib/rate-limit";
@@ -8,7 +9,8 @@ import { escapeHtml } from "@/lib/security/escape-html";
 import { sanitizePlainText } from "@/lib/security/sanitize-plain-text";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const LEAD_RECENCY_MS = 10 * 60 * 1000;
+// Defense in depth behind the capability token (see contact-upgrade).
+const LEAD_TOKEN_MAX_AGE_MS = 72 * 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
   // Rate limit by IP first — abuse should be rejected before any I/O.
@@ -33,14 +35,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid leadId format" }, { status: 400 });
   }
 
-  // Verify the lead exists AND was created recently. The cotizar flow
-  // POSTs here within seconds of creating the lead; older leads being
-  // notified-about are almost certainly an attacker spoofing a known UUID.
-  // Use a vague 400 for both not-found and stale, to avoid existence leaks.
+  // Verify the lead exists AND the caller holds its capability token
+  // (x-lead-token hash-matches client_token_hash), with a 72h max lead age as
+  // defense in depth. Notifying about an arbitrary known UUID without the
+  // token is an attacker spoofing. Use a vague 400 for not-found, bad token
+  // and stale alike, to avoid existence leaks.
   const supabase = createServiceClient();
   const { data: leadRow, error: leadErr } = await supabase
     .from("leads")
-    .select("id, created_at")
+    .select("id, created_at, client_token_hash")
     .eq("id", leadId)
     .single();
 
@@ -48,8 +51,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid lead reference" }, { status: 400 });
   }
 
+  if (!verifyLeadToken(req.headers.get("x-lead-token"), leadRow.client_token_hash)) {
+    return NextResponse.json({ error: "Invalid lead reference" }, { status: 400 });
+  }
+
   const createdAtMs = new Date(leadRow.created_at).getTime();
-  if (!Number.isFinite(createdAtMs) || Date.now() - createdAtMs > LEAD_RECENCY_MS) {
+  if (!Number.isFinite(createdAtMs) || Date.now() - createdAtMs > LEAD_TOKEN_MAX_AGE_MS) {
     return NextResponse.json({ error: "Invalid lead reference" }, { status: 400 });
   }
 

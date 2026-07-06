@@ -310,6 +310,7 @@ export default function QuoterPage() {
   const [contactPreference, setContactPreference] = useState<string[]>([]);
   const [bestCallTime, setBestCallTime] = useState("");
   const [tellUsMemberIdx, setTellUsMemberIdx] = useState(0);
+  const [immigrationStatus, setImmigrationStatus] = useState("");
   const [signatureData, setSignatureData] = useState("");
   const [consent, setConsent] = useState(false);
   const [consentRecord, setConsentRecord] = useState<ConsentRecord | null>(null);
@@ -557,6 +558,7 @@ export default function QuoterPage() {
         householdDobs: house.map((h) => h.dob || "").join(","),
         householdMembers: house,
         usesTobacco: house.some((h) => h.tobacco),
+        immigrationStatus: immigrationStatus || undefined,
         language: lang,
         utmSource: urlParams.utm_source || undefined,
         utmMedium: urlParams.utm_medium || undefined,
@@ -673,6 +675,7 @@ export default function QuoterPage() {
         householdMembers: house,
         genders: house.map((h) => h.gender).join(","),
         signatureData,
+        immigrationStatus: immigrationStatus || undefined,
         consentTimestamp: new Date().toISOString(),
         utmSource: urlParams.utm_source || undefined,
         utmMedium: urlParams.utm_medium || undefined,
@@ -1151,6 +1154,33 @@ export default function QuoterPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Immigration status — one optional lead-level question, primary
+                  applicant only. Never blocks the flow; no verdict is ever
+                  shown to the client. */}
+              {mi === 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <label htmlFor="immigration-status" style={S.label}>{t.imgStatusQ}</label>
+                  <select
+                    id="immigration-status"
+                    style={S.select}
+                    value={immigrationStatus}
+                    onChange={(e) => setImmigrationStatus(e.target.value)}
+                  >
+                    <option value="">{t.imgStatusPick}</option>
+                    <option value="citizen">{t.imgCitizen}</option>
+                    <option value="lpr">{t.imgLpr}</option>
+                    <option value="cuban_haitian_entrant">{t.imgCubanHaitian}</option>
+                    <option value="asylum_pending">{t.imgAsylumPending}</option>
+                    <option value="asylum_granted">{t.imgAsylumGranted}</option>
+                    <option value="tps">{t.imgTps}</option>
+                    <option value="humanitarian_parole">{t.imgParole}</option>
+                    <option value="daca">{t.imgDaca}</option>
+                    <option value="prefer_not_to_say">{t.imgPreferNot}</option>
+                  </select>
+                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4, lineHeight: 1.4 }}>{t.imgStatusMicro}</div>
+                </div>
+              )}
 
               {/* Buttons */}
               <div style={S.row}>

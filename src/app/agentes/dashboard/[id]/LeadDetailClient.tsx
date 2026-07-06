@@ -4,6 +4,36 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import StatusModal from "../StatusModal";
 import ActivityTimeline from "../ActivityTimeline";
+import { FLAG_COPY, type EligibilityFlag } from "@/lib/eligibility/rules";
+
+// Eligibility triage (OBBBA) — agent-only panel config.
+const FLAG_COLORS: Record<EligibilityFlag, string> = {
+  green: "#10b981",
+  yellow: "#f59e0b",
+  red: "#ef4444",
+  unknown: "#6b7280",
+};
+
+const IMMIGRATION_LABELS: Record<string, string> = {
+  citizen: "Ciudadano/a de EE.UU.",
+  lpr: "Residente permanente (green card)",
+  cuban_haitian_entrant: "Entrante cubano/haitiano (parole/ajuste)",
+  asylum_pending: "Asilo en trámite",
+  asylum_granted: "Asilo aprobado",
+  refugee: "Refugiado",
+  tps: "TPS",
+  humanitarian_parole: "Parole humanitario",
+  daca: "DACA",
+  no_status: "Sin estatus",
+  prefer_not_to_say: "Prefirió no decir",
+};
+
+const PRODUCT_TRACK_OPTIONS: { value: string; label: string }[] = [
+  { value: "aca", label: "ACA" },
+  { value: "private", label: "Privado" },
+  { value: "medicare", label: "Medicare" },
+  { value: "medicaid_referral", label: "Referido Medicaid" },
+];
 
 const STATUSES = [
   { value: "new", label: "Nuevo", color: "#3b82f6" },
@@ -49,6 +79,32 @@ export default function LeadDetailClient({ lead: initialLead, activity: initialA
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [savingPlan, setSavingPlan] = useState(false);
   const [planForm, setPlanForm] = useState({ name: "", issuer: "", premium: "", deductible: "", oopMax: "", effectiveDate: "" });
+  const [productTrack, setProductTrack] = useState<string>(lead.product_track || "aca");
+  const [savingTrack, setSavingTrack] = useState(false);
+
+  const eligibilityFlag: EligibilityFlag =
+    lead.eligibility_flag === "green" || lead.eligibility_flag === "yellow" || lead.eligibility_flag === "red"
+      ? lead.eligibility_flag
+      : "unknown";
+  const flagColor = FLAG_COLORS[eligibilityFlag];
+
+  const handleTrackSelect = async (value: string) => {
+    if (value === productTrack || savingTrack) return;
+    const previous = productTrack;
+    setProductTrack(value);
+    setSavingTrack(true);
+    const res = await fetch(`/api/leads/${lead.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productTrack: value }),
+    }).catch(() => null);
+    if (res?.ok) {
+      setLead((prev: any) => ({ ...prev, product_track: value }));
+    } else {
+      setProductTrack(previous);
+    }
+    setSavingTrack(false);
+  };
 
   const currentStatusCfg = STATUSES.find((s) => s.value === lead.status) || STATUSES[0];
 
@@ -377,6 +433,44 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
             {lead.quoted_at && <div><span style={{ fontSize: 10, color: "#94A3B8", fontWeight: 700 }}>COTIZADO</span><div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{formatDate(lead.quoted_at)}</div></div>}
             {lead.enrolled_at && <div><span style={{ fontSize: 10, color: "#94A3B8", fontWeight: 700 }}>INSCRITO</span><div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{formatDate(lead.enrolled_at)}</div></div>}
             {lead.next_followup_date && <div><span style={{ fontSize: 10, color: "#8b5cf6", fontWeight: 700 }}>SEGUIMIENTO</span><div style={{ fontSize: 12, color: "#8b5cf6", marginTop: 2 }}>{lead.next_followup_date}</div></div>}
+          </div>
+        </div>
+
+        {/* Elegibilidad Migratoria (triage OBBBA — agent-only, never shown to the client) */}
+        <div style={cardStyle}>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14 }}>🛂 Elegibilidad Migratoria</div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 10, background: `${flagColor}12`, border: `1px solid ${flagColor}40`, marginBottom: 14 }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", background: flagColor, marginTop: 4, flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: flagColor }}>{FLAG_COPY[eligibilityFlag].es}</div>
+              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 4 }}>
+                Estatus reportado: {lead.immigration_status ? (IMMIGRATION_LABELS[lead.immigration_status] || lead.immigration_status) : "No reportado"}
+                {lead.eligibility_rules_version && <span> · Reglas {lead.eligibility_rules_version}</span>}
+              </div>
+              <div style={{ fontSize: 11, color: "#64748B", marginTop: 4 }}>Auto-reportado por el cliente — no es una determinación legal. Verificar durante la inscripción.</div>
+            </div>
+          </div>
+          <div style={statLabel}>Producto</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+            {PRODUCT_TRACK_OPTIONS.map((opt) => {
+              const active = productTrack === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleTrackSelect(opt.value)}
+                  disabled={savingTrack}
+                  style={{
+                    padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                    cursor: savingTrack ? "wait" : "pointer",
+                    border: `1px solid ${active ? "#10b981" : "rgba(255,255,255,0.12)"}`,
+                    background: active ? "rgba(16,185,129,0.12)" : "transparent",
+                    color: active ? "#10b981" : "#94A3B8",
+                  }}
+                >
+                  {active ? "✓ " : ""}{opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

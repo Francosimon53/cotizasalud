@@ -7,7 +7,7 @@ vi.mock("@/lib/auth/require-agent", () => ({
   requireAuthenticatedAgent: vi.fn(),
 }));
 
-import { DELETE, GET } from "../route";
+import { DELETE, GET, PATCH } from "../route";
 import { createServiceClient } from "@/lib/supabase";
 import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
 import { NextResponse } from "next/server";
@@ -167,5 +167,99 @@ describe("DELETE /api/leads/[id]", () => {
     expect(res.status).toBe(200);
     const tables = db._deleteCalls.map((c) => c.table);
     expect(tables).toEqual(["lead_activity", "leads"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /api/leads/[id] — product_track routing
+// ---------------------------------------------------------------------------
+
+function makePatchRequest(body: unknown): any {
+  return { json: async () => body } as any;
+}
+
+function installPatchDb(opts: { lead?: { agent_id: string; selected_plan?: unknown } | null }) {
+  const { lead = null } = opts;
+  const updateCalls: Array<Record<string, unknown>> = [];
+
+  const db = {
+    from: vi.fn((table: string) => {
+      if (table !== "leads") return {};
+      return {
+        select: () => ({
+          eq: () => ({
+            single: async () => ({ data: lead, error: lead ? null : { code: "PGRST116" } }),
+          }),
+        }),
+        update: (payload: Record<string, unknown>) => {
+          updateCalls.push(payload);
+          return { eq: async () => ({ data: null, error: null }) };
+        },
+      };
+    }),
+    _updateCalls: updateCalls,
+  };
+
+  (createServiceClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue(db);
+  return db;
+}
+
+describe("PATCH /api/leads/[id] — product_track", () => {
+  it("returns 401 when no auth user is present", async () => {
+    setAuthError(401, "Authentication required");
+
+    const res = await PATCH(makePatchRequest({ productTrack: "private" }), makeParams("lead-1"));
+
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 403 and does NOT update when ownership mismatches (anti-IDOR)", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    const db = installPatchDb({ lead: { agent_id: "victim-agent" } });
+
+    const res = await PATCH(makePatchRequest({ productTrack: "private" }), makeParams("lead-1"));
+
+    expect(res.status).toBe(403);
+    expect(db._updateCalls).toHaveLength(0);
+  });
+
+  it("returns 400 for a non-whitelisted productTrack without touching the row", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    const db = installPatchDb({ lead: { agent_id: "a1" } });
+
+    const res = await PATCH(
+      makePatchRequest({ productTrack: "crypto_insurance" }),
+      makeParams("lead-1")
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/invalid producttrack/i);
+    expect(db._updateCalls).toHaveLength(0);
+  });
+
+  it("still returns 400 when neither plan nor productTrack is sent", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    installPatchDb({ lead: { agent_id: "a1" } });
+
+    const res = await PATCH(makePatchRequest({}), makeParams("lead-1"));
+
+    expect(res.status).toBe(400);
+  });
+
+  it("saves a whitelisted productTrack when ownership matches, without touching the plan", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    const db = installPatchDb({ lead: { agent_id: "a1", selected_plan: { name: "Keep Me" } } });
+
+    const res = await PATCH(
+      makePatchRequest({ productTrack: "medicaid_referral" }),
+      makeParams("lead-1")
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.product_track).toBe("medicaid_referral");
+    expect(db._updateCalls).toHaveLength(1);
+    expect(db._updateCalls[0]).toEqual({ product_track: "medicaid_referral" });
   });
 });

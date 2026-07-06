@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
+import { isProductTrack } from "@/lib/eligibility/rules";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -74,12 +75,15 @@ function toStringOrNull(v: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-// Agent-driven manual plan entry/edit. Writes the selected_plan jsonb with the
-// exact keys the consent PDF reads (name, issuer, premium, deductible, oopMax,
-// effectiveDate), preserving any pre-existing keys (id/metal/afterSubsidy/...).
-// Mirrors the GET/DELETE anti-spoofing pattern: 401/403 from the auth helper,
-// 404 if the lead is missing, 403 if it belongs to another agent. Does NOT
-// change lead status — that is owned by the enroll flow.
+// Agent-driven manual plan entry/edit and/or product-track routing. Writes
+// the selected_plan jsonb with the exact keys the consent PDF reads (name,
+// issuer, premium, deductible, oopMax, effectiveDate), preserving any
+// pre-existing keys (id/metal/afterSubsidy/...). productTrack is whitelisted
+// (aca | private | medicare | medicaid_referral); the body must carry plan,
+// productTrack, or both. Mirrors the GET/DELETE anti-spoofing pattern:
+// 401/403 from the auth helper, 404 if the lead is missing, 403 if it
+// belongs to another agent. Does NOT change lead status — that is owned by
+// the enroll flow.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuthenticatedAgent();
   if (auth instanceof NextResponse) return auth;
@@ -98,7 +102,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const plan = body.plan && typeof body.plan === "object" ? body.plan : null;
-  if (!plan) {
+  const hasProductTrack = body.productTrack !== undefined;
+  if (hasProductTrack && !isProductTrack(body.productTrack)) {
+    return NextResponse.json(
+      { error: "Invalid productTrack" },
+      { status: 400, headers: NO_STORE_HEADERS }
+    );
+  }
+  if (!plan && !hasProductTrack) {
     return NextResponse.json(
       { error: "Missing plan" },
       { status: 400, headers: NO_STORE_HEADERS }
@@ -128,31 +139,37 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       );
     }
 
-    const existing =
-      lead.selected_plan && typeof lead.selected_plan === "object" ? lead.selected_plan : {};
+    const update: Record<string, unknown> = {};
+    let merged: Record<string, any> | null = null;
 
-    // Merge over existing so id/metal/afterSubsidy/copays survive an edit.
-    const merged = {
-      ...existing,
-      name: toStringOrNull(plan.name),
-      issuer: toStringOrNull(plan.issuer),
-      premium: toNumberOrNull(plan.premium),
-      deductible: toNumberOrNull(plan.deductible),
-      oopMax: toNumberOrNull(plan.oopMax),
-      effectiveDate: toStringOrNull(plan.effectiveDate),
-    };
-    if (plan.afterSubsidy !== undefined) {
-      merged.afterSubsidy = toNumberOrNull(plan.afterSubsidy);
+    if (plan) {
+      const existing =
+        lead.selected_plan && typeof lead.selected_plan === "object" ? lead.selected_plan : {};
+
+      // Merge over existing so id/metal/afterSubsidy/copays survive an edit.
+      merged = {
+        ...existing,
+        name: toStringOrNull(plan.name),
+        issuer: toStringOrNull(plan.issuer),
+        premium: toNumberOrNull(plan.premium),
+        deductible: toNumberOrNull(plan.deductible),
+        oopMax: toNumberOrNull(plan.oopMax),
+        effectiveDate: toStringOrNull(plan.effectiveDate),
+      };
+      if (plan.afterSubsidy !== undefined) {
+        merged.afterSubsidy = toNumberOrNull(plan.afterSubsidy);
+      }
+
+      update.selected_plan = merged;
+      update.selected_plan_name = merged.name;
+      update.selected_premium = merged.afterSubsidy ?? merged.premium;
     }
 
-    const { error } = await supabase
-      .from("leads")
-      .update({
-        selected_plan: merged,
-        selected_plan_name: merged.name,
-        selected_premium: merged.afterSubsidy ?? merged.premium,
-      })
-      .eq("id", id);
+    if (hasProductTrack) {
+      update.product_track = body.productTrack;
+    }
+
+    const { error } = await supabase.from("leads").update(update).eq("id", id);
 
     if (error) {
       console.error("Update lead plan error:", error);
@@ -163,7 +180,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     return NextResponse.json(
-      { success: true, selected_plan: merged },
+      {
+        success: true,
+        ...(merged ? { selected_plan: merged } : {}),
+        ...(hasProductTrack ? { product_track: body.productTrack } : {}),
+      },
       { headers: NO_STORE_HEADERS }
     );
   } catch (err) {

@@ -92,6 +92,54 @@ describe("POST /api/leads/browse — rate limiting", () => {
   });
 });
 
+describe("POST /api/leads/browse — immigration status triage", () => {
+  it("stores status + flag + rules version for a whitelisted value", async () => {
+    const db = installSuccessDb();
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
+
+    const res = await POST(
+      makeRequest({ zipcode: "33914", agentSlug: "test", immigrationStatus: "tps" })
+    );
+
+    expect(res.status).toBe(200);
+    expect(db._insertCalls).toHaveLength(1);
+    expect(db._insertCalls[0].immigration_status).toBe("tps");
+    expect(db._insertCalls[0].eligibility_flag).toBe("yellow");
+    expect(db._insertCalls[0].eligibility_rules_version).toBe("2026-07");
+  });
+
+  it("discards a non-whitelisted value without breaking the flow", async () => {
+    const db = installSuccessDb();
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
+
+    const res = await POST(
+      makeRequest({ zipcode: "33914", agentSlug: "test", immigrationStatus: "totally made up" })
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.leadId).toBe("lead-1");
+    expect(db._insertCalls[0].immigration_status).toBeNull();
+    expect(db._insertCalls[0].eligibility_flag).toBe("unknown");
+  });
+
+  it("works exactly like today when immigrationStatus is omitted", async () => {
+    const db = installSuccessDb();
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
+
+    const res = await POST(makeRequest({ zipcode: "33914", agentSlug: "test" }));
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.leadId).toBe("lead-1");
+    expect(typeof body.clientToken).toBe("string");
+    expect(db._insertCalls[0].immigration_status).toBeNull();
+    expect(db._insertCalls[0].eligibility_flag).toBe("unknown");
+    expect(db._insertCalls[0].status).toBe("browsing");
+  });
+});
+
 describe("POST /api/leads/browse — capability token issuance", () => {
   it("returns a clientToken and stores only its SHA-256 on the lead", async () => {
     const db = installSuccessDb();

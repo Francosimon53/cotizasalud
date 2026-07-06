@@ -51,6 +51,7 @@ const CONTENT = {
               ["Annual income", "Subsidy estimation (APTC)", "Yes"],
               ["Gender", "Premium calculation", "Yes"],
               ["Tobacco use, pregnancy status", "Premium calculation & eligibility", "Yes"],
+              ["Immigration status (self-reported)", "Helps your licensed agent identify which coverage options may apply to you; never a legal determination", "No (optional)"],
               ["Contact info (name, phone, email)", "Connect with licensed agent", "Yes (to receive quotes)"],
               ["Language preference", "UI personalization", "Auto-detected"],
             ]}
@@ -255,6 +256,7 @@ const CONTENT = {
               ["Ingreso anual", "Estimación de subsidio (APTC)", "Sí"],
               ["Género", "Cálculo de primas", "Sí"],
               ["Uso de tabaco, estado de embarazo", "Cálculo de primas y elegibilidad", "Sí"],
+              ["Situación migratoria (auto-reportada)", "Ayuda a su agente licenciado a identificar qué opciones de cobertura podrían aplicarle; nunca es una determinación legal", "No (opcional)"],
               ["Info de contacto (nombre, teléfono, email)", "Conexión con agente licenciado", "Sí (para recibir cotizaciones)"],
               ["Preferencia de idioma", "Personalización", "Auto-detectado"],
             ]}

@@ -96,6 +96,7 @@ export async function saveLead(data: {
   householdMembers?: any[]
   genders?: string
   signatureData?: string
+  immigrationStatus?: string
   consentTimestamp?: string
   referrer?: string
   utmSource?: string

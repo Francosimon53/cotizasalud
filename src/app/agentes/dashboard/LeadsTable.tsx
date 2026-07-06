@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import StatusModal from "./StatusModal";
+import { FLAG_COPY, type EligibilityFlag } from "@/lib/eligibility/rules";
 
 interface Lead {
   id: string;
@@ -23,6 +24,7 @@ interface Lead {
   contacted_at: string | null;
   quoted_at: string | null;
   next_followup_date: string | null;
+  eligibility_flag?: string | null;
 }
 
 const STATUSES = [
@@ -62,6 +64,20 @@ const slaConfig = {
   stale: { label: "Estancado", color: "#f59e0b", border: "rgba(245,158,11,0.4)" },
   at_risk: { label: "En riesgo", color: "#f97316", border: "rgba(249,115,22,0.4)" },
 };
+
+// Eligibility triage badge (OBBBA): agent-only, short label per flag; the
+// full explanation (FLAG_COPY) is shown as the tooltip and in the detail view.
+const ELIGIBILITY_BADGE: Record<EligibilityFlag, { label: string; color: string }> = {
+  green: { label: "2026+2027", color: "#10b981" },
+  yellow: { label: "Pierde 2027", color: "#f59e0b" },
+  red: { label: "No ACA", color: "#ef4444" },
+  unknown: { label: "Sin verificar", color: "#6b7280" },
+};
+
+function eligibilityBadge(flag: string | null | undefined) {
+  const key: EligibilityFlag = flag === "green" || flag === "yellow" || flag === "red" ? flag : "unknown";
+  return { ...ELIGIBILITY_BADGE[key], title: FLAG_COPY[key].es };
+}
 
 const METAL_COLORS: Record<string, string> = {
   gold: "#FFD700", silver: "#C0C0C0", bronze: "#CD7F32", platinum: "#4A90D9", catastrophic: "#6b7280",
@@ -235,6 +251,17 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
             );
           })()}
         </td>
+        <td style={tdStyle}>
+          {(() => {
+            const badge = eligibilityBadge(lead.eligibility_flag);
+            return (
+              <span title={badge.title} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: badge.color, padding: "2px 8px", borderRadius: 10, background: `${badge.color}15`, whiteSpace: "nowrap" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: badge.color, flexShrink: 0 }} />
+                {badge.label}
+              </span>
+            );
+          })()}
+        </td>
         <td style={{ ...tdStyle, color: "#94A3B8", whiteSpace: "nowrap" }}>{formatDate(lead.created_at)}</td>
         <td style={tdStyle}>
           {slaInfo ? (
@@ -273,6 +300,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
         <th style={thStyle}>Ubicación</th>
         <th style={thStyle}>Ingreso</th>
         <th style={thStyle}>Plan</th>
+        <th style={thStyle}>Elegibilidad</th>
         <th style={thStyle}>Fecha</th>
         <th style={thStyle}>SLA</th>
         <th style={thStyle}>Estado</th>

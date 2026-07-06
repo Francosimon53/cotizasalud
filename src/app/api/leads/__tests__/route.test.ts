@@ -100,6 +100,70 @@ describe("POST /api/leads — rate limiting", () => {
   });
 });
 
+describe("POST /api/leads — immigration status triage", () => {
+  it("stores status + flag + rules version for a whitelisted value", async () => {
+    const db = installSuccessDb();
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
+
+    const res = await POST(
+      makeRequest({
+        zipcode: "33914",
+        contactName: "Maria Lopez",
+        contactPhone: "2395551234",
+        immigrationStatus: "citizen",
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(db._insertCalls).toHaveLength(1);
+    expect(db._insertCalls[0].immigration_status).toBe("citizen");
+    expect(db._insertCalls[0].eligibility_flag).toBe("green");
+    expect(db._insertCalls[0].eligibility_rules_version).toBe("2026-07");
+  });
+
+  it("discards a non-whitelisted value without breaking the flow", async () => {
+    const db = installSuccessDb();
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
+
+    const res = await POST(
+      makeRequest({
+        zipcode: "33914",
+        contactName: "Maria Lopez",
+        contactPhone: "2395551234",
+        immigrationStatus: "<script>alert(1)</script>",
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.leadId).toBe("lead-1");
+    expect(db._insertCalls[0].immigration_status).toBeNull();
+    expect(db._insertCalls[0].eligibility_flag).toBe("unknown");
+  });
+
+  it("works exactly like today when immigrationStatus is omitted", async () => {
+    const db = installSuccessDb();
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
+
+    const res = await POST(
+      makeRequest({
+        zipcode: "33914",
+        contactName: "Maria Lopez",
+        contactPhone: "2395551234",
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.leadId).toBe("lead-1");
+    expect(typeof body.clientToken).toBe("string");
+    expect(db._insertCalls[0].immigration_status).toBeNull();
+    expect(db._insertCalls[0].eligibility_flag).toBe("unknown");
+    expect(db._insertCalls[0].status).toBe("new");
+  });
+});
+
 describe("POST /api/leads — capability token issuance", () => {
   it("returns a clientToken, stores only its SHA-256, and forwards the token to notify-lead", async () => {
     const db = installSuccessDb();

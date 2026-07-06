@@ -6,6 +6,11 @@ import { normalizeAgentSlug } from '@/lib/normalize-slug'
 import { captureInvalidAgentSlug } from '@/lib/slug-logging'
 import { rateLimit } from '@/lib/rate-limit'
 import { requireAuthenticatedAgent } from '@/lib/auth/require-agent'
+import {
+  RULES_VERSION,
+  eligibilityFlagFor,
+  normalizeImmigrationStatus,
+} from '@/lib/eligibility/rules'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -178,6 +183,10 @@ export async function POST(request: NextRequest) {
     // stored. Later cotizar writes must present it in x-lead-token.
     const clientToken = generateLeadToken()
 
+    // Optional self-reported immigration status: strict whitelist, an
+    // invalid value is discarded (null) and the flow continues unchanged.
+    const immigrationStatus = normalizeImmigrationStatus(body.immigrationStatus)
+
     // Save lead
     const { data: lead, error: leadError } = await supabase
       .from('leads')
@@ -206,6 +215,9 @@ export async function POST(request: NextRequest) {
         household_dobs: body.householdDobs || '',
         household_members: body.householdMembers || null,
         genders: body.genders || '',
+        immigration_status: immigrationStatus,
+        eligibility_flag: eligibilityFlagFor(immigrationStatus),
+        eligibility_rules_version: RULES_VERSION,
         signature_data: body.signatureData || '',
         consent_ip: request.headers.get('x-forwarded-for') || '',
         consent_timestamp: body.consentTimestamp || new Date().toISOString(),

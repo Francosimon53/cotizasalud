@@ -5,6 +5,11 @@ import { resolveAgentFromSlug } from "@/lib/resolve-agent";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
 import { captureInvalidAgentSlug } from "@/lib/slug-logging";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  RULES_VERSION,
+  eligibilityFlagFor,
+  normalizeImmigrationStatus,
+} from "@/lib/eligibility/rules";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -46,6 +51,10 @@ export async function POST(request: NextRequest) {
     // stored. Later cotizar writes must present it in x-lead-token.
     const clientToken = generateLeadToken();
 
+    // Optional self-reported immigration status: strict whitelist, an
+    // invalid value is discarded (null) and the flow continues unchanged.
+    const immigrationStatus = normalizeImmigrationStatus(body.immigrationStatus);
+
     const { data: lead, error } = await supabase
       .from("leads")
       .insert({
@@ -63,6 +72,9 @@ export async function POST(request: NextRequest) {
         household_dobs: body.householdDobs || "",
         household_members: body.householdMembers || null,
         genders: body.genders || "",
+        immigration_status: immigrationStatus,
+        eligibility_flag: eligibilityFlagFor(immigrationStatus),
+        eligibility_rules_version: RULES_VERSION,
         language: body.language || "es",
         contact_name: "",
         contact_phone: "",

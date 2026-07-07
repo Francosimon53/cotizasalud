@@ -835,6 +835,11 @@ const PlayIcon = () => (
   </svg>
 );
 
+type Testimonio = { initials: string; name: string; role: string; quote: string };
+
+// poblar con testimonios reales verificados
+const testimonios: Testimonio[] = [];
+
 export default function AgentesPage() {
   const navRef = useRef<HTMLElement>(null);
 
@@ -939,7 +944,7 @@ export default function AgentesPage() {
         <div className="ag-nav-links">
           <a href="#ai-advisor">AI Advisor</a>
           <a href="#features">Funciones</a>
-          <a href="#testimonials">Testimonios</a>
+          {testimonios.length > 0 && <a href="#testimonials">Testimonios</a>}
           <a href="#roi">ROI</a>
           <a href="#precios">Precios</a>
           <Link href="/agentes/login" style={{ color: "#10b981", fontWeight: 700 }}>Iniciar Sesión</Link>
@@ -1089,57 +1094,28 @@ export default function AgentesPage() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="ag-social-section" id="testimonials">
-        <div className="ag-section-label ag-reveal">Agentes que confían en nosotros</div>
-        <h2 className="ag-reveal">Lo que dicen los agentes</h2>
+      {testimonios.length > 0 && (
+        <section className="ag-social-section" id="testimonials">
+          <div className="ag-section-label ag-reveal">Agentes que confían en nosotros</div>
+          <h2 className="ag-reveal">Lo que dicen los agentes</h2>
 
-        <div className="ag-testimonials-grid">
-          <div className="ag-testimonial ag-reveal">
-            <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;Antes pasaba 20 minutos explicando cada plan. Ahora el AI Advisor lo hace en segundos y mis clientes lo entienden mejor que cuando yo les explicaba.&rdquo;</p>
-            <div className="ag-testimonial-author">
-              <div className="ag-testimonial-avatar">MR</div>
-              <div className="ag-testimonial-info">
-                <h4>María Rodríguez</h4>
-                <p>Agente Licenciada · Miami, FL</p>
+          <div className="ag-testimonials-grid">
+            {testimonios.map((tm, i) => (
+              <div className="ag-testimonial ag-reveal" key={i}>
+                <div className="ag-testimonial-stars">★★★★★</div>
+                <p className="ag-testimonial-text">&ldquo;{tm.quote}&rdquo;</p>
+                <div className="ag-testimonial-author">
+                  <div className="ag-testimonial-avatar">{tm.initials}</div>
+                  <div className="ag-testimonial-info">
+                    <h4>{tm.name}</h4>
+                    <p>{tm.role}</p>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-          <div className="ag-testimonial ag-reveal">
-            <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;El link personalizado es oro. Lo mando por WhatsApp y mis prospectos cotizan solos. Yo solo recibo la notificación cuando eligen plan.&rdquo;</p>
-            <div className="ag-testimonial-author">
-              <div className="ag-testimonial-avatar">CP</div>
-              <div className="ag-testimonial-info">
-                <h4>Carlos Pérez</h4>
-                <p>Agente Independiente · Orlando, FL</p>
-              </div>
-            </div>
-          </div>
-          <div className="ag-testimonial ag-reveal">
-            <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;En OEP cerré 40% más clientes que el año pasado. La velocidad de cotización más la explicación de la IA es una combinación imbatible.&rdquo;</p>
-            <div className="ag-testimonial-author">
-              <div className="ag-testimonial-avatar">LG</div>
-              <div className="ag-testimonial-info">
-                <h4>Laura García</h4>
-                <p>Agency Owner · Tampa, FL</p>
-              </div>
-            </div>
-          </div>
-          <div className="ag-testimonial ag-reveal">
-            <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;La IA le explicó a mi cliente que estaba pagando $200 más al mes que el año pasado y exactamente cómo recuperar ese dinero. El cliente abrió su cuenta de ahorros médicos ese mismo día. Ninguna otra herramienta hace eso.&rdquo;</p>
-            <div className="ag-testimonial-author">
-              <div className="ag-testimonial-avatar">RM</div>
-              <div className="ag-testimonial-info">
-                <h4>Roberto Méndez</h4>
-                <p>Agente Senior · Fort Myers, FL</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ROI SECTION */}
       <section className="ag-roi-section" id="roi">

@@ -1100,7 +1100,7 @@ export default function AgentesPage() {
         <p className="ag-triage-desc ag-reveal">
           El cotizador pre-clasifica a cada cliente por su estatus migratorio y marca el impacto en su
           elegibilidad de subsidio a partir del 1 de enero de 2027. Ves la señal en el lead antes de
-          invertir tiempo, para enfocar tu esfuerzo donde hay comisión.
+          invertir tiempo, para planear tu estrategia con cada cliente desde el arranque.
         </p>
 
         <div className="ag-triage-cols">

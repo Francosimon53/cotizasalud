@@ -1093,6 +1093,54 @@ export default function AgentesPage() {
         </div>
       </section>
 
+      {/* IMMIGRATION ELIGIBILITY TRIAGE */}
+      <section className="ag-triage-section" id="elegibilidad-2027">
+        <div className="ag-section-label ag-reveal">Elegibilidad 2027</div>
+        <h2 className="ag-reveal">Sabe qué clientes pierden subsidio en 2027 — antes de perder horas</h2>
+        <p className="ag-triage-desc ag-reveal">
+          El cotizador pre-clasifica a cada cliente por su estatus migratorio y marca el impacto en su
+          elegibilidad de subsidio a partir del 1 de enero de 2027. Ves la señal en el lead antes de
+          invertir tiempo, para enfocar tu esfuerzo donde hay comisión.
+        </p>
+
+        <div className="ag-triage-cols">
+          <div className="ag-triage-card keep ag-reveal">
+            <h3><span className="ag-triage-dot green" /> Mantienen el subsidio</h3>
+            <div className="ag-triage-tag">Elegibles en 2026 y en 2027</div>
+            <ul className="ag-triage-list">
+              <li>Ciudadanos de EE.UU.</li>
+              <li>Residentes permanentes legales (LPR / green card)</li>
+              <li>Entrantes cubanos y haitianos</li>
+              <li>Nacionales COFA (Micronesia, Islas Marshall, Palaos)</li>
+            </ul>
+          </div>
+          <div className="ag-triage-card lose ag-reveal">
+            <h3><span className="ag-triage-dot amber" /> Pierden el subsidio en 2027</h3>
+            <div className="ag-triage-tag">Elegibles en 2026 — sin subsidio desde el 1-ene-2027</div>
+            <ul className="ag-triage-list">
+              <li>TPS (Estatus de Protección Temporal)</li>
+              <li>Asilados (en trámite y aprobados)</li>
+              <li>Refugiados</li>
+              <li>Parolados (parole humanitario)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="ag-triage-value ag-reveal">
+          El lead que pierde subsidio no se bota: el cotizador lo <strong>etiqueta</strong> para
+          canalizarlo a un plan privado / off-exchange o a Medicare, según su caso. No se te pierde el
+          rastro de ningún cliente — cada estatus queda registrado en tu pipeline con su señal de elegibilidad.
+        </div>
+
+        <div className="ag-triage-disclaimer ag-reveal">
+          <span className="ag-triage-disclaimer-icon">⚠️</span>
+          <span>
+            Es orientación, no una determinación legal de elegibilidad. La validación final la hacen el
+            agente y Healthcare.gov.
+          </span>
+        </div>
+      </section>
+
       {/* TESTIMONIALS */}
       {testimonios.length > 0 && (
         <section className="ag-social-section" id="testimonials">

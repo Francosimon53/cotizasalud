@@ -3,20 +3,20 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
-  title: "EnrollSalud — Health Insurance Enrollment",
-  description: "Compare ACA Marketplace health insurance plans, estimate subsidies, and enroll. Bilingual English/Spanish.",
+  title: "EnrollSalud | Cotiza tu seguro médico ACA en español",
+  description: "Cotiza tu seguro médico ACA en español y calcula tu subsidio en minutos — los mismos planes de Healthcare.gov, con un agente que te ayuda en tu idioma.",
   openGraph: {
-    title: "EnrollSalud — Health Insurance Enrollment",
-    description: "Compare ACA Marketplace health insurance plans, estimate subsidies, and enroll. Bilingual English/Spanish.",
+    title: "EnrollSalud | Cotiza tu seguro médico ACA en español",
+    description: "Cotiza tu seguro médico ACA en español y calcula tu subsidio en minutos — los mismos planes de Healthcare.gov, con un agente que te ayuda en tu idioma.",
     url: "https://enrollsalud.com",
     siteName: "EnrollSalud",
     type: "website",
-    locale: "en_US",
+    locale: "es_US",
   },
   twitter: {
     card: "summary",
-    title: "EnrollSalud — Health Insurance Enrollment",
-    description: "Compare ACA Marketplace health insurance plans, estimate subsidies, and enroll.",
+    title: "EnrollSalud | Cotiza tu seguro médico ACA en español",
+    description: "Cotiza tu seguro médico ACA en español y calcula tu subsidio en minutos — los mismos planes de Healthcare.gov, con un agente que te ayuda en tu idioma.",
   },
   robots: {
     index: true,

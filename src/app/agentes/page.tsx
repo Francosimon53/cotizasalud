@@ -835,6 +835,11 @@ const PlayIcon = () => (
   </svg>
 );
 
+type Testimonio = { initials: string; name: string; role: string; quote: string };
+
+// poblar con testimonios reales verificados
+const testimonios: Testimonio[] = [];
+
 export default function AgentesPage() {
   const navRef = useRef<HTMLElement>(null);
 
@@ -939,7 +944,7 @@ export default function AgentesPage() {
         <div className="ag-nav-links">
           <a href="#ai-advisor">AI Advisor</a>
           <a href="#features">Funciones</a>
-          <a href="#testimonials">Testimonios</a>
+          {testimonios.length > 0 && <a href="#testimonials">Testimonios</a>}
           <a href="#roi">ROI</a>
           <a href="#precios">Precios</a>
           <Link href="/agentes/login" style={{ color: "#10b981", fontWeight: 700 }}>Iniciar Sesión</Link>
@@ -1088,58 +1093,77 @@ export default function AgentesPage() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="ag-social-section" id="testimonials">
-        <div className="ag-section-label ag-reveal">Agentes que confían en nosotros</div>
-        <h2 className="ag-reveal">Lo que dicen los agentes</h2>
+      {/* IMMIGRATION ELIGIBILITY TRIAGE */}
+      <section className="ag-triage-section" id="elegibilidad-2027">
+        <div className="ag-section-label ag-reveal">Elegibilidad 2027</div>
+        <h2 className="ag-reveal">Sabe qué clientes pierden subsidio en 2027 — antes de perder horas</h2>
+        <p className="ag-triage-desc ag-reveal">
+          El cotizador pre-clasifica a cada cliente por su estatus migratorio y marca el impacto en su
+          elegibilidad de subsidio a partir del 1 de enero de 2027. Ves la señal en el lead antes de
+          invertir tiempo, para planear tu estrategia con cada cliente desde el arranque.
+        </p>
 
-        <div className="ag-testimonials-grid">
-          <div className="ag-testimonial ag-reveal">
-            <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;Antes pasaba 20 minutos explicando cada plan. Ahora el AI Advisor lo hace en segundos y mis clientes lo entienden mejor que cuando yo les explicaba.&rdquo;</p>
-            <div className="ag-testimonial-author">
-              <div className="ag-testimonial-avatar">MR</div>
-              <div className="ag-testimonial-info">
-                <h4>María Rodríguez</h4>
-                <p>Agente Licenciada · Miami, FL</p>
-              </div>
-            </div>
+        <div className="ag-triage-cols">
+          <div className="ag-triage-card keep ag-reveal">
+            <h3><span className="ag-triage-dot green" /> Mantienen el subsidio</h3>
+            <div className="ag-triage-tag">Elegibles en 2026 y en 2027</div>
+            <ul className="ag-triage-list">
+              <li>Ciudadanos de EE.UU.</li>
+              <li>Residentes permanentes legales (LPR / green card)</li>
+              <li>Entrantes cubanos y haitianos</li>
+              <li>Nacionales COFA (Micronesia, Islas Marshall, Palaos)</li>
+            </ul>
           </div>
-          <div className="ag-testimonial ag-reveal">
-            <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;El link personalizado es oro. Lo mando por WhatsApp y mis prospectos cotizan solos. Yo solo recibo la notificación cuando eligen plan.&rdquo;</p>
-            <div className="ag-testimonial-author">
-              <div className="ag-testimonial-avatar">CP</div>
-              <div className="ag-testimonial-info">
-                <h4>Carlos Pérez</h4>
-                <p>Agente Independiente · Orlando, FL</p>
-              </div>
-            </div>
-          </div>
-          <div className="ag-testimonial ag-reveal">
-            <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;En OEP cerré 40% más clientes que el año pasado. La velocidad de cotización más la explicación de la IA es una combinación imbatible.&rdquo;</p>
-            <div className="ag-testimonial-author">
-              <div className="ag-testimonial-avatar">LG</div>
-              <div className="ag-testimonial-info">
-                <h4>Laura García</h4>
-                <p>Agency Owner · Tampa, FL</p>
-              </div>
-            </div>
-          </div>
-          <div className="ag-testimonial ag-reveal">
-            <div className="ag-testimonial-stars">★★★★★</div>
-            <p className="ag-testimonial-text">&ldquo;La IA le explicó a mi cliente que estaba pagando $200 más al mes que el año pasado y exactamente cómo recuperar ese dinero. El cliente abrió su cuenta de ahorros médicos ese mismo día. Ninguna otra herramienta hace eso.&rdquo;</p>
-            <div className="ag-testimonial-author">
-              <div className="ag-testimonial-avatar">RM</div>
-              <div className="ag-testimonial-info">
-                <h4>Roberto Méndez</h4>
-                <p>Agente Senior · Fort Myers, FL</p>
-              </div>
-            </div>
+          <div className="ag-triage-card lose ag-reveal">
+            <h3><span className="ag-triage-dot amber" /> Pierden el subsidio en 2027</h3>
+            <div className="ag-triage-tag">Elegibles en 2026 — sin subsidio desde el 1-ene-2027</div>
+            <ul className="ag-triage-list">
+              <li>TPS (Estatus de Protección Temporal)</li>
+              <li>Asilados (en trámite y aprobados)</li>
+              <li>Refugiados</li>
+              <li>Parolados (parole humanitario)</li>
+            </ul>
           </div>
         </div>
+
+        <div className="ag-triage-value ag-reveal">
+          El lead que pierde subsidio no se bota: el cotizador lo <strong>etiqueta</strong> para
+          canalizarlo a un plan privado / off-exchange o a Medicare, según su caso. No se te pierde el
+          rastro de ningún cliente — cada estatus queda registrado en tu pipeline con su señal de elegibilidad.
+        </div>
+
+        <div className="ag-triage-disclaimer ag-reveal">
+          <span className="ag-triage-disclaimer-icon">⚠️</span>
+          <span>
+            Es orientación, no una determinación legal de elegibilidad. La validación final la hacen el
+            agente y Healthcare.gov.
+          </span>
+        </div>
       </section>
+
+      {/* TESTIMONIALS */}
+      {testimonios.length > 0 && (
+        <section className="ag-social-section" id="testimonials">
+          <div className="ag-section-label ag-reveal">Agentes que confían en nosotros</div>
+          <h2 className="ag-reveal">Lo que dicen los agentes</h2>
+
+          <div className="ag-testimonials-grid">
+            {testimonios.map((tm, i) => (
+              <div className="ag-testimonial ag-reveal" key={i}>
+                <div className="ag-testimonial-stars">★★★★★</div>
+                <p className="ag-testimonial-text">&ldquo;{tm.quote}&rdquo;</p>
+                <div className="ag-testimonial-author">
+                  <div className="ag-testimonial-avatar">{tm.initials}</div>
+                  <div className="ag-testimonial-info">
+                    <h4>{tm.name}</h4>
+                    <p>{tm.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ROI SECTION */}
       <section className="ag-roi-section" id="roi">

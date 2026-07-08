@@ -4,6 +4,11 @@ import { useEffect } from "react";
 import Link from "next/link";
 import "./landing.css";
 
+type Testimonio = { initials: string; name: string; role: string; quote: string };
+
+// poblar con testimonios reales verificados
+const testimonios: Testimonio[] = [];
+
 export default function HomePage() {
   useEffect(() => {
     // Scroll nav effect
@@ -191,29 +196,23 @@ export default function HomePage() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="testimonials">
-        <div className="section-inner">
-          <div className="section-label reveal">💬 Testimonios</div>
-          <h2 className="section-title reveal">Lo que dicen nuestros usuarios</h2>
-          <div className="testimonials-grid">
-            <div className="testimonial reveal">
-              <div className="stars">★★★★★</div>
-              <p>Por fin entendí lo que estaba pagando. En HealthCare.gov me perdía. Aquí en 2 minutos vi mis opciones y el agente me llamó al día siguiente en español.</p>
-              <div className="author"><div className="avatar">MG</div><div><div className="name">María G.</div><div className="role">Cape Coral, FL · Familia de 4</div></div></div>
-            </div>
-            <div className="testimonial reveal">
-              <div className="stars">★★★★★</div>
-              <p>Uso EnrollSalud como mi cotizador con mi marca. Envío el link por WhatsApp y el cliente ya tiene todo listo cuando me llama. Me ahorra horas.</p>
-              <div className="author"><div className="avatar">RC</div><div><div className="name">Roberto C.</div><div className="role">Agente Licenciado · Miami, FL</div></div></div>
-            </div>
-            <div className="testimonial reveal">
-              <div className="stars">★★★★★</div>
-              <p>No sabía que calificaba para subsidio. EnrollSalud me mostró que podía tener seguro Gold por $85/mes en vez de $520. Increíble.</p>
-              <div className="author"><div className="avatar">JS</div><div><div className="name">Jorge S.</div><div className="role">Orlando, FL · Individual</div></div></div>
+      {testimonios.length > 0 && (
+        <section className="testimonials">
+          <div className="section-inner">
+            <div className="section-label reveal">💬 Testimonios</div>
+            <h2 className="section-title reveal">Lo que dicen nuestros usuarios</h2>
+            <div className="testimonials-grid">
+              {testimonios.map((tm, i) => (
+                <div className="testimonial reveal" key={i}>
+                  <div className="stars">★★★★★</div>
+                  <p>{tm.quote}</p>
+                  <div className="author"><div className="avatar">{tm.initials}</div><div><div className="name">{tm.name}</div><div className="role">{tm.role}</div></div></div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* FAQ */}
       <section className="faq" id="faq">

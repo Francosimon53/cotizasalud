@@ -840,6 +840,77 @@ type Testimonio = { initials: string; name: string; role: string; quote: string 
 // poblar con testimonios reales verificados
 const testimonios: Testimonio[] = [];
 
+type Faq = { q: string; a: string };
+
+const faqs: Faq[] = [
+  {
+    q: "¿Qué es EnrollSalud?",
+    a: "Es una plataforma para agentes de seguros de salud ACA hispanos. Incluye un cotizador bilingüe con los mismos planes de Healthcare.gov, un CRM de leads y consentimiento CMS con firma digital.",
+  },
+  {
+    q: "¿EnrollSalud reemplaza a HealthSherpa?",
+    a: "No. EnrollSalud captura y organiza tus leads antes del enrollment y te ayuda a retener clientes después. Tú sigues inscribiendo en HealthSherpa; EnrollSalud se conecta con un enlace directo.",
+  },
+  {
+    q: "¿Los planes y precios que cotiza son reales?",
+    a: "Sí. EnrollSalud cotiza con la API oficial del Marketplace de CMS. Son los mismos datos de Healthcare.gov y cuidadodesalud.gov.",
+  },
+  {
+    q: "¿Cuánto cuesta EnrollSalud?",
+    a: "Básico cuesta $29 al mes e incluye 50 leads. Pro cuesta $79 al mes e incluye 200 leads. Avanzado cuesta $149 al mes e incluye 500 leads.",
+  },
+  {
+    q: "¿Cómo llegan los leads a mi cuenta?",
+    a: "Cada agente tiene un enlace personal para compartir por WhatsApp, redes sociales o código QR. Cuando un cliente cotiza desde tu enlace, el lead entra a tu CRM y recibes una notificación.",
+  },
+  {
+    q: "¿Qué es el triage de elegibilidad 2027?",
+    a: "Desde el 1 de enero de 2027 cambian las reglas de elegibilidad de subsidio por estatus migratorio. EnrollSalud marca cada lead según si mantiene o pierde elegibilidad, para que priorices tu cartera antes del OEP.",
+  },
+  {
+    q: "¿El consentimiento cumple los requisitos de CMS?",
+    a: "Sí. El cliente firma digitalmente y el sistema guarda firma, IP y fecha/hora. Puedes descargar el PDF para tus registros.",
+  },
+  {
+    q: "¿Funciona en español y en inglés?",
+    a: "Sí. El cotizador que ve tu cliente es completamente bilingüe.",
+  },
+  {
+    q: "¿Cómo empiezo?",
+    a: "Regístrate en enrollsalud.com/agentes/registro, configura tu NPN y comparte tu enlace personal.",
+  },
+];
+
+// El FAQPage debe reflejar 1:1 el contenido visible de la sección FAQ.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "FAQPage",
+      mainEntity: faqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.q,
+        acceptedAnswer: { "@type": "Answer", text: faq.a },
+      })),
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "EnrollSalud",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: "https://enrollsalud.com/agentes",
+      description:
+        "Plataforma para agentes de seguros de salud ACA hispanos con cotizador bilingüe de los mismos planes de Healthcare.gov, CRM de leads y consentimiento CMS con firma digital.",
+      inLanguage: ["es", "en"],
+      offers: [
+        { "@type": "Offer", name: "Básico", price: "29", priceCurrency: "USD" },
+        { "@type": "Offer", name: "Pro", price: "79", priceCurrency: "USD" },
+        { "@type": "Offer", name: "Avanzado", price: "149", priceCurrency: "USD" },
+      ],
+    },
+  ],
+};
+
 export default function AgentesPage() {
   const navRef = useRef<HTMLElement>(null);
 
@@ -1191,6 +1262,26 @@ export default function AgentesPage() {
 
       {/* PRICING SECTION */}
       <PricingSection />
+
+      {/* FAQ SECTION */}
+      <section className="ag-faq-section" id="faq">
+        <div className="ag-section-label ag-reveal">Preguntas frecuentes</div>
+        <h2 className="ag-reveal">Lo que todo agente <em>quiere saber</em></h2>
+
+        <div className="ag-faq-list">
+          {faqs.map((faq, i) => (
+            <details className="ag-faq-item ag-reveal" key={i}>
+              <summary>{faq.q}</summary>
+              <p>{faq.a}</p>
+            </details>
+          ))}
+        </div>
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+        />
+      </section>
 
       {/* CTA SECTION */}
       <section className="ag-cta-section">

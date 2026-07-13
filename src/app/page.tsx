@@ -56,7 +56,7 @@ export default function HomePage() {
         <div className="hero-grid" />
         <div className="hero-inner">
           <div>
-            <div className="hero-badge"><span className="pulse" /> OEP 2026 — Primas subieron 26%</div>
+            <div className="hero-badge"><span className="pulse" /> OEP 2027 — Nov 1 a Dic 15</div>
             <h1>Seguro médico<br /><span className="accent">sin complicaciones</span></h1>
             <p className="hero-sub">Compara planes ACA del Marketplace con subsidios estimados en 2 minutos. Bilingüe. Gratis. Sin crear cuenta en HealthCare.gov.</p>
             <div className="hero-actions">
@@ -231,7 +231,7 @@ export default function HomePage() {
       {/* FINAL CTA */}
       <section className="final-cta">
         <h2>¿Listo para simplificar<br />tu seguro médico?</h2>
-        <p>Únete a miles de familias hispanas que encontraron cobertura accesible.</p>
+        <p>Compara tus opciones de cobertura ACA en español, sin compromiso.</p>
         <Link href="/cotizar" className="btn-primary">Cotiza Gratis Ahora →</Link>
         <div className="trust">
           <span>🔒 Datos encriptados</span>

@@ -56,7 +56,7 @@ export default function HomePage() {
         <div className="hero-grid" />
         <div className="hero-inner">
           <div>
-            <div className="hero-badge"><span className="pulse" /> OEP 2026 — Primas subieron 26%</div>
+            <div className="hero-badge"><span className="pulse" /> OEP 2027 — Nov 1 a Dic 15</div>
             <h1>Seguro médico<br /><span className="accent">sin complicaciones</span></h1>
             <p className="hero-sub">Compara planes ACA del Marketplace con subsidios estimados en 2 minutos. Bilingüe. Gratis. Sin crear cuenta en HealthCare.gov.</p>
             <div className="hero-actions">
@@ -114,7 +114,7 @@ export default function HomePage() {
 
       {/* URGENCY BAR */}
       <div className="urgency">
-        ⚠️ Las primas ACA subieron <span>26%</span> para 2026 — Los subsidios mejorados EXPIRARON — Millones pagarán más sin orientación
+        ⚠️ Los subsidios mejorados EXPIRARON — lo que las familias pagan de su bolsillo subió ~<span>58%</span> en 2026 — millones necesitan orientación
       </div>
 
       {/* SOCIAL PROOF */}
@@ -134,8 +134,8 @@ export default function HomePage() {
           <h2 className="section-title reveal">El sistema de salud en EE.UU.<br />es confuso por diseño</h2>
           <p className="section-sub reveal">Especialmente si tu idioma principal es español.</p>
           <div className="problem-grid">
-            <div className="problem-card reveal"><div className="icon">📊</div><h3>Primas por las nubes</h3><p>Las primas ACA subieron un promedio de 26% para 2026 — el mayor aumento desde 2018.</p><div className="stat">+26%</div></div>
-            <div className="problem-card reveal"><div className="icon">💸</div><h3>Subsidios eliminados</h3><p>Los subsidios mejorados del ARPA/IRA expiraron. Millones de familias pagarán el doble o más.</p><div className="stat">2x</div></div>
+            <div className="problem-card reveal"><div className="icon">📊</div><h3>Las aseguradoras cobran más</h3><p>Las aseguradoras subieron sus primas ~26% en 2026, pero lo que las familias pagan de su bolsillo subió aún más al expirar los subsidios.</p><div className="stat">+26%</div></div>
+            <div className="problem-card reveal"><div className="icon">💸</div><h3>Subsidios eliminados</h3><p>Los subsidios mejorados del ARPA/IRA expiraron. El pago neto promedio subió ~58%, y hasta ~114% para quien mantiene su mismo plan.</p><div className="stat">+58%</div></div>
             <div className="problem-card reveal"><div className="icon">🌐</div><h3>Barrera del idioma</h3><p>HealthCare.gov tiene traducción parcial. Los formularios, copays, y deducibles son confusos incluso en inglés.</p><div className="stat">23M+</div></div>
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function HomePage() {
       {/* FINAL CTA */}
       <section className="final-cta">
         <h2>¿Listo para simplificar<br />tu seguro médico?</h2>
-        <p>Únete a miles de familias hispanas que encontraron cobertura accesible.</p>
+        <p>Compara tus opciones de cobertura ACA en español, sin compromiso.</p>
         <Link href="/cotizar" className="btn-primary">Cotiza Gratis Ahora →</Link>
         <div className="trust">
           <span>🔒 Datos encriptados</span>

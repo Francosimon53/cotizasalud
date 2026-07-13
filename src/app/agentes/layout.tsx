@@ -4,6 +4,9 @@ import type { ReactNode } from "react";
 // Subroutes (dashboard, registro, share, …) inherit this unless they export
 // their own metadata, which would override it — the correct precedence.
 export const metadata = {
+  alternates: {
+    canonical: "/agentes",
+  },
   title: "EnrollSalud para Agentes | Cotizador ACA con tu marca + CRM",
   description: "Cotizador ACA bilingüe con planes reales del Marketplace, CRM de leads y consentimiento CMS con firma digital. La plataforma del agente de salud hispano.",
   openGraph: {

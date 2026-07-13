@@ -11,7 +11,7 @@ EnrollSalud no vende seguros ni inscribe directamente: es la herramienta del age
 
 ## Contexto del mercado (2026)
 
-- Los subsidios mejorados (enhanced PTC) expiraron el 1 de enero de 2026; las primas subieron en promedio ~114% para quienes los recibían (fuente: KFF/CMS).
+- Los subsidios mejorados (enhanced PTC) expiraron el 1 de enero de 2026. Las aseguradoras subieron sus primas ~26% en promedio (prima bruta), pero lo que los inscritos subsidiados pagan de su bolsillo subió ~58% en 2026 en promedio, y hasta ~114% para quien mantuvo su mismo plan (fuente: KFF).
 - El período de inscripción abierta (OEP) federal para 2027 va del 1 de noviembre al 15 de diciembre de 2026.
 - Desde el 1 de enero de 2027 cambian las reglas de elegibilidad de subsidio por estatus migratorio; EnrollSalud marca cada lead según si mantiene o pierde elegibilidad.
 

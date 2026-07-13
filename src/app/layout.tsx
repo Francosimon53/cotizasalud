@@ -3,6 +3,10 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
+  metadataBase: new URL("https://enrollsalud.com"),
+  alternates: {
+    canonical: "/",
+  },
   title: "EnrollSalud | Cotiza tu seguro médico ACA en español",
   description: "Cotiza tu seguro médico ACA en español y calcula tu subsidio en minutos — los mismos planes de Healthcare.gov, con un agente que te ayuda en tu idioma.",
   openGraph: {

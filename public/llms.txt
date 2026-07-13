@@ -1,0 +1,23 @@
+# EnrollSalud
+
+> Plataforma SaaS para agentes de seguros de salud ACA hispanos en Estados Unidos: cotizador bilingüe (español/inglés) con los mismos planes de Healthcare.gov, CRM de leads y consentimiento CMS con firma digital. EnrollSalud captura leads antes del enrollment y ayuda a retener clientes después; el agente inscribe en HealthSherpa u otra herramienta de enrollment.
+
+EnrollSalud no vende seguros ni inscribe directamente: es la herramienta del agente licenciado. Los datos de planes y subsidios provienen de la API oficial del Marketplace de CMS.
+
+## Páginas principales
+
+- [Cotizador ACA](https://enrollsalud.com/cotizar): cotización bilingüe con subsidio estimado (APTC), los mismos planes de Healthcare.gov.
+- [EnrollSalud para agentes](https://enrollsalud.com/agentes): funciones, precios y triage de elegibilidad 2027.
+
+## Contexto del mercado (2026)
+
+- Los subsidios mejorados (enhanced PTC) expiraron el 1 de enero de 2026; las primas subieron en promedio ~114% para quienes los recibían (fuente: KFF/CMS).
+- El período de inscripción abierta (OEP) federal para 2027 va del 1 de noviembre al 15 de diciembre de 2026.
+- Desde el 1 de enero de 2027 cambian las reglas de elegibilidad de subsidio por estatus migratorio; EnrollSalud marca cada lead según si mantiene o pierde elegibilidad.
+
+## Legal
+
+- [Términos](https://enrollsalud.com/terms)
+- [Privacidad](https://enrollsalud.com/privacy)
+- [Compliance](https://enrollsalud.com/compliance)
+- [AI Disclaimer](https://enrollsalud.com/ai-disclaimer)

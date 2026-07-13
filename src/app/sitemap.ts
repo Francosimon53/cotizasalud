@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { articles } from "./recursos/articles";
 
 const BASE_URL = "https://enrollsalud.com";
 
@@ -25,6 +26,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.9,
     },
+    {
+      url: `${BASE_URL}/recursos`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    // Un artículo nuevo en articles.ts entra al sitemap automáticamente.
+    ...articles.map((a) => ({
+      url: `${BASE_URL}/recursos/${a.slug}`,
+      lastModified: new Date(a.publishedISO),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     {
       url: `${BASE_URL}/terms`,
       lastModified,

@@ -1030,21 +1030,22 @@ export default function AgentesPage() {
 
         <div className="ag-hero-badge ag-reveal">
           <span className="ag-dot" />
-          Potenciado por Inteligencia Artificial
+          OEP 2027: solo 45 días — 1 nov al 15 dic
         </div>
 
         <h1 className="ag-reveal">
-          Cotiza, explica y cierra<br /><em>en minutos</em>
+          Deja de perder clientes<br /><em>por cotizar tarde</em>
         </h1>
 
         <p className="ag-hero-sub ag-reveal">
-          La primera plataforma de cotización ACA con IA que le explica cada plan
-          a tu cliente como si fueras tú — en español e inglés.
+          Mientras armas la cotización a mano, otro agente ya le contestó a tu cliente.
+          Con tu link de EnrollSalud, tu cliente ve planes reales del Marketplace en
+          2 minutos — y el contacto cae en tu pipeline con aviso al instante.
         </p>
 
         <div className="ag-hero-actions ag-reveal">
           <Link href="/cotizar" className="ag-btn-primary">
-            Probar EnrollSalud
+            Empieza a cotizar gratis
             <ArrowIcon />
           </Link>
           <a href="#ai-advisor" className="ag-btn-secondary">
@@ -1061,26 +1062,26 @@ export default function AgentesPage() {
           <div className="ag-stat-label">Cotización completa</div>
         </div>
         <div className="ag-stat">
-          <div className="ag-stat-value">5.6x</div>
-          <div className="ag-stat-label">ROI para agentes</div>
+          <div className="ag-stat-value">45</div>
+          <div className="ag-stat-label">Días de OEP 2027</div>
         </div>
         <div className="ag-stat">
           <div className="ag-stat-value">100%</div>
           <div className="ag-stat-label">Bilingüe ES/EN</div>
         </div>
         <div className="ag-stat">
-          <div className="ag-stat-value">1 IA</div>
-          <div className="ag-stat-label">Plan + Finanzas + Ahorro en una explicación</div>
+          <div className="ag-stat-value">14 días</div>
+          <div className="ag-stat-label">De prueba gratis</div>
         </div>
       </div>
 
       {/* AI ADVISOR SECTION */}
       <section className="ag-ai-section" id="ai-advisor">
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div className="ag-section-label ag-reveal">Función estrella</div>
-          <h2 className="ag-reveal">Tu <em>asesor de salud</em> con inteligencia artificial</h2>
+          <div className="ag-section-label ag-reveal">AI Advisor</div>
+          <h2 className="ag-reveal">Deja de explicar el mismo plan <em>veinte veces al día</em></h2>
           <p className="ag-section-desc ag-reveal">
-            Un solo asesor de IA que le explica a tu cliente TODO: qué cubre el plan, cuánto cuesta en la vida real, qué cambió en 2026 vs 2025, y si hay estrategias para pagar menos — en español simple, sin jerga de seguros.
+            Tu cliente no compra lo que no entiende — y tú no tienes tiempo de dar una clase de seguros por cada cotización. El AI Advisor le explica cada plan como lo harías tú: qué cubre, cuánto cuesta en la vida real, qué cambió en 2026 y cómo pagar menos. En español simple, sin siglas.
           </p>
 
           <div className="ag-ai-grid">
@@ -1132,34 +1133,34 @@ export default function AgentesPage() {
 
       {/* BENTO FEATURES */}
       <section className="ag-bento-section" id="features">
-        <div className="ag-section-label ag-reveal">Todo lo que necesitas</div>
-        <h2 className="ag-reveal">Una plataforma, todo tu flujo de trabajo</h2>
+        <div className="ag-section-label ag-reveal">Tu flujo completo</div>
+        <h2 className="ag-reveal">Menos noches cotizando, menos clientes que se enfrían</h2>
 
         <div className="ag-bento-grid">
           <div className="ag-bento-card wide ag-reveal">
             <div className="ag-bento-icon green">📋</div>
-            <h3>Cotizador con Subsidio APTC</h3>
-            <p>Ingresa código postal, composición familiar e ingreso. EnrollSalud calcula el subsidio estimado y muestra planes reales del Marketplace ACA con precios after-subsidy en tiempo real.</p>
+            <h3>Cotiza en 2 minutos, no en una noche</h3>
+            <p>Tu cliente entra desde tu link, pone su código postal, su familia y su ingreso — y ve planes reales del Marketplace con el subsidio estimado ya aplicado. La cotización que antes te costaba una llamada de una hora ahora ocurre sola, incluso mientras duermes.</p>
           </div>
           <div className="ag-bento-card ag-reveal">
             <div className="ag-bento-icon cyan">✍️</div>
-            <h3>Consent CMS Digital</h3>
-            <p>Formulario de consentimiento CMS integrado con firma digital. Se activa después de seleccionar plan — todo guardado y compliance-ready.</p>
+            <h3>El consent CMS, sin perseguir a nadie</h3>
+            <p>¿Cuántas ventas se te han caído esperando una firma? Aquí el cliente firma digital justo después de elegir plan. Queda guardado con firma, IP y fecha — y puedes descargar el PDF cuando lo necesites.</p>
           </div>
           <div className="ag-bento-card ag-reveal">
             <div className="ag-bento-icon purple">🔗</div>
-            <h3>Links Personalizados</h3>
-            <p>Cada agente tiene su URL única. Comparte tu link y tus prospectos cotizan directamente — el contacto llega a tu pipeline automáticamente.</p>
+            <h3>Tu link trabaja cuando tú no puedes</h3>
+            <p>Los leads se enfrían en horas. Comparte tu URL única por WhatsApp, redes o código QR: cuando alguien cotiza, el contacto entra a tu pipeline y te llega una notificación al instante — respondes mientras aún está caliente.</p>
           </div>
           <div className="ag-bento-card ag-reveal">
             <div className="ag-bento-icon amber">📊</div>
-            <h3>Dashboard de Contactos</h3>
-            <p>Ve quién cotizó, qué plan eligió, y si firmó el consent. Pipeline visual para que no se te escape ningún prospecto.</p>
+            <h3>Jubila el Excel como CRM</h3>
+            <p>Nada de buscar en pestañas quién era el que faltaba por firmar. Ve quién cotizó, qué plan eligió y si firmó el consent, en un pipeline visual donde no se te escapa ningún prospecto.</p>
           </div>
           <div className="ag-bento-card wide ag-reveal">
             <div className="ag-bento-icon red">🧠</div>
-            <h3>Asesor IA Unificado</h3>
-            <p>Una sola inteligencia artificial que explica el plan, tu situación financiera, qué cambió en 2026, y te da una recomendación clara de qué hacer. En español simple, con tus números reales.</p>
+            <h3>Las explicaciones, delegadas</h3>
+            <p>El AI Advisor le explica a tu cliente el plan, su situación financiera, qué cambió en 2026 y qué le conviene hacer — con sus números reales, en español simple. Tú entras a la conversación cuando ya entendió, listo para cerrar.</p>
           </div>
         </div>
       </section>
@@ -1238,24 +1239,24 @@ export default function AgentesPage() {
 
       {/* ROI SECTION */}
       <section className="ag-roi-section" id="roi">
-        <div className="ag-section-label ag-reveal">El negocio tiene sentido</div>
-        <h2 className="ag-reveal">Números que hablan solos</h2>
+        <div className="ag-section-label ag-reveal">Haz cuentas</div>
+        <h2 className="ag-reveal">Lo que te cuesta seguir cotizando a mano</h2>
 
         <div className="ag-roi-cards">
           <div className="ag-roi-card ag-reveal">
             <div className="ag-roi-number">45</div>
             <h4>Días de OEP 2027</h4>
-            <p>El OEP 2027 se acorta a solo 45 días (Nov 1 – Dec 15). EnrollSalud te prepara para cerrar más en menos tiempo.</p>
+            <p>El OEP 2027 se acorta a solo 45 días (1 nov – 15 dic). Cada cotización que te toma una noche es un cliente que otro agente puede cerrar primero.</p>
           </div>
           <div className="ag-roi-card ag-reveal">
-            <div className="ag-roi-number">5.6x</div>
-            <h4>ROI comprobado</h4>
-            <p>Por cada dólar que inviertes, recuperas $5.60 en tiempo ahorrado y clientes adicionales cerrados.</p>
+            <div className="ag-roi-number">60/30/15</div>
+            <h4>Renovaciones que no se escapan</h4>
+            <p>¿Cuántas renovaciones se te fueron el año pasado sin darte cuenta? EnrollSalud te recuerda cada una 60, 30 y 15 días antes, automáticamente.</p>
           </div>
           <div className="ag-roi-card ag-reveal">
             <div className="ag-roi-number">$0</div>
             <h4>Para empezar</h4>
-            <p>Empieza gratis. Escala cuando quieras. Sin contratos, sin sorpresas.</p>
+            <p>14 días de prueba gratis con los límites del plan Pro. Sin permanencia, sin sorpresas.</p>
           </div>
         </div>
       </section>
@@ -1285,11 +1286,11 @@ export default function AgentesPage() {
 
       {/* CTA SECTION */}
       <section className="ag-cta-section">
-        <h2 className="ag-reveal">¿Listo para cotizar<br /><em>más rápido?</em></h2>
-        <p className="ag-cta-desc ag-reveal">Únete a los agentes que están cerrando más con menos esfuerzo. Empieza en 30 segundos.</p>
+        <h2 className="ag-reveal">¿Cuántos clientes perdiste<br /><em>por cotizar tarde?</em></h2>
+        <p className="ag-cta-desc ag-reveal">Que este OEP no te agarre cotizando a medianoche en Excel. Comparte tu link, deja que tus clientes coticen solos y dedica tu tiempo a cerrar.</p>
         <div className="ag-reveal">
           <Link href="/cotizar" className="ag-btn-primary" style={{ fontSize: 18, padding: "20px 48px" }}>
-            Empezar Gratis Ahora
+            Empieza a cotizar gratis
             <ArrowIcon />
           </Link>
         </div>

@@ -46,7 +46,7 @@ export default function HomePage() {
             <a href="#beneficios">Beneficios</a>
             <Link href="/agentes">Para Agentes</Link>
             <a href="#precios">Precios</a>
-            <Link href="/cotizar" className="es-nav-cta">Cotizar Ahora →</Link>
+            <Link href="/cotizar" className="es-nav-cta">Cotiza Gratis →</Link>
           </div>
         </div>
       </nav>
@@ -57,8 +57,8 @@ export default function HomePage() {
         <div className="hero-inner">
           <div>
             <div className="hero-badge"><span className="pulse" /> OEP 2027 — Nov 1 a Dic 15</div>
-            <h1>Seguro médico<br /><span className="accent">sin complicaciones</span></h1>
-            <p className="hero-sub">Compara planes ACA del Marketplace con subsidios estimados en 2 minutos. Bilingüe. Gratis. Sin crear cuenta en HealthCare.gov.</p>
+            <h1>¿Tu seguro subió y nadie<br /><span className="accent">te explica por qué?</span></h1>
+            <p className="hero-sub">Los subsidios mejorados expiraron y las familias están pagando más que nunca. Compara planes reales del Marketplace con tu subsidio estimado en 2 minutos — gratis, en español y sin crear cuenta en HealthCare.gov.</p>
             <div className="hero-actions">
               <Link href="/cotizar" className="btn-primary">Cotiza Gratis en 2 Min →</Link>
               <Link href="/agentes" className="btn-secondary">🏢 Soy Agente</Link>
@@ -183,13 +183,13 @@ export default function HomePage() {
               <span className="tag">Para Familias</span>
               <h3>Busca tu seguro médico sin estrés</h3>
               <ul><li>Compara planes reales del Marketplace ACA</li><li>Ve tu subsidio estimado antes de inscribirte</li><li>Todo en español — sin traducción robótica</li><li>Un agente licenciado te ayuda gratis</li><li>Sin SSN, sin documentos, sin compromisos</li></ul>
-              <Link href="/cotizar" className="cta">Cotizar Ahora →</Link>
+              <Link href="/cotizar" className="cta">Ver mis planes y mi subsidio →</Link>
             </div>
             <div className="audience-card agent reveal">
               <span className="tag">Para Agentes & Brokers</span>
-              <h3>Tu cotizador con tu marca en minutos</h3>
-              <ul><li>Etiqueta privada: tu logo, tu nombre, tus colores</li><li>Smart links para WhatsApp, SMS, email, redes</li><li>Captura contactos automáticamente con notificaciones</li><li>Dashboard con analytics de conversión</li><li>Tú conservas 100% de tus comisiones</li></ul>
-              <Link href="/agentes" className="cta">Ver Plataforma →</Link>
+              <h3>¿Sigues cotizando a mano hasta medianoche?</h3>
+              <ul><li>Tus clientes cotizan solos desde tu link — WhatsApp, redes o código QR</li><li>Cada cotización cae en tu pipeline con notificación al instante</li><li>Tu marca: tu logo, tu nombre, tus colores</li><li>El AI Advisor le explica cada plan a tu cliente por ti</li><li>Tú conservas 100% de tus comisiones</li></ul>
+              <Link href="/agentes" className="cta">Consigue tu link de cotización →</Link>
             </div>
           </div>
         </div>

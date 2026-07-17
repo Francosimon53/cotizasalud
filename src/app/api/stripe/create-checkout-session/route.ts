@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { data: agent, error: agentError } = await db
       .from("agents")
-      .select("id, email, stripe_customer_id")
+      .select("id, email, stripe_customer_id, stripe_subscription_id")
       .eq("auth_user_id", user.id)
       .single();
 
@@ -67,20 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     let customerId: string | null = agent.stripe_customer_id;
-    // The 14-day trial applies ONLY to the agent's first-ever paid subscription.
-    // Stripe is the source of truth (not agents.stripe_subscription_id, which
-    // depends on webhook delivery): any subscription on the customer — active,
-    // trialing, canceled or past — burns the trial forever, so plan changes and
-    // resubscriptions can't be cycled to live in perpetual trial.
-    let eligibleForTrial = true;
-    if (customerId) {
-      const priorSubscriptions = await stripe.subscriptions.list({
-        customer: customerId,
-        status: "all",
-        limit: 1,
-      });
-      eligibleForTrial = priorSubscriptions.data.length === 0;
-    } else {
+    if (!customerId) {
       const customer = await stripe.customers.create({
         email: agent.email ?? user.email ?? undefined,
         metadata: { agent_id: agent.id },
@@ -98,6 +85,13 @@ export async function POST(request: NextRequest) {
     }
 
     const origin = request.headers.get("origin") ?? new URL(request.url).origin;
+
+    // 14-day trial only on the agent's first-ever paid subscription. The
+    // webhook writes stripe_subscription_id on the first subscription and
+    // never clears it (markSubscriptionCancelled only flips status), so this
+    // also blocks cancel-and-resubscribe from earning a fresh trial — without
+    // an extra Stripe API call per checkout.
+    const eligibleForTrial = !agent.stripe_subscription_id;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

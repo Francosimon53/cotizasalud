@@ -159,7 +159,7 @@ export default async function DashboardPage({
         />
 
         {/* Agent Profile */}
-        <div style={{
+        <div className="ph-no-capture" style={{
           background: "#1E293B", borderRadius: 16, padding: 24,
           border: "1px solid #334155", marginBottom: 20,
           display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16,

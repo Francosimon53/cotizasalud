@@ -31,3 +31,7 @@ Tras corregir una variable, `vercel env pull` siguió devolviendo el valor viejo
 ## PostHog proxy `/srx/`: el 404 de la raíz es del UPSTREAM, no de la app
 
 `curl https://enrollsalud.com/srx/` devuelve 404 con el erizo ASCII de PostHog — la rewrite funciona y es PostHog quien 404ea su raíz. Smoke checks correctos: `/srx/static/array.js` → 200 JS y `/srx/decide?v=3` → 200 JSON. Un 404 pelado en `/srx/` NO indica rewrite rota; un 404 con la página de Next sí.
+
+## El clasificador de auto-mode bloquea abrir/curl-ear URLs de Stripe Checkout live
+
+Navegar con Chrome o hacer `curl` a `checkout.stripe.com/c/pay/cs_live_...` es denegado por el clasificador de permisos (página de pago live). La smoke visual del checkout debe hacerla el usuario con el link; la prueba automatizable es a nivel API: `checkout.sessions.create` valida `trial_period_days` en la creación — si Stripe acepta la sesión, la UI la renderiza.

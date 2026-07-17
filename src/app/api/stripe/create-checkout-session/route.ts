@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
 import { stripe } from "@/lib/stripe-client";
-import { getPriceId, PAID_PLANS, BILLING_INTERVALS } from "@/lib/subscription-plans";
+import { getPriceId, PAID_PLANS, BILLING_INTERVALS, TRIAL_DAYS } from "@/lib/subscription-plans";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { data: agent, error: agentError } = await db
       .from("agents")
-      .select("id, email, stripe_customer_id")
+      .select("id, email, stripe_customer_id, stripe_subscription_id")
       .eq("auth_user_id", user.id)
       .single();
 
@@ -86,6 +86,13 @@ export async function POST(request: NextRequest) {
 
     const origin = request.headers.get("origin") ?? new URL(request.url).origin;
 
+    // 14-day trial only on the agent's first-ever paid subscription. The
+    // webhook writes stripe_subscription_id on the first subscription and
+    // never clears it (markSubscriptionCancelled only flips status), so this
+    // also blocks cancel-and-resubscribe from earning a fresh trial — without
+    // an extra Stripe API call per checkout.
+    const eligibleForTrial = !agent.stripe_subscription_id;
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
@@ -94,6 +101,7 @@ export async function POST(request: NextRequest) {
       cancel_url: `${origin}/agentes/dashboard?checkout=cancelled`,
       metadata: { agent_id: agent.id, plan, interval },
       subscription_data: {
+        ...(eligibleForTrial ? { trial_period_days: TRIAL_DAYS } : {}),
         metadata: { agent_id: agent.id, plan, interval },
       },
     });

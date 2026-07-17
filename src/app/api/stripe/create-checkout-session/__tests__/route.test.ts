@@ -14,7 +14,6 @@ vi.mock("@/lib/supabase", () => ({
 vi.mock("@/lib/stripe-client", () => ({
   stripe: {
     customers: { create: vi.fn() },
-    subscriptions: { list: vi.fn() },
     checkout: { sessions: { create: vi.fn() } },
   },
 }));
@@ -25,7 +24,14 @@ import { createServiceClient } from "@/lib/supabase";
 import { stripe } from "@/lib/stripe-client";
 import { TRIAL_DAYS } from "@/lib/subscription-plans";
 
-const AGENT = { id: "agent-1", email: "agente@example.com", stripe_customer_id: "cus_existing" };
+// Never subscribed: has a Stripe customer (e.g. from an abandoned checkout)
+// but no subscription was ever created for it.
+const FIRST_TIMER = {
+  id: "agent-1",
+  email: "agente@example.com",
+  stripe_customer_id: "cus_existing",
+  stripe_subscription_id: null,
+};
 
 const PRICE_ENV = {
   STRIPE_PRICE_BASIC: "price_basic_month_test",
@@ -70,12 +76,6 @@ function installDb(agent: Record<string, unknown> | null) {
   return db;
 }
 
-function mockSubscriptions(subs: Array<{ id: string; status: string }>) {
-  (stripe.subscriptions.list as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-    data: subs,
-  });
-}
-
 function lastSessionPayload(): Record<string, any> {
   const mock = stripe.checkout.sessions.create as unknown as ReturnType<typeof vi.fn>;
   expect(mock).toHaveBeenCalledTimes(1);
@@ -100,23 +100,17 @@ afterEach(() => {
 });
 
 describe("POST /api/stripe/create-checkout-session — trial de primera suscripción", () => {
-  it("includes trial_period_days on the agent's first checkout (customer with no subscriptions)", async () => {
-    installDb(AGENT);
-    mockSubscriptions([]);
+  it("includes trial_period_days on the agent's first checkout (no prior subscription)", async () => {
+    installDb(FIRST_TIMER);
 
     const res = await POST(makeRequest({ plan: "basic", interval: "month" }));
 
     expect(res.status).toBe(200);
-    expect(stripe.subscriptions.list).toHaveBeenCalledWith({
-      customer: "cus_existing",
-      status: "all",
-      limit: 1,
-    });
     expect(lastSessionPayload().subscription_data.trial_period_days).toBe(TRIAL_DAYS);
   });
 
-  it("includes trial_period_days for a brand-new customer without calling subscriptions.list", async () => {
-    installDb({ ...AGENT, stripe_customer_id: null });
+  it("includes trial_period_days for a brand-new customer (no stripe_customer_id yet)", async () => {
+    installDb({ ...FIRST_TIMER, stripe_customer_id: null });
     (stripe.customers.create as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "cus_new",
     });
@@ -124,20 +118,16 @@ describe("POST /api/stripe/create-checkout-session — trial de primera suscripc
     const res = await POST(makeRequest({ plan: "pro", interval: "year" }));
 
     expect(res.status).toBe(200);
-    expect(stripe.subscriptions.list).not.toHaveBeenCalled();
     const payload = lastSessionPayload();
     expect(payload.customer).toBe("cus_new");
     expect(payload.subscription_data.trial_period_days).toBe(TRIAL_DAYS);
   });
 
-  it.each([
-    ["active", "active"],
-    ["canceled", "canceled"],
-    ["trialing", "trialing"],
-    ["past_due", "past_due"],
-  ])("omits the trial when the customer already had a subscription (status %s)", async (_label, status) => {
-    installDb(AGENT);
-    mockSubscriptions([{ id: "sub_prior", status }]);
+  it("omits the trial when the agent already had a subscription — even a canceled one", async () => {
+    // stripe_subscription_id is written by the webhook on the first
+    // subscription and never cleared on cancellation, so it also covers
+    // cancel-and-resubscribe: no fresh 14 days by cycling plans.
+    installDb({ ...FIRST_TIMER, stripe_subscription_id: "sub_prior" });
 
     const res = await POST(makeRequest({ plan: "basic", interval: "month" }));
 
@@ -146,7 +136,7 @@ describe("POST /api/stripe/create-checkout-session — trial de primera suscripc
     expect(payload.subscription_data).not.toHaveProperty("trial_period_days");
     // Existing behavior stays intact: metadata still flows to the subscription.
     expect(payload.subscription_data.metadata).toEqual({
-      agent_id: AGENT.id,
+      agent_id: FIRST_TIMER.id,
       plan: "basic",
       interval: "month",
     });

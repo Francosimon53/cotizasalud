@@ -8,6 +8,7 @@ import {
   type BillingInterval,
   type PlanTier,
 } from "@/lib/subscription-plans";
+import { capturePlanCtaClick } from "@/lib/analytics";
 
 const FEATURES: Record<PlanTier, string[]> = {
   basic: [
@@ -220,6 +221,7 @@ export default function PricingSection() {
 
                 <Link
                   href={`/agentes/registro?plan=${id}&interval=${interval}`}
+                  onClick={() => capturePlanCtaClick(id, interval)}
                   style={{
                     display: "block",
                     textAlign: "center",

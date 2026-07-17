@@ -3,8 +3,21 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Required so the PostHog proxy paths below aren't broken by trailing-slash redirects.
+  skipTrailingSlashRedirect: true,
   async rewrites() {
-    return [];
+    return [
+      // Reverse proxy to PostHog Cloud US so ad blockers don't drop events.
+      // The /srx path is deliberately non-obvious.
+      {
+        source: "/srx/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/srx/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+    ];
   },
   async headers() {
     return [

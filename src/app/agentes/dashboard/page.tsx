@@ -8,12 +8,13 @@ import DashboardClient from "./DashboardClient";
 import ShareCard from "./ShareCard";
 import DistributionKitCard from "./DistributionKitCard";
 import BillingCard from "./BillingCard";
+import CheckoutSuccessTracker from "./CheckoutSuccessTracker";
 import "../agentes.css";
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ checkout?: string }>;
+  searchParams: Promise<{ checkout?: string; session_id?: string }>;
 }) {
   const sp = await searchParams;
   const checkoutResult = sp.checkout === "success" ? "success" : sp.checkout === "cancelled" ? "cancelled" : null;
@@ -109,6 +110,7 @@ export default async function DashboardPage({
       <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} isAdmin={["simon-dev", "delbert"].includes(agent.slug)} />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 60px" }}>
+        {checkoutResult === "success" && <CheckoutSuccessTracker sessionId={sp.session_id} />}
         {checkoutResult === "success" && (
           <div style={{
             background: "rgba(16, 185, 129, 0.12)",

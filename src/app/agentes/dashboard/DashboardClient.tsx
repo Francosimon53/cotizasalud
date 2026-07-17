@@ -10,7 +10,8 @@ export default function DashboardClient({ leads, agentSlug }: { leads: any[]; ag
   const [showAddClient, setShowAddClient] = useState(false);
 
   return (
-    <>
+    // ph-no-capture: session replay must never record lead data.
+    <div className="ph-no-capture">
       {/* Add Client button */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <button
@@ -36,6 +37,6 @@ export default function DashboardClient({ leads, agentSlug }: { leads: any[]; ag
       )}
 
       <LeadsTable leads={leads} onRefresh={() => router.refresh()} />
-    </>
+    </div>
   );
 }

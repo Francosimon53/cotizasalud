@@ -934,7 +934,8 @@ export default function QuoterPage() {
   const brandName = agentBrand?.brand_name || agentBrand?.name || t.title;
 
   return (
-    <div style={S.app}>
+    // ph-no-capture: session replay must never record consumer data in the quoter.
+    <div className="ph-no-capture" style={S.app}>
       {/* Header */}
       <div style={S.hdr}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserAuthClient } from "@/lib/supabase-auth";
+import { identifyAgent } from "@/lib/analytics";
 import "../agentes.css";
 
 export default function AgentLoginPage() {
@@ -20,7 +21,7 @@ export default function AgentLoginPage() {
     setLoading(true);
 
     const supabase = createBrowserAuthClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -30,6 +31,8 @@ export default function AgentLoginPage() {
       setLoading(false);
       return;
     }
+
+    if (authData.user) identifyAgent(authData.user.id);
 
     router.push("/agentes/dashboard");
   };

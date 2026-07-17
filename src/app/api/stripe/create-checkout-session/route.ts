@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
 import { stripe } from "@/lib/stripe-client";
-import { getPriceId, PAID_PLANS, BILLING_INTERVALS } from "@/lib/subscription-plans";
+import { getPriceId, PAID_PLANS, BILLING_INTERVALS, TRIAL_DAYS } from "@/lib/subscription-plans";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -67,7 +67,20 @@ export async function POST(request: NextRequest) {
     }
 
     let customerId: string | null = agent.stripe_customer_id;
-    if (!customerId) {
+    // The 14-day trial applies ONLY to the agent's first-ever paid subscription.
+    // Stripe is the source of truth (not agents.stripe_subscription_id, which
+    // depends on webhook delivery): any subscription on the customer — active,
+    // trialing, canceled or past — burns the trial forever, so plan changes and
+    // resubscriptions can't be cycled to live in perpetual trial.
+    let eligibleForTrial = true;
+    if (customerId) {
+      const priorSubscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "all",
+        limit: 1,
+      });
+      eligibleForTrial = priorSubscriptions.data.length === 0;
+    } else {
       const customer = await stripe.customers.create({
         email: agent.email ?? user.email ?? undefined,
         metadata: { agent_id: agent.id },
@@ -94,6 +107,7 @@ export async function POST(request: NextRequest) {
       cancel_url: `${origin}/agentes/dashboard?checkout=cancelled`,
       metadata: { agent_id: agent.id, plan, interval },
       subscription_data: {
+        ...(eligibleForTrial ? { trial_period_days: TRIAL_DAYS } : {}),
         metadata: { agent_id: agent.id, plan, interval },
       },
     });

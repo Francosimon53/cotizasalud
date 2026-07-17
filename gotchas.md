@@ -19,3 +19,15 @@ Loops that need indirect variable lookup (`for VAR in A B; do echo "${!VAR}"; do
 ## Next.js `current_period_*` lives on the SubscriptionItem in Stripe API ≥ dahlia
 
 In Stripe API version `2026-04-22.dahlia` (the default in `stripe ^22`), `current_period_start` and `current_period_end` are no longer top-level on `Stripe.Subscription` — they're on `subscription.items.data[0]`. Older snippets that read `subscription.current_period_end` directly will TS-error. Read from the item.
+
+## Vercel CLI: `env add` por stdin puede guardar valor VACÍO sin error
+
+Con el plugin en modo no-interactivo, `pbpaste | vercel env add NAME production` responde "Added Environment Variable" pero puede ignorar el stdin y guardar `""`. Verificar SIEMPRE después de cargar: `vercel env pull` + grep del formato esperado (a ciegas si es secreto). La vía confiable es `--value "$(pbpaste)"` expandido en el shell del usuario.
+
+## Vercel: `env pull --environment=X` puede servir un valor cacheado rancio
+
+Tras corregir una variable, `vercel env pull` siguió devolviendo el valor viejo (vacío) para Production durante varios minutos, mientras Development (nunca consultado en el estado viejo) bajaba bien. La verdad de campo para `NEXT_PUBLIC_*` es el bundle desplegado: `curl` de los chunks `/_next/static/chunks/*.js` y `grep -c` del prefijo esperado.
+
+## PostHog proxy `/srx/`: el 404 de la raíz es del UPSTREAM, no de la app
+
+`curl https://enrollsalud.com/srx/` devuelve 404 con el erizo ASCII de PostHog — la rewrite funciona y es PostHog quien 404ea su raíz. Smoke checks correctos: `/srx/static/array.js` → 200 JS y `/srx/decide?v=3` → 200 JSON. Un 404 pelado en `/srx/` NO indica rewrite rota; un 404 con la página de Next sí.

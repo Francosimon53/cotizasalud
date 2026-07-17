@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserAuthClient } from "@/lib/supabase-auth";
+import { captureRegistroCompletado, identifyAgent } from "@/lib/analytics";
 import "../agentes.css";
 
 export default function AgentRegistroPage() {
@@ -30,7 +31,7 @@ export default function AgentRegistroPage() {
     const supabase = createBrowserAuthClient();
 
     // Sign up
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: "https://www.enrollsalud.com/agentes/dashboard" },
@@ -48,6 +49,9 @@ export default function AgentRegistroPage() {
 
     // Create agent record via API
     await fetch("/api/auth/register", { method: "POST" });
+
+    if (signUpData.user) identifyAgent(signUpData.user.id);
+    captureRegistroCompletado();
 
     // Redirect to setup wizard
     router.push("/agentes/setup");

@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import type { BillingInterval, PlanTier } from "@/lib/subscription-plans";
+import { captureCheckoutIniciado, capturePlanCtaClick } from "@/lib/analytics";
 
 interface CheckoutButtonProps {
   plan: PlanTier;
@@ -17,6 +18,7 @@ export function CheckoutButton({ plan, interval, label, style, className }: Chec
   async function handleClick() {
     if (loading) return;
     setLoading(true);
+    capturePlanCtaClick(plan, interval);
     try {
       const res = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
@@ -27,6 +29,7 @@ export function CheckoutButton({ plan, interval, label, style, className }: Chec
       if (!res.ok || !data.url) {
         throw new Error(data.error || `Error iniciando el pago (HTTP ${res.status})`);
       }
+      captureCheckoutIniciado(plan, interval);
       window.location.href = data.url;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error iniciando el pago";

@@ -304,7 +304,7 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
   });
 
   return (
-    <div style={{ fontFamily: "'Satoshi', -apple-system, sans-serif", minHeight: "100vh", background: "#0F172A", color: "#E2E8F0" }}>
+    <div className="ph-no-capture" style={{ fontFamily: "'Satoshi', -apple-system, sans-serif", minHeight: "100vh", background: "#0F172A", color: "#E2E8F0" }}>
       {modal && (
         <StatusModal leadId={lead.id} leadName={lead.contact_name || "Contacto"} currentStatus={lead.status} newStatus={modal.newStatus} onClose={() => setModal(null)} onSaved={handleStatusSaved} />
       )}

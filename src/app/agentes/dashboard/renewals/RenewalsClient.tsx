@@ -26,7 +26,8 @@ export default function RenewalsClient({ leads }: { leads: Lead[] }) {
   const router = useRouter();
 
   return (
-    <>
+    // ph-no-capture: session replay must never record lead data.
+    <div className="ph-no-capture">
       <button onClick={() => router.push("/agentes/dashboard")} style={{ padding: "6px 14px", borderRadius: 8, marginBottom: 20, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#8b8fa3", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Dashboard</button>
 
       <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>Renovaciones</h1>
@@ -75,6 +76,6 @@ export default function RenewalsClient({ leads }: { leads: Lead[] }) {
           })
         )}
       </div>
-    </>
+    </div>
   );
 }

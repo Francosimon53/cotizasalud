@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       mode: "subscription",
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/agentes/dashboard?checkout=success`,
+      success_url: `${origin}/agentes/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/agentes/dashboard?checkout=cancelled`,
       metadata: { agent_id: agent.id, plan, interval },
       subscription_data: {

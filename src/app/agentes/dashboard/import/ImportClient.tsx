@@ -87,7 +87,8 @@ export default function ImportClient({ agentSlug }: { agentSlug: string }) {
   };
 
   return (
-    <>
+    // ph-no-capture: session replay must never record lead data.
+    <div className="ph-no-capture">
       <button onClick={() => router.push("/agentes/dashboard")} style={{ padding: "6px 14px", borderRadius: 8, marginBottom: 20, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#8b8fa3", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Dashboard</button>
       <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>Importar Clientes</h1>
       <p style={{ fontSize: 14, color: "#5a5e72", marginBottom: 24 }}>Sube un CSV exportado de HealthSherpa para importar tus clientes.</p>
@@ -148,6 +149,6 @@ export default function ImportClient({ agentSlug }: { agentSlug: string }) {
           )}
         </>
       )}
-    </>
+    </div>
   );
 }

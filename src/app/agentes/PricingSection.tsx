@@ -96,8 +96,8 @@ export default function PricingSection() {
             lineHeight: 1.5,
           }}
         >
-          Empezás con <strong style={{ color: TEXT }}>14 días de prueba gratis</strong> con los límites del plan
-          Pro (200 contactos). Después elegís el plan que mejor se ajuste a tu volumen. Sin permanencia.
+          Empiezas con <strong style={{ color: TEXT }}>14 días de prueba gratis</strong> con los límites del plan
+          Pro (200 contactos). Después eliges el plan que mejor se ajuste a tu volumen. Sin permanencia.
         </p>
 
         <BillingToggle value={interval} onChange={setInterval} />
@@ -187,7 +187,7 @@ export default function PricingSection() {
                     marginBottom: 18,
                   }}
                 >
-                  {interval === "year" ? `Ahorrás $${getYearlySavings(id)}/año` : " "}
+                  {interval === "year" ? `Ahorras $${getYearlySavings(id)}/año` : " "}
                 </div>
 
                 <ul
@@ -237,7 +237,7 @@ export default function PricingSection() {
                     transition: "transform 150ms",
                   }}
                 >
-                  Empezar prueba gratis →
+                  Empieza tu prueba gratis →
                 </Link>
               </div>
             );
@@ -252,7 +252,7 @@ export default function PricingSection() {
             marginTop: 32,
           }}
         >
-          Sin permanencia. Cancelá cuando quieras desde el portal de pagos.
+          Sin permanencia. Cancela cuando quieras desde el portal de pagos.
         </p>
       </div>
     </section>
@@ -306,7 +306,7 @@ function BillingToggle({ value, onChange }: BillingToggleProps) {
           onClick={() => onChange("year")}
           style={{ ...baseBtn, ...(value === "year" ? active : {}) }}
         >
-          Anual <span style={{ opacity: 0.85, fontWeight: 600 }}>(ahorrás 2 meses)</span>
+          Anual <span style={{ opacity: 0.85, fontWeight: 600 }}>(ahorras 2 meses)</span>
         </button>
       </div>
     </div>

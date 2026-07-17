@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
 import { stripe } from "@/lib/stripe-client";
-import { getPriceId, PAID_PLANS, BILLING_INTERVALS } from "@/lib/subscription-plans";
+import { getPriceId, PAID_PLANS, BILLING_INTERVALS, TRIAL_DAYS } from "@/lib/subscription-plans";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { data: agent, error: agentError } = await db
       .from("agents")
-      .select("id, email, stripe_customer_id")
+      .select("id, email, stripe_customer_id, stripe_subscription_id")
       .eq("auth_user_id", user.id)
       .single();
 
@@ -86,6 +86,11 @@ export async function POST(request: NextRequest) {
 
     const origin = request.headers.get("origin") ?? new URL(request.url).origin;
 
+    // 14-day free trial on the first paid subscription only: an agent who
+    // already had a Stripe subscription (upgrade, or cancel-and-resubscribe)
+    // doesn't get a fresh trial each time.
+    const isFirstSubscription = !agent.stripe_subscription_id;
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
@@ -95,6 +100,7 @@ export async function POST(request: NextRequest) {
       metadata: { agent_id: agent.id, plan, interval },
       subscription_data: {
         metadata: { agent_id: agent.id, plan, interval },
+        ...(isFirstSubscription ? { trial_period_days: TRIAL_DAYS } : {}),
       },
     });
 

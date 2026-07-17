@@ -36,6 +36,12 @@ export function captureSuscripcionActivada() {
   posthog.capture("suscripcion_activada");
 }
 
+// cantidad is a row count only — never lead PII.
+export function captureLeadsExportados(cantidad: number) {
+  if (!enabled()) return;
+  posthog.capture("leads_exportados", { cantidad });
+}
+
 // distinct_id is the Supabase auth user id — never an email or a name.
 export function identifyAgent(supabaseUserId: string) {
   if (!enabled()) return;

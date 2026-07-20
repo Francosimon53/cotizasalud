@@ -42,6 +42,26 @@ export function captureLeadsExportados(cantidad: number) {
   posthog.capture("leads_exportados", { cantidad });
 }
 
+// Counts only — never client names, contact info, income, age or plan data.
+export function captureCarteraImportada(props: {
+  filas_totales: number;
+  filas_validas: number;
+  filas_con_error: number;
+}) {
+  if (!enabled()) return;
+  posthog.capture("cartera_importada", props);
+}
+
+// Counts only — never client names, contact info, income, age or plan data.
+export function captureCarteraVista(props: {
+  clientes_total: number;
+  criticos: number;
+  altos: number;
+}) {
+  if (!enabled()) return;
+  posthog.capture("cartera_vista", props);
+}
+
 // distinct_id is the Supabase auth user id — never an email or a name.
 export function identifyAgent(supabaseUserId: string) {
   if (!enabled()) return;

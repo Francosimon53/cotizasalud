@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { isCarteraEnabled } from "@/lib/feature-flags";
 
 export default function DashboardHeader({ agentName, agencyName, isAdmin }: { agentName: string; agencyName?: string; isAdmin?: boolean }) {
   const router = useRouter();
@@ -53,6 +54,11 @@ export default function DashboardHeader({ agentName, agencyName, isAdmin }: { ag
         {isAdmin && (
           <button onClick={() => router.push("/agentes/dashboard/team")} style={{ ...navBtn, color: "#8b5cf6", borderColor: "rgba(139,92,246,0.3)" }}>
             Equipo
+          </button>
+        )}
+        {isCarteraEnabled() && (
+          <button onClick={() => router.push("/agentes/dashboard/cartera")} style={{ ...navBtn, color: "#06b6d4", borderColor: "rgba(6,182,212,0.3)" }}>
+            Mi Cartera
           </button>
         )}
         <button onClick={() => router.push("/agentes/dashboard/renewals")} style={navBtn}>

@@ -141,8 +141,14 @@ bajos, contra 28/18/25/29 en los tests. La diferencia es esperada: los tests
 fijan la fecha de referencia en 2026-11-01 y el Preview usa la fecha real
 (2026-07-20), así que un par de clientes aún no cruzan el umbral de edad.
 
-## Limpieza pendiente
+## Limpieza
 
-El agente `cartera-e2e-b` y sus 100 filas de cartera siguen en la base de
-Preview para que Simón pueda revisar la vista. Eliminar tras la revisión
-(igual que se hizo con `cartera-e2e` en la Fase A).
+Tras la revisión de Simón se eliminó todo el rastro del agente de prueba
+`cartera-e2e-b`: 100 filas de `portfolio_clients`, 2 registros de
+`portfolio_imports`, la fila de `agents` y su usuario de Supabase Auth
+(`cartera-e2e-b@example.com`). Se verificó antes del borrado que el agente no
+tenía filas en `leads`, `consents` ni `ai_queries`.
+
+*Verificación:* `portfolio_clients` y `portfolio_imports` en **0 filas**;
+`agents` en 7 (solo cuentas reales, ninguna con slug `cartera-e2e*`); ningún
+usuario de Auth con correo `cartera-e2e*@example.com`. ✅

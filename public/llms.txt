@@ -8,6 +8,7 @@ EnrollSalud no vende seguros ni inscribe directamente: es la herramienta del age
 
 - [Cotizador ACA](https://enrollsalud.com/cotizar): cotización bilingüe con subsidio estimado (APTC), los mismos planes de Healthcare.gov.
 - [EnrollSalud para agentes](https://enrollsalud.com/agentes): funciones, precios y triage de elegibilidad 2027.
+- [CRM para agentes de Obamacare](https://enrollsalud.com/crm-para-agentes-de-obamacare): qué hace distinto a un CRM para agentes ACA — link de cotización propio con captura de leads, consentimiento CMS con firma digital y renovaciones ancladas al OEP; complementario a HealthSherpa.
 
 ## Contexto del mercado (2026)
 

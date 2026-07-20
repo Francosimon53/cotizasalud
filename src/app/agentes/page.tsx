@@ -1303,6 +1303,7 @@ export default function AgentesPage() {
           <span className="ag-footer-text">© 2026 EnrollSalud. Todos los derechos reservados.</span>
         </div>
         <div className="ag-footer-links">
+          <a href="/crm-para-agentes-de-obamacare">CRM para agentes de Obamacare</a>
           <a href="/privacy">Privacidad</a>
           <a href="/terms">Términos</a>
           <a href="/compliance">Cumplimiento</a>

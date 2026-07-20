@@ -190,7 +190,7 @@ export default function CrmParaAgentesDeObamacarePage() {
           <div className="ag-bento-card wide">
             <div className="ag-bento-icon green">🔗</div>
             <h3>Tu propio link de cotización que captura el lead</h3>
-            <p>El lead que te escribe &ldquo;¿cuánto me sale?&rdquo; y espera tu respuesta hasta la noche, se enfría. Con tu enlace personal, cotiza solo: pone su código postal, su familia y su ingreso, y ve planes reales del Marketplace con subsidio estimado. Su contacto cae en tu pipeline al instante — aunque cotice un domingo a medianoche.</p>
+            <p>El lead que te escribe &ldquo;¿cuánto me sale?&rdquo; y espera tu respuesta hasta la noche, se enfría. Con tu enlace personal, cotiza solo: pone su código postal, su familia y su ingreso, y ve planes reales del Marketplace con subsidio estimado. Su contacto cae en tu pipeline al instante — aunque cotice un domingo a medianoche. Y si quieres tácticas para ponerlo a circular, aquí está la guía completa: <Link href="/recursos/como-conseguir-clientes-de-obamacare" style={{ color: "var(--accent-bright)" }}>cómo conseguir clientes de Obamacare</Link>.</p>
           </div>
           <div className="ag-bento-card">
             <div className="ag-bento-icon cyan">📊</div>

@@ -35,3 +35,30 @@ Tras corregir una variable, `vercel env pull` siguió devolviendo el valor viejo
 ## El clasificador de auto-mode bloquea abrir/curl-ear URLs de Stripe Checkout live
 
 Navegar con Chrome o hacer `curl` a `checkout.stripe.com/c/pay/cs_live_...` es denegado por el clasificador de permisos (página de pago live). La smoke visual del checkout debe hacerla el usuario con el link; la prueba automatizable es a nivel API: `checkout.sessions.create` valida `trial_period_days` en la creación — si Stripe acepta la sesión, la UI la renderiza.
+
+## posthog-js (npm) no expone window.posthog ni usa el fetch parcheado
+
+Con `import posthog from "posthog-js"` (v1.404), el SDK captura referencias a
+`fetch`/`sendBeacon` al evaluarse el módulo: monkeypatchear `window.fetch` o
+`XMLHttpRequest` después de cargar la página NO intercepta los payloads de
+`/srx/e/`, y `window.posthog` no existe. Para verificar payloads: unit test
+mockeando `posthog-js` (ver `src/lib/__tests__/analytics-cartera.test.ts`) +
+`localStorage.setItem('ph_debug','true')` para confirmar el nombre del evento
+en consola.
+
+## node --experimental-strip-types no resuelve imports TS sin extensión
+
+`import { x } from "./fpl"` (sin `.ts`) falla con ERR_MODULE_NOT_FOUND al
+ejecutar TS directo con Node 24 strip-types. Para scripts rápidos sobre código
+del repo, usar un test de vitest (resuelve igual que el bundler) en vez de
+`node -e`.
+
+## El clasificador de auto-mode puede bloquear `apply_migration` (MCP Supabase)
+
+En la Fase A la migración se aplicó vía MCP sin problema; en la Fase B el
+mismo tipo de llamada (DDL remoto con `apply_migration`) fue denegado por el
+clasificador de permisos. No intentar rodearlo (p. ej. metiendo DDL por
+`execute_sql`): dejar la migración lista en `supabase/migrations/`, avisar al
+usuario y que él apruebe/ejecute. Verificar el estado de las tablas con un
+SELECT antes, para saber si los pasos destructivos (DELETE de backfill) tocan
+datos reales.

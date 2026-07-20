@@ -191,6 +191,15 @@ export default function ArticlePage() {
         </p>
 
         <p>
+          Si quieres ver esa capa de captura en detalle — el link de cotización propio, el
+          consentimiento CMS con firma digital, los recordatorios de renovación — aquí desglosamos{" "}
+          <Link href="/crm-para-agentes-de-obamacare">
+            qué hace distinto a un CRM para agentes de Obamacare
+          </Link>
+          .
+        </p>
+
+        <p>
           <Link href="/agentes">Ver cómo funciona EnrollSalud para agentes →</Link>
         </p>
       </div>

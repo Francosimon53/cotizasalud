@@ -93,8 +93,8 @@ perfiles en `docs/SCORING.md`. ✅
   posibles duplicados por nombre cuando aplica.
 
 *Verificación:* grep de inglés visible en `src/app/agentes/dashboard/cartera/`
-sin resultados de cara al usuario; captura de la vista en el PR. ✅ (captura
-pendiente de la migración remota, ver estado final)
+sin resultados de cara al usuario; captura de la vista corregida en el PR
+(`docs/img/cartera-b-resumen.jpg`). ✅
 
 ## Paso 4 — Suite, build y PR
 
@@ -105,12 +105,44 @@ pendiente de la migración remota, ver estado final)
   `filas_actualizadas`, `posibles_duplicados` — solo conteos numéricos, el
   guard anti-PII (`analytics-cartera.test.ts`) sigue en verde.
 
-## Estado de la migración remota
+## Migración remota
 
-La aplicación vía Supabase MCP fue bloqueada por el clasificador de permisos
-de la sesión (DDL remoto). La migración quedó lista en
-`supabase/migrations/20260720190000_portfolio_dedupe.sql` y verificada contra
-una base con 0 filas en ambas tablas. **Debe aplicarse al remoto antes de
-probar el Preview** (el código de la Fase B lee `dedupe_key` y los contadores
-nuevos). Tras aplicarla: E2E en Preview (doble import → 100, no 200) y
-capturas para el PR.
+`20260720190000_portfolio_dedupe.sql` aplicada al proyecto `cotizasalud`
+(`iwleejqxiiqxyznasktl`) vía Supabase MCP el 2026-07-20, tras aprobación
+explícita de Simón (el primer intento lo bloqueó el clasificador de permisos
+de la sesión — ver gotchas.md). Ambas tablas estaban en 0 filas, así que el
+paso de limpieza de duplicados heredados no borró nada.
+
+*Verificación:* `dedupe_key` NOT NULL presente, índice único
+`uq_portfolio_clients_agent_dedupe` creado, y las 3 columnas de conteo en
+`portfolio_imports`. ✅
+
+## Prueba end-to-end en Preview
+
+Deploy `cotizasalud-git-feature-modul-25410d`, agente sintético
+`cartera-e2e-b` (datos 100% sintéticos: teléfonos 555, correos @example.com).
+
+1. Import de `scripts/cartera-sintetica.csv` → **"100 clientes nuevos · 0
+   actualizados"**, cartera con 100 clientes.
+2. Segundo import del MISMO archivo → **"0 clientes nuevos · 100
+   actualizados"**, la cartera sigue en **100, no 200**
+   (`docs/img/cartera-b-segundo-import.jpg`).
+3. Dispersión de puntajes visible en la tabla: 98, 97, 97, 95, 95, 94, 94, 94,
+   93, 92… — ningún 100 (`docs/img/cartera-b-dispersion.jpg`).
+4. Subtítulo en español y encabezado "PUNTAJE"; metales como "Bronce"
+   (`docs/img/cartera-b-resumen.jpg`).
+
+*Verificación en base:* 100 filas en `portfolio_clients` para ese agente y dos
+registros en `portfolio_imports`: `{ins:100, upd:0, dup:0}` y
+`{ins:0, upd:100, dup:0}`. ✅
+
+Nota: la distribución en Preview es 27 críticos / 19 altos / 25 medios / 29
+bajos, contra 28/18/25/29 en los tests. La diferencia es esperada: los tests
+fijan la fecha de referencia en 2026-11-01 y el Preview usa la fecha real
+(2026-07-20), así que un par de clientes aún no cruzan el umbral de edad.
+
+## Limpieza pendiente
+
+El agente `cartera-e2e-b` y sus 100 filas de cartera siguen en la base de
+Preview para que Simón pueda revisar la vista. Eliminar tras la revisión
+(igual que se hizo con `cartera-e2e` en la Fase A).

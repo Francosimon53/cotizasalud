@@ -13,6 +13,7 @@ import {
   coerceDate,
 } from "@/lib/cartera/csv";
 import { scorePortfolioClient } from "@/lib/cartera/scoring";
+import { dedupeKeyFor, type DedupeTier } from "@/lib/cartera/dedupe";
 
 const MAX_ROWS = 1000;
 const MAX_STORED_ERRORS = 50;
@@ -112,7 +113,11 @@ export async function POST(request: NextRequest) {
   const { fileName, rows } = parsed.data;
   const referenceDate = new Date();
   const errors: { row: number; reason: string }[] = [];
-  const clients: Record<string, unknown>[] = [];
+  // Dedupe within the file: keyed by dedupe_key. For dob/zip tiers the last
+  // row wins; name_only collisions are never merged (see partition below).
+  const byKey = new Map<string, { client: Record<string, unknown>; tier: DedupeTier }>();
+  let possibleDuplicates = 0;
+  let validCount = 0;
 
   rows.forEach((raw, i) => {
     const { candidate, bad } = coerceRow(raw);
@@ -140,29 +145,79 @@ export async function POST(request: NextRequest) {
       },
       referenceDate
     );
-    clients.push({
-      ...valid.data,
-      // Ownership always comes from the session — never from the body.
-      agent_id: agent.id,
-      risk_score: assessment.riskScore,
-      risk_level: assessment.riskLevel,
-      risk_reasons: assessment.riskReasons,
-      score_confidence: assessment.scoreConfidence,
-      source: "csv",
+    validCount++;
+    const { key, tier } = dedupeKeyFor(valid.data);
+    if (tier === "name_only" && byKey.has(key)) {
+      // Same bare name twice in one file with nothing to tell them apart:
+      // keep the first, report the rest — never merge on name alone.
+      possibleDuplicates++;
+      return;
+    }
+    byKey.set(key, {
+      tier,
+      client: {
+        ...valid.data,
+        // Ownership always comes from the session — never from the body.
+        agent_id: agent.id,
+        dedupe_key: key,
+        risk_score: assessment.riskScore,
+        risk_level: assessment.riskLevel,
+        risk_reasons: assessment.riskReasons,
+        score_confidence: assessment.scoreConfidence,
+        source: "csv",
+        updated_at: referenceDate.toISOString(),
+      },
     });
   });
 
   const db = createServiceClient();
 
   try {
+    // Existing keys for this agent decide insert vs update, and let us skip
+    // (not merge) name_only collisions before any write happens.
+    const { data: existingRows, error: existingError } = await db
+      .from("portfolio_clients")
+      .select("dedupe_key")
+      .eq("agent_id", agent.id);
+    if (existingError) {
+      console.error(
+        "Cartera existing-keys select error:",
+        existingError.code,
+        existingError.message
+      );
+      return NextResponse.json({ error: "Insert failed" }, { status: 500 });
+    }
+    const existingKeys = new Set(
+      (existingRows ?? []).map((r: { dedupe_key: string }) => r.dedupe_key)
+    );
+
+    const toWrite: Record<string, unknown>[] = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
+    for (const { client, tier } of byKey.values()) {
+      const exists = existingKeys.has(client.dedupe_key as string);
+      if (tier === "name_only" && exists) {
+        // A bare-name match against the stored book could be a different
+        // person — leave the stored row untouched and flag it for review.
+        possibleDuplicates++;
+        continue;
+      }
+      if (exists) updatedCount++;
+      else insertedCount++;
+      toWrite.push(client);
+    }
+
     const { data: importRow, error: importError } = await db
       .from("portfolio_imports")
       .insert({
         agent_id: agent.id,
         file_name: fileName || null,
         total_rows: rows.length,
-        valid_rows: clients.length,
+        valid_rows: validCount,
         error_rows: errors.length,
+        inserted_rows: insertedCount,
+        updated_rows: updatedCount,
+        possible_duplicates: possibleDuplicates,
         errors: errors.slice(0, MAX_STORED_ERRORS),
       })
       .select("id")
@@ -173,14 +228,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Insert failed" }, { status: 500 });
     }
 
-    if (clients.length > 0) {
-      const withImportId = clients.map((c) => ({ ...c, import_id: importRow.id }));
+    if (toWrite.length > 0) {
+      const withImportId = toWrite.map((c) => ({ ...c, import_id: importRow.id }));
+      // One statement, atomic: matches on (agent_id, dedupe_key) update in
+      // place (new data + recalculated score), the rest insert.
       const { error: clientsError } = await db
         .from("portfolio_clients")
-        .insert(withImportId);
+        .upsert(withImportId, { onConflict: "agent_id,dedupe_key" });
       if (clientsError) {
         console.error(
-          "Cartera clients insert error:",
+          "Cartera clients upsert error:",
           clientsError.code,
           clientsError.message
         );
@@ -194,8 +251,11 @@ export async function POST(request: NextRequest) {
       success: true,
       importId: importRow.id,
       totalRows: rows.length,
-      validRows: clients.length,
+      validRows: validCount,
       errorRows: errors.length,
+      insertedRows: insertedCount,
+      updatedRows: updatedCount,
+      possibleDuplicates,
     });
   } catch (err) {
     // Message only — the error object could echo row payloads.

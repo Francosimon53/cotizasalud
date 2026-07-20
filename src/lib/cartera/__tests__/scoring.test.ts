@@ -93,16 +93,25 @@ describe("scorePortfolioClient", () => {
       REF
     );
     expect(r.riskReasons).not.toContain("subsidy_cliff");
-    // Household of 6 still flags large_household (+10)
+    // Household of 6 still flags large_household (+7, 5+ tier)
     expect(r.riskReasons).toContain("large_household");
-    expect(r.riskScore).toBe(10);
+    expect(r.riskScore).toBe(7);
   });
 
   it("household of 1 vs 6: only the larger household gets the family-size points", () => {
     const solo = scorePortfolioClient({ householdMembers: 1 }, REF);
     const familia = scorePortfolioClient({ householdMembers: 6 }, REF);
     expect(solo.riskScore).toBe(0);
-    expect(familia.riskScore).toBe(10);
+    expect(familia.riskScore).toBe(7);
+  });
+
+  it("household steps: 3-4 members score lower than 5+, same reason key", () => {
+    const mediano = scorePortfolioClient({ householdMembers: 3 }, REF);
+    const grande = scorePortfolioClient({ householdMembers: 5 }, REF);
+    expect(mediano.riskScore).toBe(4);
+    expect(grande.riskScore).toBe(7);
+    expect(mediano.riskReasons).toEqual(["large_household"]);
+    expect(grande.riskReasons).toEqual(["large_household"]);
   });
 
   it("missing income adds no cliff points (does not assume eligibility loss)", () => {
@@ -114,10 +123,19 @@ describe("scorePortfolioClient", () => {
     // Born 1971-12-15 → 54 on 2026-11-01 (birthday pending) → no flag
     const younger = scorePortfolioClient({ dateOfBirth: "1971-12-15" }, REF);
     expect(younger.riskReasons).not.toContain("age_55_plus");
-    // Born 1971-06-15 → 55 on 2026-11-01 → flag
+    // Born 1971-06-15 → 55 on 2026-11-01 → flag (55-59 tier)
     const older = scorePortfolioClient({ dateOfBirth: "1971-06-15" }, REF);
     expect(older.riskReasons).toContain("age_55_plus");
-    expect(older.riskScore).toBe(15);
+    expect(older.riskScore).toBe(10);
+  });
+
+  it("age steps: 55-59 scores lower than 60+, same reason key", () => {
+    const cincuentaYSiete = scorePortfolioClient({ estimatedAge: 57 }, REF);
+    const sesentaYDos = scorePortfolioClient({ estimatedAge: 62 }, REF);
+    expect(cincuentaYSiete.riskScore).toBe(10);
+    expect(sesentaYDos.riskScore).toBe(15);
+    expect(cincuentaYSiete.riskReasons).toEqual(["age_55_plus"]);
+    expect(sesentaYDos.riskReasons).toEqual(["age_55_plus"]);
   });
 
   it("estimated_age works when date_of_birth is absent", () => {
@@ -133,7 +151,7 @@ describe("scorePortfolioClient", () => {
 
   it("bronze plan and auto-renewal add their weights", () => {
     const r = scorePortfolioClient({ metalLevel: "bronze", autoRenewal: true }, REF);
-    expect(r.riskScore).toBe(25);
+    expect(r.riskScore).toBe(23);
     expect(r.riskReasons).toEqual(
       expect.arrayContaining(["bronze_plan", "auto_renewal_shock"])
     );
@@ -145,15 +163,16 @@ describe("scorePortfolioClient", () => {
     expect(r.scoreConfidence).toBe(Math.round((1 / 7) * 100));
   });
 
-  it("worst case caps at 100 and is critical", () => {
-    // Raw sum: 30 + 25 + 15 + 10 + 15 + 10 = 105 → capped
+  it("only the absolute worst profile reaches exactly 100", () => {
+    // 30 (full dependency) + 25 (cliff) + 15 (60+) + 15 (auto) + 8 (bronze)
+    // + 7 (household 5+) = 100 — the theoretical max, no clamp involved.
     const r = scorePortfolioClient(
       {
         monthlyPremium: 0,
         monthlySubsidy: 800,
         estimatedAnnualIncome: 200_000,
-        householdMembers: 4,
-        estimatedAge: 60,
+        householdMembers: 5,
+        estimatedAge: 62,
         metalLevel: "bronze",
         autoRenewal: true,
       },
@@ -162,6 +181,39 @@ describe("scorePortfolioClient", () => {
     expect(r.riskScore).toBe(100);
     expect(r.riskLevel).toBe("critical");
     expect(r.scoreConfidence).toBe(100);
+  });
+
+  it("two critical 'textbook' profiles land on different scores (dispersion)", () => {
+    // Same flags, different intensity: the old formula clamped both at 100.
+    const peor = scorePortfolioClient(
+      {
+        monthlyPremium: 0,
+        monthlySubsidy: 800,
+        estimatedAnnualIncome: 200_000,
+        householdMembers: 5,
+        estimatedAge: 62,
+        metalLevel: "bronze",
+        autoRenewal: true,
+      },
+      REF
+    );
+    const critico = scorePortfolioClient(
+      {
+        monthlyPremium: 150,
+        monthlySubsidy: 450, // ratio 0.75 → 23
+        estimatedAnnualIncome: 200_000,
+        householdMembers: 4, // 3-4 tier → 4
+        estimatedAge: 57, // 55-59 tier → 10
+        metalLevel: "bronze",
+        autoRenewal: true,
+      },
+      REF
+    );
+    expect(peor.riskScore).toBe(100);
+    expect(critico.riskScore).toBe(85);
+    expect(peor.riskLevel).toBe("critical");
+    expect(critico.riskLevel).toBe("critical");
+    expect(peor.riskScore).toBeGreaterThan(critico.riskScore);
   });
 
   it("confidence counts age once whether dob or estimated_age is present", () => {

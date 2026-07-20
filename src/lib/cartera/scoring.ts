@@ -36,19 +36,29 @@ export interface RiskAssessment {
   scoreConfidence: number;
 }
 
+// Calibration (Fase B): the theoretical max sums to exactly 100, so only the
+// single worst profile reaches 100 and critical clients spread out instead of
+// piling on the old min(100, 105) ceiling. Stepped weights (age, household)
+// break ties between critical profiles; signals and their direction are
+// unchanged from Fase A.
 const WEIGHTS = {
   subsidyDependencyMax: 30,
   subsidyCliff: 25,
-  age55Plus: 15,
+  age60Plus: 15,
+  age55to59: 10,
   autoRenewal: 15,
-  bronzePlan: 10,
-  largeHousehold: 10,
+  bronzePlan: 8,
+  household5Plus: 7,
+  household3to4: 4,
 } as const;
+// 30 + 25 + 15 + 15 + 8 + 7 = 100 — keep this sum at exactly 100.
 
 // Dependency ratio at which the client is flagged as subsidy-dependent.
 const SUBSIDY_DEPENDENT_RATIO = 0.5;
 const AGE_RISK_THRESHOLD = 55;
+const AGE_SEVERE_THRESHOLD = 60;
 const LARGE_HOUSEHOLD_MIN = 3;
+const XL_HOUSEHOLD_MIN = 5;
 
 export function riskLevelFor(score: number): RiskLevel {
   if (score >= 70) return "critical";
@@ -103,10 +113,11 @@ export function scorePortfolioClient(
     }
   }
 
-  // 3. Age 55+: higher premiums and a steeper cliff.
+  // 3. Age 55+: higher premiums and a steeper cliff. Stepped: 60+ is worse
+  //    than 55-59 (steeper age curve, closer to the Medicare gap years).
   const age = ageFrom(signals, referenceDate);
   if (age != null && age >= AGE_RISK_THRESHOLD) {
-    score += WEIGHTS.age55Plus;
+    score += age >= AGE_SEVERE_THRESHOLD ? WEIGHTS.age60Plus : WEIGHTS.age55to59;
     reasons.push("age_55_plus");
   }
 
@@ -123,8 +134,12 @@ export function scorePortfolioClient(
   }
 
   // 6. Multi-member household: family premium increase is larger in dollars.
+  //    Stepped: 5+ members compound the dollar increase further than 3-4.
   if (signals.householdMembers != null && signals.householdMembers >= LARGE_HOUSEHOLD_MIN) {
-    score += WEIGHTS.largeHousehold;
+    score +=
+      signals.householdMembers >= XL_HOUSEHOLD_MIN
+        ? WEIGHTS.household5Plus
+        : WEIGHTS.household3to4;
     reasons.push("large_household");
   }
 

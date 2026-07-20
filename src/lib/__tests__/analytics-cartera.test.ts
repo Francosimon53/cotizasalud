@@ -22,13 +22,23 @@ describe("analytics de cartera sin PII", () => {
   });
 
   it("cartera_importada sends only numeric counts", () => {
-    captureCarteraImportada({ filas_totales: 100, filas_validas: 98, filas_con_error: 2 });
+    captureCarteraImportada({
+      filas_totales: 100,
+      filas_validas: 98,
+      filas_con_error: 2,
+      filas_nuevas: 90,
+      filas_actualizadas: 8,
+      posibles_duplicados: 0,
+    });
     expect(captured).toHaveLength(1);
     expect(captured[0].event).toBe("cartera_importada");
     expect(captured[0].props).toEqual({
       filas_totales: 100,
       filas_validas: 98,
       filas_con_error: 2,
+      filas_nuevas: 90,
+      filas_actualizadas: 8,
+      posibles_duplicados: 0,
     });
     for (const v of Object.values(captured[0].props)) {
       expect(typeof v).toBe("number");
@@ -47,7 +57,14 @@ describe("analytics de cartera sin PII", () => {
 
   it("both are no-ops without the PostHog key (dark launch)", () => {
     vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "");
-    captureCarteraImportada({ filas_totales: 1, filas_validas: 1, filas_con_error: 0 });
+    captureCarteraImportada({
+      filas_totales: 1,
+      filas_validas: 1,
+      filas_con_error: 0,
+      filas_nuevas: 1,
+      filas_actualizadas: 0,
+      posibles_duplicados: 0,
+    });
     captureCarteraVista({ clientes_total: 1, criticos: 0, altos: 0 });
     expect(captured).toHaveLength(0);
   });

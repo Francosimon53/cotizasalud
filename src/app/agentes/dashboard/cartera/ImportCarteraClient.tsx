@@ -18,6 +18,9 @@ interface ImportResult {
   totalRows: number;
   validRows: number;
   errorRows: number;
+  insertedRows: number;
+  updatedRows: number;
+  possibleDuplicates: number;
 }
 
 export default function ImportCarteraClient({ onImported }: { onImported: () => void }) {
@@ -54,7 +57,7 @@ export default function ImportCarteraClient({ onImported }: { onImported: () => 
       return;
     }
     if (parsed.rows.length > MAX_ROWS) {
-      setError(`El archivo tiene ${parsed.rows.length} filas; el máximo por import es ${MAX_ROWS}.`);
+      setError(`El archivo tiene ${parsed.rows.length} filas; el máximo por importación es ${MAX_ROWS}.`);
       return;
     }
     setFileName(file.name);
@@ -83,8 +86,8 @@ export default function ImportCarteraClient({ onImported }: { onImported: () => 
       if (!res.ok || !data?.success) {
         setError(
           res.status === 429
-            ? "Demasiados imports seguidos. Espera unos minutos e intenta de nuevo."
-            : "No se pudo completar el import. Intenta de nuevo."
+            ? "Demasiadas importaciones seguidas. Espera unos minutos e intenta de nuevo."
+            : "No se pudo completar la importación. Intenta de nuevo."
         );
         return;
       }
@@ -92,8 +95,18 @@ export default function ImportCarteraClient({ onImported }: { onImported: () => 
         filas_totales: data.totalRows,
         filas_validas: data.validRows,
         filas_con_error: data.errorRows,
+        filas_nuevas: data.insertedRows ?? 0,
+        filas_actualizadas: data.updatedRows ?? 0,
+        posibles_duplicados: data.possibleDuplicates ?? 0,
       });
-      setResult({ totalRows: data.totalRows, validRows: data.validRows, errorRows: data.errorRows });
+      setResult({
+        totalRows: data.totalRows,
+        validRows: data.validRows,
+        errorRows: data.errorRows,
+        insertedRows: data.insertedRows ?? 0,
+        updatedRows: data.updatedRows ?? 0,
+        possibleDuplicates: data.possibleDuplicates ?? 0,
+      });
     } catch {
       setError("Error de conexión. Intenta de nuevo.");
     } finally {
@@ -110,11 +123,21 @@ export default function ImportCarteraClient({ onImported }: { onImported: () => 
     return (
       <div className="ph-no-capture" style={{ textAlign: "center", padding: "10px 0" }}>
         <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Import completado</div>
-        <p style={{ fontSize: 13, color: "#8b8fa3", margin: "0 0 16px" }}>
-          {result.validRows} de {result.totalRows} clientes importados
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Importación completada</div>
+        <p style={{ fontSize: 13, color: "#8b8fa3", margin: "0 0 8px" }}>
+          {result.insertedRows} clientes nuevos · {result.updatedRows} actualizados
           {result.errorRows > 0 && ` · ${result.errorRows} filas con error (revisa el historial)`}
         </p>
+        {result.possibleDuplicates > 0 && (
+          <p style={{ fontSize: 13, color: "#eab308", margin: "0 0 16px" }}>
+            {result.possibleDuplicates}{" "}
+            {result.possibleDuplicates === 1
+              ? "posible duplicado por nombre — revísalo"
+              : "posibles duplicados por nombre — revísalos"}
+            : filas con el mismo nombre y sin fecha de nacimiento ni código postal
+            no se unifican automáticamente.
+          </p>
+        )}
         <button
           onClick={() => {
             reset();
@@ -137,7 +160,8 @@ export default function ImportCarteraClient({ onImported }: { onImported: () => 
       <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Importar cartera desde CSV</div>
       <p style={{ fontSize: 12, color: "#8b8fa3", margin: "0 0 14px" }}>
         Acepta encabezados en español o inglés (nombre/name, prima/premium, subsidio/aptc…).
-        Máximo {MAX_ROWS} filas / 2 MB. Las columnas que falten solo reducen la confianza del score.
+        Máximo {MAX_ROWS} filas / 2 MB. Las columnas que falten solo reducen la confianza del puntaje.
+        Si un cliente ya está en tu cartera, sus datos se actualizan — no se duplica.
       </p>
 
       {headers.length === 0 ? (
@@ -204,7 +228,7 @@ export default function ImportCarteraClient({ onImported }: { onImported: () => 
               color: sending ? "#8b8fa3" : "#000", cursor: sending ? "default" : "pointer", fontFamily: "inherit",
             }}
           >
-            {sending ? "Importando…" : `Confirmar import de ${rows.length} filas`}
+            {sending ? "Importando…" : `Confirmar importación de ${rows.length} filas`}
           </button>
         </>
       )}

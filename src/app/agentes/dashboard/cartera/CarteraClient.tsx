@@ -33,6 +33,10 @@ export interface PortfolioImportRow {
   total_rows: number;
   valid_rows: number;
   error_rows: number;
+  // Nullable: imports recorded before the Fase B migration lack these counts.
+  inserted_rows: number | null;
+  updated_rows: number | null;
+  possible_duplicates: number | null;
   created_at: string;
 }
 
@@ -44,10 +48,10 @@ const LEVEL_COLORS: Record<RiskLevel, { fg: string; bg: string }> = {
 };
 
 const METAL_ES: Record<string, string> = {
-  bronze: "Bronze",
-  silver: "Silver",
-  gold: "Gold",
-  platinum: "Platinum",
+  bronze: "Bronce",
+  silver: "Plata",
+  gold: "Oro",
+  platinum: "Platino",
 };
 
 const card: React.CSSProperties = {
@@ -128,13 +132,13 @@ export default function CarteraClient({
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Mi Cartera</h1>
           <p style={{ fontSize: 13, color: "#8b8fa3", margin: "4px 0 0" }}>
-            Tu book of business ordenado por riesgo de perderse en la renovación de noviembre 2026
+            Tu cartera de clientes ordenada por riesgo de perderse en la renovación de noviembre 2026
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {imports.length > 0 && (
             <button onClick={() => setShowHistory(!showHistory)} style={filterBtn(showHistory)}>
-              Historial de imports
+              Historial de importaciones
             </button>
           )}
           <button
@@ -163,13 +167,17 @@ export default function CarteraClient({
 
       {showHistory && imports.length > 0 && (
         <div style={{ ...card, marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Historial de imports</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Historial de importaciones</div>
           {imports.map((imp) => (
-            <div key={imp.id} style={{ display: "flex", gap: 16, fontSize: 12, color: "#8b8fa3", padding: "6px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <div key={imp.id} style={{ display: "flex", gap: 16, fontSize: 12, color: "#8b8fa3", padding: "6px 0", borderTop: "1px solid rgba(255,255,255,0.05)", flexWrap: "wrap" }}>
               <span style={{ color: "#f0f1f5", minWidth: 160 }}>{imp.file_name || "archivo.csv"}</span>
               <span>{new Date(imp.created_at).toLocaleDateString("es-US")}</span>
               <span>{imp.total_rows} filas</span>
-              <span style={{ color: "#10b981" }}>{imp.valid_rows} válidas</span>
+              {imp.inserted_rows != null && <span style={{ color: "#10b981" }}>{imp.inserted_rows} nuevos</span>}
+              {imp.updated_rows != null && <span style={{ color: "#06b6d4" }}>{imp.updated_rows} actualizados</span>}
+              {(imp.possible_duplicates ?? 0) > 0 && (
+                <span style={{ color: "#eab308" }}>{imp.possible_duplicates} posibles duplicados por nombre</span>
+              )}
               {imp.error_rows > 0 && <span style={{ color: "#f97316" }}>{imp.error_rows} con error</span>}
             </div>
           ))}
@@ -182,7 +190,7 @@ export default function CarteraClient({
             <div style={{ fontSize: 40, marginBottom: 12 }}>📂</div>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Tu cartera está vacía</div>
             <p style={{ fontSize: 13, color: "#8b8fa3", maxWidth: 420, margin: "0 auto 20px" }}>
-              Importa tu book of business y te decimos a qué clientes estás a punto de perder
+              Importa tu cartera de clientes y te decimos a quiénes estás a punto de perder
               en la renovación, ordenados por riesgo.
             </p>
             <button
@@ -232,7 +240,7 @@ export default function CarteraClient({
                 <tr style={{ textAlign: "left", color: "#8b8fa3", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
                   <th style={{ padding: "12px 16px" }}>Cliente</th>
                   <th style={{ padding: "12px 8px" }}>Riesgo</th>
-                  <th style={{ padding: "12px 8px" }}>Score</th>
+                  <th style={{ padding: "12px 8px" }}>Puntaje</th>
                   <th style={{ padding: "12px 8px" }}>Prima</th>
                   <th style={{ padding: "12px 8px" }}>Subsidio</th>
                   <th style={{ padding: "12px 8px" }}>Metal</th>

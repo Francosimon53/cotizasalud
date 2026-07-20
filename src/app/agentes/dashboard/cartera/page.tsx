@@ -33,7 +33,9 @@ export default async function CarteraPage() {
       .order("risk_score", { ascending: false }),
     db
       .from("portfolio_imports")
-      .select("id, file_name, total_rows, valid_rows, error_rows, created_at")
+      .select(
+        "id, file_name, total_rows, valid_rows, error_rows, inserted_rows, updated_rows, possible_duplicates, created_at"
+      )
       .eq("agent_id", agent.id)
       .order("created_at", { ascending: false })
       .limit(10),

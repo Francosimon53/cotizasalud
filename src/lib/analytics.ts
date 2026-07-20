@@ -47,6 +47,9 @@ export function captureCarteraImportada(props: {
   filas_totales: number;
   filas_validas: number;
   filas_con_error: number;
+  filas_nuevas: number;
+  filas_actualizadas: number;
+  posibles_duplicados: number;
 }) {
   if (!enabled()) return;
   posthog.capture("cartera_importada", props);

@@ -62,3 +62,13 @@ clasificador de permisos. No intentar rodearlo (p. ej. metiendo DDL por
 usuario y que él apruebe/ejecute. Verificar el estado de las tablas con un
 SELECT antes, para saber si los pasos destructivos (DELETE de backfill) tocan
 datos reales.
+
+## `git diff --name-status <rama> origin/main` no predice qué borra un merge
+
+Los `D` de ese diff son *dirección de diff* ("para ir de la rama a main hay que
+borrar X"), no una predicción de que el merge borrará X. Un merge de tres vías
+nunca elimina commits que llegaron a `main` después del merge-base. Confundirlo
+lleva a asumir regresiones inexistentes y a rebases innecesarios sobre ramas ya
+publicadas. Para predecir el resultado real: `git merge-tree --write-tree HEAD
+origin/main` (exit 0 y salida de una sola línea = sin conflictos) y comparar el
+árbol resultante contra ambos lados con `git diff <tree> origin/main -- <paths>`.

@@ -26,6 +26,13 @@ export const articles: Article[] = [
     publishedISO: "2026-07-13",
     category: "Herramientas del agente",
   },
+  {
+    slug: "como-conseguir-clientes-de-obamacare",
+    title: "Cómo conseguir clientes de Obamacare: guía para agentes",
+    description: "Guía real para el agente ACA licenciado: referidos sistemáticos, WhatsApp, tu propio link de cotización y cómo prepararte para un OEP corto.",
+    publishedISO: "2026-07-20",
+    category: "Crecimiento",
+  },
 ];
 
 // Helper para el sitemap y otras vistas

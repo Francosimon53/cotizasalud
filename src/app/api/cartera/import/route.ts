@@ -15,6 +15,9 @@ import {
 import { scorePortfolioClient } from "@/lib/cartera/scoring";
 import { dedupeKeyFor, type DedupeTier } from "@/lib/cartera/dedupe";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const MAX_ROWS = 1000;
 const MAX_STORED_ERRORS = 50;
 

@@ -85,6 +85,30 @@ Esto era posible sin infraestructura nueva porque **las 6 páginas que renderiza
 importaban `agentes.css`**. La migración a clases es justamente lo que elimina la causa de que
 la media query existente no pudiera alcanzar el header.
 
+### #1b · Seguro de ancho: el wordmark se oculta bajo 400px
+
+La primera versión dejaba el nav de `/agentes` con sólo ~14px de holgura a 390px. Como el
+iPhone SE es de **375px** y ésta es la vía de entrada principal del agente, el margen era
+insuficiente: cualquier etiqueta que se alargue en el futuro rompía el nav.
+
+Bajo **400px** se oculta el wordmark "EnrollSalud" y queda sólo el icono, que sigue siendo el
+mismo enlace a `/`. Se eligió 400px por dejar el peor caso (401px, wordmark ya visible) con
+holgura suficiente — medido en 39–53px — en vez de justo en el límite.
+
+Aplicado a las tres superficies tocadas para que el comportamiento sea consistente, no sólo en
+la que iba justa:
+
+- `landing.css` — `@media(max-width:400px){.es-nav-logo .text{display:none}}`
+- `agentes.css` — `@media (max-width: 400px) { .ag-nav-logo-text { display: none; } }`,
+  que cubre `/agentes` y la página CRM porque comparten `.ag-nav`.
+
+En la landing el wordmark era un nodo de texto suelto dentro del `<Link>`, sin elemento donde
+enganchar, así que se envolvió en `<span className="text">`.
+
+Los tres enlaces de logo reciben `aria-label="EnrollSalud — Inicio"`: `display: none` saca el
+texto también del árbol de accesibilidad, así que sin el label el enlace se quedaría con sólo
+un icono como nombre accesible.
+
 ### #4 · Página CRM SEO
 
 `src/app/crm-para-agentes-de-obamacare/page.tsx:101` — se añade `Iniciar Sesión` al nav.
@@ -106,11 +130,25 @@ Runtime a 390px de viewport exactos. Chrome no permite reducir la ventana por de
 viewport para las media queries. `X-Frame-Options: DENY` (`next.config.ts:28`) impide framear
 las rutas por URL, de modo que se usó `srcdoc` con el HTML servido más un `<base>`.
 
-| Ruta | Resultado |
+Ninguna de las tres rutas públicas desborda a 375, 390, 401 ni 430px. La holgura relevante es
+el hueco entre el logo y el primer enlace del nav, porque el contenedor es `space-between`
+(los 14px que sobran a la derecha son el padding del propio nav, no margen aprovechable):
+
+| Ruta | 375px | 390px | 401px | 430px |
+|---|---|---|---|---|
+| `/` | 104px | 119px | 39px | 68px |
+| `/agentes` | 113px | 128px | 51px | 80px |
+| `/crm-para-agentes-de-obamacare` | 115px | 130px | 53px | 82px |
+
+A 375 y 390px el wordmark está oculto; a 401 y 430px vuelve a estar visible — de ahí que la
+holgura baje al cruzar el breakpoint y luego crezca de nuevo. El peor caso de todo el rango es
+39px a 401px en la landing, contra los ~14px que había antes de este ajuste.
+
+En las tres rutas y a los cuatro anchos se ven exactamente los dos enlaces esperados, con los
+anclas de sección en `display:none`.
+
+| Superficie | Resultado |
 |---|---|
-| `/` | `Para Agentes` visible en x=161–243; `Cotiza Gratis →` en 255–376; 3 anclas de sección en `display:none`; `scrollWidth` = 390, sin desbordamiento |
-| `/agentes` | `Iniciar Sesión` visible en 172–252; `Crear Cuenta →` en 262–376; 4 anclas ocultas; sin desbordamiento |
-| `/crm-para-agentes-de-obamacare` | logo 14–132; `Iniciar Sesión` 174–254; `Crear cuenta →` 264–376; sin colisión ni desbordamiento |
 | `DashboardHeader` | admin (6 botones) y agente normal (5) en **2 filas de botones**; borde derecho máximo 378 ≤ 390; sin scroll horizontal; nombre de agencia recortado con elipsis |
 
 El header se verificó con un harness que carga el `agentes.css` real y el markup exacto del

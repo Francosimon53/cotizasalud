@@ -90,7 +90,7 @@ export default function CrmParaAgentesDeObamacarePage() {
 
       {/* NAV */}
       <nav className="ag-nav">
-        <Link href="/" className="ag-nav-logo">
+        <Link href="/" className="ag-nav-logo" aria-label="EnrollSalud — Inicio">
           <div className="ag-nav-logo-icon">ES</div>
           <span className="ag-nav-logo-text">EnrollSalud</span>
         </Link>

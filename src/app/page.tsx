@@ -40,7 +40,7 @@ export default function HomePage() {
       {/* NAV */}
       <nav className="es-nav scrolled">
         <div className="es-nav-inner">
-          <Link href="/" className="es-nav-logo"><span className="icon">🏥</span> EnrollSalud</Link>
+          <Link href="/" className="es-nav-logo" aria-label="EnrollSalud — Inicio"><span className="icon">🏥</span> <span className="text">EnrollSalud</span></Link>
           <div className="es-nav-links">
             <a href="#como-funciona">Cómo Funciona</a>
             <a href="#beneficios">Beneficios</a>

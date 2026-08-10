@@ -1040,6 +1040,14 @@ html { scroll-behavior: smooth; }
   to { --angle: 360deg; }
 }
 
+/* Seguro para pantallas estrechas (iPhone SE = 375px): se oculta el wordmark y
+   queda solo el icono "ES", que sigue siendo el mismo enlace a "/". El nombre
+   accesible lo aporta el aria-label del <Link>. Aplica a /agentes y a la
+   página CRM, que comparten .ag-nav. */
+@media (max-width: 400px) {
+  .ag-nav-logo-text { display: none; }
+}
+
 /* ===== DASHBOARD HEADER =====
    Antes vivía 100% en estilos inline dentro de DashboardHeader.tsx, lo que hacía
    imposible alcanzarlo con una media query: no había clases donde enganchar.

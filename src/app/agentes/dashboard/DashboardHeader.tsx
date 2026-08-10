@@ -13,65 +13,34 @@ export default function DashboardHeader({ agentName, agencyName, isAdmin }: { ag
     router.push("/agentes/login");
   };
 
-  const navBtn: React.CSSProperties = {
-    padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-    border: "1px solid rgba(255,255,255,0.1)", background: "transparent",
-    color: "#8b8fa3", cursor: "pointer", fontFamily: "inherit",
-  };
-
   return (
-    <header style={{
-      background: "rgba(8,9,13,0.9)",
-      backdropFilter: "blur(20px)",
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
-      padding: "12px 20px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      position: "sticky",
-      top: 0,
-      zIndex: 50,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          onClick={() => router.push("/agentes/dashboard")}
-          style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: "linear-gradient(135deg, #10b981, #06b6d4)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 14, fontWeight: 900, color: "#000", cursor: "pointer",
-          }}
-        >ES</div>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f1f5" }}>
-            {agencyName || agentName}
-          </div>
-          <div style={{ fontSize: 11, color: "#5a5e72" }}>Panel de Agente</div>
+    <header className="dh-header">
+      <div className="dh-brand">
+        <div className="dh-logo" onClick={() => router.push("/agentes/dashboard")}>ES</div>
+        <div className="dh-brand-text">
+          <div className="dh-brand-name">{agencyName || agentName}</div>
+          <div className="dh-brand-sub">Panel de Agente</div>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <div className="dh-nav">
         {isAdmin && (
-          <button onClick={() => router.push("/agentes/dashboard/team")} style={{ ...navBtn, color: "#8b5cf6", borderColor: "rgba(139,92,246,0.3)" }}>
+          <button onClick={() => router.push("/agentes/dashboard/team")} className="dh-btn dh-btn-admin">
             Equipo
           </button>
         )}
-        <button onClick={() => router.push("/agentes/dashboard/renewals")} style={navBtn}>
+        <button onClick={() => router.push("/agentes/dashboard/renewals")} className="dh-btn">
           Renovaciones
         </button>
-        <button onClick={() => router.push("/agentes/dashboard/import")} style={navBtn}>
+        <button onClick={() => router.push("/agentes/dashboard/import")} className="dh-btn">
           Importar
         </button>
-        <button onClick={() => router.push("/agentes/dashboard/share")} style={navBtn}>
+        <button onClick={() => router.push("/agentes/dashboard/share")} className="dh-btn">
           Compartir
         </button>
-        <button onClick={() => router.push("/agentes/dashboard/profile")} style={navBtn}>
+        <button onClick={() => router.push("/agentes/dashboard/profile")} className="dh-btn">
           Perfil
         </button>
-        <button
-          onClick={handleLogout}
-          disabled={loggingOut}
-          style={{ ...navBtn, color: loggingOut ? "#3a3d4a" : "#8b8fa3" }}
-        >
+        <button onClick={handleLogout} disabled={loggingOut} className="dh-btn">
           {loggingOut ? "..." : "Salir"}
         </button>
       </div>

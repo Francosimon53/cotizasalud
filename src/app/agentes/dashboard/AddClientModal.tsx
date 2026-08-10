@@ -128,7 +128,8 @@ export default function AddClientModal({ agentSlug, onClose, onSaved }: Props) {
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "10px 12px", borderRadius: 8,
-    border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 14,
+    // fontSize >= 16: por debajo, iOS Safari hace auto-zoom al enfocar el campo.
+    border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 16,
     background: "#0e1018", color: "#f0f1f5", fontFamily: "inherit",
     outline: "none", boxSizing: "border-box",
   };
@@ -181,7 +182,7 @@ export default function AddClientModal({ agentSlug, onClose, onSaved }: Props) {
             <div style={{ marginBottom: 10 }}>
               <label style={labelStyle}>Pega clientes (uno por línea)</label>
               <div style={{ fontSize: 11, color: "#5a5e72", marginBottom: 6 }}>Formato: Nombre, Apellido, Teléfono, Plan, Fecha</div>
-              <textarea style={{ ...inputStyle, resize: "vertical", fontFamily: "monospace", fontSize: 12 }} rows={6} value={bulkText} onChange={(e) => { setBulkText(e.target.value); setBulkRows([]); setBulkResults(null); }} placeholder="María, López, 2395551234, Ambetter Gold, 2025-06-01&#10;Juan, Pérez, 3055559876, Molina Silver, 2025-01-15" />
+              <textarea style={{ ...inputStyle, resize: "vertical", fontFamily: "monospace" }} rows={6} value={bulkText} onChange={(e) => { setBulkText(e.target.value); setBulkRows([]); setBulkResults(null); }} placeholder="María, López, 2395551234, Ambetter Gold, 2025-06-01&#10;Juan, Pérez, 3055559876, Molina Silver, 2025-01-15" />
             </div>
             {bulkRows.length === 0 && bulkText.trim() && (
               <button onClick={parseBulk} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#8b8fa3", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: 10 }}>Vista Previa</button>

@@ -61,7 +61,8 @@ export default function ProfileForm({ agent }: { agent: Agent }) {
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "12px 14px", borderRadius: 8,
-    border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15,
+    // fontSize >= 16: por debajo, iOS Safari hace auto-zoom al enfocar el campo.
+    border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 16,
     background: "#0e1018", color: "#f0f1f5", fontFamily: "inherit",
     outline: "none", boxSizing: "border-box",
   };

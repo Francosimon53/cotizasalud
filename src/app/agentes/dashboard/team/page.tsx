@@ -4,9 +4,8 @@ import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
 import DashboardHeader from "../DashboardHeader";
 import TeamClient from "./TeamClient";
+import { isAdminSlug } from "@/lib/admin-slugs";
 import "../../agentes.css";
-
-const ADMIN_SLUGS = ["simon-dev", "delbert"];
 
 export default async function TeamPage() {
   const cookieStore = await cookies();
@@ -16,7 +15,7 @@ export default async function TeamPage() {
 
   const db = createServiceClient();
   const { data: agent } = await db.from("agents").select("slug, name, agency_name").eq("auth_user_id", user.id).single();
-  if (!agent || !ADMIN_SLUGS.includes(agent.slug)) redirect("/agentes/dashboard");
+  if (!agent || !isAdminSlug(agent.slug)) redirect("/agentes/dashboard");
 
   // Get all agents
   const { data: agents } = await db
@@ -49,7 +48,7 @@ export default async function TeamPage() {
 
   return (
     <div style={{ fontFamily: "'Satoshi', -apple-system, sans-serif", minHeight: "100vh", background: "#08090d", color: "#f0f1f5" }}>
-      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} />
+      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} agentSlug={agent.slug} />
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px 60px" }}>
         <TeamClient
           agents={agentStats}

@@ -162,11 +162,109 @@ Una primera medición del header se descartó por inválida: el harness no habí
 de estilos y midió botones sin estilo. Se repitió confirmando antes que
 `getComputedStyle(.dh-header)` devolviera `display:flex` y `flex-wrap:wrap`.
 
+## Segunda ronda: el recorte en el iPhone no era el header
+
+La verificación en dispositivo real falló pese a que el gate y las medidas daban verde. En
+`/import`, `/renewals`, `/profile` y `/share` la página aparecía recortada por ambos lados,
+con scroll horizontal: `"Importar Clientes"` se leía `"mportar Clientes"` y el icono `ES`
+salía partido por la mitad.
+
+### Causa: auto-zoom de Safari en iOS
+
+iOS Safari **hace zoom automático al enfocar un `input`, `select` o `textarea` cuyo
+`font-size` sea menor que 16px**. Es comportamiento de plataforma, no un bug del sitio. Una
+vez que hace zoom, **se queda**: el viewport visual queda más pequeño que el de layout, y toda
+página posterior de la sesión se ve recortada por ambos lados.
+
+Secuencia real: landing (perfecta, ningún campo tocado) → `/agentes/login`, se enfoca el campo
+de correo, que estaba a `fontSize: 15` → zoom → todo el dashboard recortado a partir de ahí.
+
+Esto explica de golpe los cuatro síntomas que no encajaban:
+
+- El recorte simétrico izquierda y derecha: no era desbordamiento, era el viewport visual
+  reducido.
+- Por qué el header medía correcto: **medía correcto**. Nunca fue el header.
+- Por qué Chrome de escritorio no lo reproduce: no hace auto-zoom al enfocar.
+- Por qué la landing se veía bien: es lo que se visita *antes* de tocar un campo.
+
+### Qué se cambió
+
+Los 40 controles de las superficies del agente que disparaban el zoom pasan a `font-size: 16`.
+Los seis restantes (`file`, `checkbox` ×2, `color` ×2, `button`) están exentos: no disparan
+zoom. El `<select>` de estado por fila de `LeadsTable` venía de 11px y además llevaba
+`padding` propio, así que se le redujo el padding para compensar el salto.
+
+Todos los campos del proyecto se estilan **inline**, sin una sola clase CSS: no hay ninguna
+regla para `input`/`select`/`textarea` en `agentes.css`, `globals.css` ni `landing.css`. Por
+eso el arreglo no pudo hacerse desde una hoja — el estilo inline gana siempre salvo con
+`!important` — y se hizo en los diez objetos de estilo que son la fuente de verdad.
+
+**No se tocó el viewport.** Bloquear el zoom con `maximum-scale=1` o `user-scalable=no`
+habría "arreglado" el síntoma y es la receta que circula por internet, pero es una barrera de
+accesibilidad para agentes con vista cansada. El arreglo es el tamaño de fuente. Se verificó
+además que el repo no tenía ya ningún intento de bloquear el zoom: cero coincidencias de
+`maximum-scale|user-scalable|minimum-scale` en todo `src/`.
+
+### GOTCHA — el auto-zoom de iOS no es reproducible fuera del dispositivo
+
+Ninguna de estas herramientas lo detecta:
+
+| Método | Por qué falla |
+|---|---|
+| Chrome de escritorio | No hace auto-zoom al enfocar un campo |
+| Emulación de dispositivo de DevTools | Simula el tamaño del viewport, no el comportamiento de zoom de Safari |
+| Harness con iframe `srcdoc` | El iframe define su propio viewport; el zoom del padre no le llega |
+| Ventana popup con viewport real | Sigue siendo Blink; el auto-zoom es de WebKit |
+| `tsc`, tests, `next build` | Un `fontSize: 15` compila igual de bien que un 16 |
+
+**La única verificación válida es dispositivo real, y hay que tocar un campo.** Abrir la página
+y mirarla no basta: el zoom se dispara al enfocar el input, no al cargar. Cualquier revisión
+futura de responsive en formularios tiene que incluir ese paso explícito.
+
+Corolario para el método: un harness que solo contiene el componente bajo prueba no puede
+detectar problemas causados por el resto de la página ni por el estado del navegador. El
+primer harness de este PR contenía únicamente el header, y por eso dio verde sobre algo que
+en el teléfono estaba roto.
+
+### Defecto #5, resuelto en el mismo commit
+
+`isAdmin` era un prop que solo pasaba 1 de las 6 páginas que montan el header, así que el botón
+"Equipo" desaparecía al salir del panel principal. Se resuelve ahora dentro del propio
+`DashboardHeader` a partir del slug, y `ADMIN_SLUGS` —que estaba duplicado en `dashboard/page.tsx`,
+`team/page.tsx` y `api/admin/toggle-agent/route.ts`— pasa a `src/lib/admin-slugs.ts` como fuente
+única.
+
+Efecto secundario previsto y aceptado: al aparecer "Equipo" en las cinco sub-páginas, el grupo
+de botones sube de 351px a ~417px y pasará a dos filas en ellas. Cumple el criterio de
+aceptación (≤2 filas) y por eso entra en el mismo commit que el arreglo del zoom, no después.
+
+## DEUDA PRIORITARIA — el cotizador público tiene el mismo defecto, y es peor
+
+`src/app/cotizar/` sufre exactamente el mismo auto-zoom, vía la constante compartida
+`S` en `page.tsx:253-254` (`S.input` y `S.select`, ambos a `fontSize: 15`).
+
+| Fichero | Controles | `font-size` |
+|---|---|---|
+| `cotizar/page.tsx` | 21 | 15 |
+| `DobSelect.tsx` | 3 selects | 15 (recibe `S.select`) |
+| `PreCarta.tsx` | 2 | 15 (`S.input`) |
+| `CMSConsentForm.tsx:301` | 1 (firma) | 18 ✅ el único a salvo |
+
+**26 de 27 controles disparan auto-zoom.** El cliente final rellena ese formulario entero desde
+el teléfono: toca el primer campo, Safari hace zoom, y **el resto del flujo —incluidos los
+resultados de planes y la firma CMS— se ve recortado con scroll horizontal**.
+
+Esto es superficie de conversión del canal principal del producto, y es sospechoso de estar
+degradando la conversión de forma silenciosa desde siempre. **Es el PR siguiente.** El arreglo
+es de dos líneas (la constante `S`), pero merece su propia verificación en dispositivo real
+recorriendo el formulario completo, y por eso no entra aquí.
+
 ## Qué quedó fuera, y por qué
 
 | Defecto | Por qué no entra |
 |---|---|
-| `isAdmin` ausente en 5 de las 6 páginas que montan el header | Bug real de navegación, pero de permisos, no de responsive. Mezclarlo diluye la verificación del desbloqueo. **Registrado en `gotchas.md`** con las 5 rutas. |
+| ~~`isAdmin` ausente en 5 de las 6 páginas~~ | **Ya no queda fuera**: se arregló en la segunda ronda, ver arriba. La observación en dispositivo lo confirmó en vivo. |
+| Cotizador público (`src/app/cotizar/`) con el mismo auto-zoom | Superficie de conversión del cliente final. Arreglo de dos líneas, pero necesita su propia verificación en dispositivo recorriendo el formulario entero. **PR siguiente, prioritario.** |
 | `top: 53` hardcodeado en la barra sticky de `LeadDetailClient.tsx:380` | Se rompe cuando el header envuelve en móvil. Arreglarlo requiere decidir un patrón nuevo (wrapper sticky o medición). |
 | 10 grids inline de 3–4 columnas fijas que no colapsan | Trabajo de volumen y de legibilidad, no de acceso. Ilegible ≠ bloqueante. |
 | Breakpoints inconsistentes entre hojas (640 / 760 / 768 / 900) sin tokens compartidos | Deuda documentada; unificarla ahora amplía la superficie de regresión del PR que más urge. |

@@ -2,10 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { isAdminSlug } from "@/lib/admin-slugs";
 
-export default function DashboardHeader({ agentName, agencyName, isAdmin }: { agentName: string; agencyName?: string; isAdmin?: boolean }) {
+// El admin se resuelve aquí a partir del slug, no vía prop: antes cada página
+// tenía que acordarse de pasar `isAdmin` y solo una de las seis lo hacía, así
+// que "Equipo" desaparecía al salir del panel principal.
+export default function DashboardHeader({ agentName, agencyName, agentSlug }: { agentName: string; agencyName?: string; agentSlug: string }) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const isAdmin = isAdminSlug(agentSlug);
 
   const handleLogout = async () => {
     setLoggingOut(true);

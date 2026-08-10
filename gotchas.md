@@ -54,5 +54,31 @@ La lista de admins está duplicada en tres sitios (`dashboard/page.tsx:110`,
 Arreglo de raíz: resolver el admin dentro del propio header a partir del slug, o extraer
 `ADMIN_SLUGS` a un módulo compartido — no seguir pasando el prop a mano en cada página.
 
-Detectado el 2026-08-10 durante el PR de acceso móvil; dejado fuera de ese PR a propósito
-porque es un bug de navegación/permisos, no de responsive, y mezclarlo diluía la verificación.
+Detectado el 2026-08-10 durante el PR de acceso móvil. **RESUELTO** ese mismo día en el mismo
+PR, una vez que la observación en dispositivo real lo confirmó en vivo: el admin se resuelve
+ahora dentro de `DashboardHeader` a partir del slug, y `ADMIN_SLUGS` vive en
+`src/lib/admin-slugs.ts` como fuente única. Se conserva la entrada porque la lección sigue
+vigente: **un permiso que se pasa por prop desde N sitios se olvida en N-1 de ellos.**
+
+## iOS Safari hace auto-zoom con `input`/`select`/`textarea` bajo 16px — y no es reproducible fuera del dispositivo
+
+Safari en iOS hace zoom automático al **enfocar** cualquier campo con `font-size` menor que
+16px. El zoom **persiste** el resto de la sesión: el viewport visual queda más chico que el de
+layout y toda página posterior aparece recortada por ambos lados con scroll horizontal. El
+síntoma parece un desbordamiento de layout y no lo es.
+
+Nada de esto lo detecta: Chrome de escritorio (no hace auto-zoom), la emulación de dispositivo
+de DevTools (simula tamaño, no el comportamiento de Safari), un harness con iframe `srcdoc`
+(el iframe tiene su propio viewport), una ventana popup con viewport real (sigue siendo Blink),
+ni el gate — `fontSize: 15` compila exactamente igual que `16`.
+
+**La única verificación válida es dispositivo real tocando un campo.** Cargar la página y
+mirarla no basta: el zoom se dispara al enfocar, no al cargar.
+
+El arreglo es subir el `font-size` a 16, **nunca** `maximum-scale=1` ni `user-scalable=no`:
+bloquear el zoom es una barrera de accesibilidad.
+
+Corolario de método, aprendido a base de un falso verde en este mismo PR: **un harness que solo
+contiene el componente bajo prueba no puede detectar problemas causados por el resto de la
+página ni por el estado del navegador.** Si un harness no reproduce el fallo conocido, no sirve
+para confirmar el arreglo — hay que validar primero que el harness sabe fallar.

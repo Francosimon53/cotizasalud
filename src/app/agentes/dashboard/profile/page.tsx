@@ -47,7 +47,7 @@ export default async function ProfilePage() {
       fontFamily: "'Satoshi', -apple-system, sans-serif",
       minHeight: "100vh", background: "#08090d", color: "#f0f1f5",
     }}>
-      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} />
+      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} agentSlug={agent.slug} />
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 20px 60px" }}>
         <ProfileForm agent={agent} />
       </div>

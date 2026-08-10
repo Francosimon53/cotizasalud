@@ -115,6 +115,11 @@ html { scroll-behavior: smooth; }
   transition: color 0.3s;
 }
 .ag-nav-links a:hover { color: var(--text-primary); }
+/* Vía de entrada del agente que ya tiene cuenta. Sobrevive al ocultado móvil. */
+.ag-nav-links .ag-nav-login {
+  color: var(--accent);
+  font-weight: 700;
+}
 .ag-nav-cta {
   padding: 10px 24px;
   background: var(--gradient-1);
@@ -982,8 +987,22 @@ html { scroll-behavior: smooth; }
     gap: 32px;
     align-items: center;
   }
-  .ag-nav { padding: 16px 20px; }
-  .ag-nav-links { display: none; }
+  /* Se ocultan los anclas de sección, pero NUNCA las dos vías de entrada a la
+     sesión: iniciar sesión (agente existente) y crear cuenta (agente nuevo).
+     Misma forma que la regla de landing.css para .es-nav-links. */
+  .ag-nav { padding: 14px 14px; }
+  .ag-nav.scrolled { padding: 12px 14px; }
+  .ag-nav-links a:not(.ag-nav-cta):not(.ag-nav-login) { display: none; }
+  .ag-nav-links { gap: 10px; }
+  .ag-nav-logo { gap: 8px; }
+  .ag-nav-logo-icon { width: 30px; height: 30px; font-size: 14px; }
+  .ag-nav-logo-text { font-size: 16px; }
+  .ag-nav-links .ag-nav-login { font-size: 13px; white-space: nowrap; }
+  .ag-nav-cta {
+    padding: 8px 12px;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
   .ag-hero { padding: 140px 24px 80px; }
   .ag-ai-section, .ag-bento-section, .ag-social-section, .ag-roi-section, .ag-faq-section, .ag-cta-section {
     padding: 80px 24px;
@@ -1020,3 +1039,4 @@ html { scroll-behavior: smooth; }
 @keyframes ag-spin-border {
   to { --angle: 360deg; }
 }
+

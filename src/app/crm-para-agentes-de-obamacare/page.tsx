@@ -98,6 +98,7 @@ export default function CrmParaAgentesDeObamacarePage() {
           <Link href="/agentes">Para agentes</Link>
           <Link href="/recursos">Recursos</Link>
           <a href="#precios">Precios</a>
+          <Link href="/agentes/login" className="ag-nav-login">Iniciar Sesión</Link>
           <Link href="/agentes/registro" className="ag-nav-cta">Crear cuenta &rarr;</Link>
         </div>
       </nav>

@@ -44,7 +44,7 @@ export default function HomePage() {
           <div className="es-nav-links">
             <a href="#como-funciona">Cómo Funciona</a>
             <a href="#beneficios">Beneficios</a>
-            <Link href="/agentes">Para Agentes</Link>
+            <Link href="/agentes" className="es-nav-agentes">Para Agentes</Link>
             <a href="#precios">Precios</a>
             <Link href="/cotizar" className="es-nav-cta">Cotiza Gratis →</Link>
           </div>

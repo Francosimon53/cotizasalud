@@ -35,3 +35,24 @@ Tras corregir una variable, `vercel env pull` siguió devolviendo el valor viejo
 ## El clasificador de auto-mode bloquea abrir/curl-ear URLs de Stripe Checkout live
 
 Navegar con Chrome o hacer `curl` a `checkout.stripe.com/c/pay/cs_live_...` es denegado por el clasificador de permisos (página de pago live). La smoke visual del checkout debe hacerla el usuario con el link; la prueba automatizable es a nivel API: `checkout.sessions.create` valida `trial_period_days` en la creación — si Stripe acepta la sesión, la UI la renderiza.
+
+## `DashboardHeader` sólo recibe `isAdmin` en 1 de las 6 páginas que lo renderizan
+
+`isAdmin` controla el botón "Equipo" (`DashboardHeader.tsx:26`). Se pasa únicamente en
+`src/app/agentes/dashboard/page.tsx:110`. Las otras cinco rutas montan el header sin el prop,
+así que un admin **pierde el botón "Equipo" en cuanto sale del dashboard principal** — incluso
+estando dentro de `/team`:
+
+- `src/app/agentes/dashboard/profile/page.tsx:50`
+- `src/app/agentes/dashboard/renewals/page.tsx:29`
+- `src/app/agentes/dashboard/import/page.tsx:21`
+- `src/app/agentes/dashboard/team/page.tsx:52`
+- `src/app/agentes/dashboard/share/page.tsx:24`
+
+La lista de admins está duplicada en tres sitios (`dashboard/page.tsx:110`,
+`team/page.tsx:9`, `api/admin/toggle-agent/route.ts:6`), lo que hace fácil que se desincronicen.
+Arreglo de raíz: resolver el admin dentro del propio header a partir del slug, o extraer
+`ADMIN_SLUGS` a un módulo compartido — no seguir pasando el prop a mano en cada página.
+
+Detectado el 2026-08-10 durante el PR de acceso móvil; dejado fuera de ese PR a propósito
+porque es un bug de navegación/permisos, no de responsive, y mezclarlo diluía la verificación.

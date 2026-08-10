@@ -23,7 +23,21 @@ img{max-width:100%;display:block}
 .es-nav-links a:hover{color:var(--white)}
 .es-nav-cta{padding:9px 20px;border-radius:8px;background:var(--emerald);color:var(--white)!important;font-weight:700;font-size:13px;transition:all .2s}
 .es-nav-cta:hover{background:#047857;transform:translateY(-1px)}
-@media(max-width:768px){.es-nav-links a:not(.es-nav-cta){display:none}}
+/* Bajo 768px se ocultan los anclas de sección, pero se conservan la vía de
+   entrada del agente (.es-nav-agentes) y el CTA del consumidor (.es-nav-cta). */
+@media(max-width:768px){
+  .es-nav-links a:not(.es-nav-cta):not(.es-nav-agentes){display:none}
+  .es-nav-inner{padding:0 14px}
+  .es-nav-links{gap:12px}
+  .es-nav-logo{font-size:16px;gap:8px}
+  .es-nav-logo .icon{width:28px;height:28px;font-size:15px}
+  .es-nav-agentes{font-size:12px;white-space:nowrap}
+  .es-nav-cta{padding:8px 13px;font-size:12px;white-space:nowrap}
+}
+/* Seguro para pantallas estrechas (iPhone SE = 375px): se oculta el wordmark y
+   queda solo el icono, que sigue siendo el mismo enlace a "/". El nombre
+   accesible lo aporta el aria-label del <Link>. */
+@media(max-width:400px){.es-nav-logo .text{display:none}}
 
 /* ===== HERO ===== */
 .hero{position:relative;min-height:100vh;background:linear-gradient(155deg,#011d16 0%,#022c22 25%,#064e3b 50%,#065f46 75%,#047857 100%);display:flex;align-items:center;overflow:hidden;padding:100px 24px 80px}

@@ -120,7 +120,7 @@ export default function AgentLoginPage() {
             }}>Correo electrónico</label>
             <input id="login-email" type="email" required value={email}
               onChange={(e) => setEmail(e.target.value)} placeholder="agente@ejemplo.com" autoFocus
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#0e1018", color: "#f0f1f5" }} />
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 16, outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#0e1018", color: "#f0f1f5" }} />
           </div>
 
           {!resetMode && (
@@ -131,7 +131,7 @@ export default function AgentLoginPage() {
               }}>Contraseña</label>
               <input id="login-password" type="password" required value={password}
                 onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#0e1018", color: "#f0f1f5" }} />
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 16, outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#0e1018", color: "#f0f1f5" }} />
             </div>
           )}
 

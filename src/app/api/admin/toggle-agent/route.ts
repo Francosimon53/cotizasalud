@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
-
-const ADMIN_SLUGS = ["simon-dev", "delbert"];
+import { isAdminSlug } from "@/lib/admin-slugs";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -13,7 +12,7 @@ export async function POST(request: NextRequest) {
 
   const db = createServiceClient();
   const { data: admin } = await db.from("agents").select("slug").eq("auth_user_id", user.id).single();
-  if (!admin || !ADMIN_SLUGS.includes(admin.slug)) {
+  if (!admin || !isAdminSlug(admin.slug)) {
     return NextResponse.json({ error: "Admin only" }, { status: 403 });
   }
 

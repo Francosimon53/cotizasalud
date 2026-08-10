@@ -188,7 +188,8 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
 
   const inputStyle: React.CSSProperties = {
     padding: "8px 12px", borderRadius: 8,
-    border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 13,
+    // fontSize >= 16: por debajo, iOS Safari hace auto-zoom al enfocar el campo.
+    border: "1.5px solid rgba(255,255,255,0.1)", fontSize: 16,
     background: "#0F172A", color: "#E2E8F0", fontFamily: "inherit", outline: "none",
   };
   const thStyle: React.CSSProperties = {
@@ -271,10 +272,12 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
           ) : <span style={{ fontSize: 11, color: "#475569" }}>—</span>}
         </td>
         <td style={tdStyle} onClick={(e) => e.stopPropagation()}>
+          {/* fontSize >= 16: por debajo, iOS Safari hace auto-zoom al enfocar.
+              Padding reducido para compensar el salto desde 11px. */}
           <select
             value={lead.status}
             onChange={(e) => handleStatusSelect(lead, e.target.value)}
-            style={{ padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, fontFamily: "inherit", color: st.color, background: st.bg, border: `1px solid ${st.border}`, cursor: "pointer", outline: "none" }}
+            style={{ padding: "2px 6px", borderRadius: 6, fontSize: 16, fontWeight: 700, fontFamily: "inherit", color: st.color, background: st.bg, border: `1px solid ${st.border}`, cursor: "pointer", outline: "none" }}
           >
             {STATUSES.map((s) => <option key={s.value} value={s.value} style={{ background: "#1E293B", color: "#E2E8F0" }}>{s.label}</option>)}
           </select>

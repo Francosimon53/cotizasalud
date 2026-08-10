@@ -107,7 +107,7 @@ export default async function DashboardPage({
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       minHeight: "100vh", background: "#0F172A", color: "#E2E8F0",
     }}>
-      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} isAdmin={["simon-dev", "delbert"].includes(agent.slug)} />
+      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} agentSlug={agent.slug} />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 60px" }}>
         {checkoutResult === "success" && <CheckoutSuccessTracker sessionId={sp.session_id} />}

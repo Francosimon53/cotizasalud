@@ -18,7 +18,7 @@ export default async function CarteraPage() {
   const db = createServiceClient();
   const { data: agent } = await db
     .from("agents")
-    .select("id, name, agency_name")
+    .select("id, name, agency_name, slug")
     .eq("auth_user_id", user.id)
     .single();
   if (!agent) redirect("/agentes/dashboard");
@@ -43,7 +43,7 @@ export default async function CarteraPage() {
 
   return (
     <div style={{ fontFamily: "'Satoshi', -apple-system, sans-serif", minHeight: "100vh", background: "#08090d", color: "#f0f1f5" }}>
-      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} />
+      <DashboardHeader agentName={agent.name} agencyName={agent.agency_name} agentSlug={agent.slug} />
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px 60px" }}>
         <CarteraClient initialClients={clients || []} initialImports={imports || []} />
       </div>

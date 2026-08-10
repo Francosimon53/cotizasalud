@@ -115,6 +115,11 @@ html { scroll-behavior: smooth; }
   transition: color 0.3s;
 }
 .ag-nav-links a:hover { color: var(--text-primary); }
+/* Vía de entrada del agente que ya tiene cuenta. Sobrevive al ocultado móvil. */
+.ag-nav-links .ag-nav-login {
+  color: var(--accent);
+  font-weight: 700;
+}
 .ag-nav-cta {
   padding: 10px 24px;
   background: var(--gradient-1);
@@ -982,8 +987,22 @@ html { scroll-behavior: smooth; }
     gap: 32px;
     align-items: center;
   }
-  .ag-nav { padding: 16px 20px; }
-  .ag-nav-links { display: none; }
+  /* Se ocultan los anclas de sección, pero NUNCA las dos vías de entrada a la
+     sesión: iniciar sesión (agente existente) y crear cuenta (agente nuevo).
+     Misma forma que la regla de landing.css para .es-nav-links. */
+  .ag-nav { padding: 14px 14px; }
+  .ag-nav.scrolled { padding: 12px 14px; }
+  .ag-nav-links a:not(.ag-nav-cta):not(.ag-nav-login) { display: none; }
+  .ag-nav-links { gap: 10px; }
+  .ag-nav-logo { gap: 8px; }
+  .ag-nav-logo-icon { width: 30px; height: 30px; font-size: 14px; }
+  .ag-nav-logo-text { font-size: 16px; }
+  .ag-nav-links .ag-nav-login { font-size: 13px; white-space: nowrap; }
+  .ag-nav-cta {
+    padding: 8px 12px;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
   .ag-hero { padding: 140px 24px 80px; }
   .ag-ai-section, .ag-bento-section, .ag-social-section, .ag-roi-section, .ag-faq-section, .ag-cta-section {
     padding: 80px 24px;
@@ -1019,4 +1038,125 @@ html { scroll-behavior: smooth; }
 }
 @keyframes ag-spin-border {
   to { --angle: 360deg; }
+}
+
+/* Seguro para pantallas estrechas (iPhone SE = 375px): se oculta el wordmark y
+   queda solo el icono "ES", que sigue siendo el mismo enlace a "/". El nombre
+   accesible lo aporta el aria-label del <Link>. Aplica a /agentes y a la
+   página CRM, que comparten .ag-nav. */
+@media (max-width: 400px) {
+  .ag-nav-logo-text { display: none; }
+}
+
+/* ===== DASHBOARD HEADER =====
+   Antes vivía 100% en estilos inline dentro de DashboardHeader.tsx, lo que hacía
+   imposible alcanzarlo con una media query: no había clases donde enganchar.
+   Las 6 páginas que renderizan el header ya importan esta hoja. */
+.dh-header {
+  background: rgba(8, 9, 13, 0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.dh-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.dh-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--gradient-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  color: #000;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.dh-brand-text { min-width: 0; }
+.dh-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f0f1f5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dh-brand-sub {
+  font-size: 11px;
+  color: #5a5e72;
+}
+.dh-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dh-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #8b8fa3;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.dh-btn:hover { color: #f0f1f5; border-color: rgba(255, 255, 255, 0.2); }
+.dh-btn:disabled { color: #3a3d4a; cursor: default; }
+.dh-btn-admin {
+  color: var(--accent-3);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+.dh-btn-admin:hover { color: #a78bfa; border-color: rgba(139, 92, 246, 0.5); }
+.dh-btn-cartera {
+  color: var(--accent-2);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+.dh-btn-cartera:hover { color: #22d3ee; border-color: rgba(6, 182, 212, 0.5); }
+
+/* Bajo 760px la fila de 6 botones (~790px de ancho mínimo) desbordaba el
+   viewport y dejaba Perfil y Salir fuera de pantalla. Se envuelve en una
+   segunda línea propia y se recorta el nombre de agencia. */
+@media (max-width: 760px) {
+  .dh-header {
+    padding: 10px 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .dh-brand {
+    gap: 8px;
+    flex: 1 1 auto;
+  }
+  .dh-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    font-size: 13px;
+  }
+  .dh-brand-name { font-size: 13px; }
+  .dh-brand-sub { display: none; }
+  .dh-nav {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .dh-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
 }

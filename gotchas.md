@@ -72,3 +72,50 @@ lleva a asumir regresiones inexistentes y a rebases innecesarios sobre ramas ya
 publicadas. Para predecir el resultado real: `git merge-tree --write-tree HEAD
 origin/main` (exit 0 y salida de una sola línea = sin conflictos) y comparar el
 árbol resultante contra ambos lados con `git diff <tree> origin/main -- <paths>`.
+
+## `DashboardHeader` sólo recibe `isAdmin` en 1 de las 6 páginas que lo renderizan
+
+`isAdmin` controla el botón "Equipo" (`DashboardHeader.tsx:26`). Se pasa únicamente en
+`src/app/agentes/dashboard/page.tsx:110`. Las otras cinco rutas montan el header sin el prop,
+así que un admin **pierde el botón "Equipo" en cuanto sale del dashboard principal** — incluso
+estando dentro de `/team`:
+
+- `src/app/agentes/dashboard/profile/page.tsx:50`
+- `src/app/agentes/dashboard/renewals/page.tsx:29`
+- `src/app/agentes/dashboard/import/page.tsx:21`
+- `src/app/agentes/dashboard/team/page.tsx:52`
+- `src/app/agentes/dashboard/share/page.tsx:24`
+
+La lista de admins está duplicada en tres sitios (`dashboard/page.tsx:110`,
+`team/page.tsx:9`, `api/admin/toggle-agent/route.ts:6`), lo que hace fácil que se desincronicen.
+Arreglo de raíz: resolver el admin dentro del propio header a partir del slug, o extraer
+`ADMIN_SLUGS` a un módulo compartido — no seguir pasando el prop a mano en cada página.
+
+Detectado el 2026-08-10 durante el PR de acceso móvil. **RESUELTO** ese mismo día en el mismo
+PR, una vez que la observación en dispositivo real lo confirmó en vivo: el admin se resuelve
+ahora dentro de `DashboardHeader` a partir del slug, y `ADMIN_SLUGS` vive en
+`src/lib/admin-slugs.ts` como fuente única. Se conserva la entrada porque la lección sigue
+vigente: **un permiso que se pasa por prop desde N sitios se olvida en N-1 de ellos.**
+
+## iOS Safari hace auto-zoom con `input`/`select`/`textarea` bajo 16px — y no es reproducible fuera del dispositivo
+
+Safari en iOS hace zoom automático al **enfocar** cualquier campo con `font-size` menor que
+16px. El zoom **persiste** el resto de la sesión: el viewport visual queda más chico que el de
+layout y toda página posterior aparece recortada por ambos lados con scroll horizontal. El
+síntoma parece un desbordamiento de layout y no lo es.
+
+Nada de esto lo detecta: Chrome de escritorio (no hace auto-zoom), la emulación de dispositivo
+de DevTools (simula tamaño, no el comportamiento de Safari), un harness con iframe `srcdoc`
+(el iframe tiene su propio viewport), una ventana popup con viewport real (sigue siendo Blink),
+ni el gate — `fontSize: 15` compila exactamente igual que `16`.
+
+**La única verificación válida es dispositivo real tocando un campo.** Cargar la página y
+mirarla no basta: el zoom se dispara al enfocar, no al cargar.
+
+El arreglo es subir el `font-size` a 16, **nunca** `maximum-scale=1` ni `user-scalable=no`:
+bloquear el zoom es una barrera de accesibilidad.
+
+Corolario de método, aprendido a base de un falso verde en este mismo PR: **un harness que solo
+contiene el componente bajo prueba no puede detectar problemas causados por el resto de la
+página ni por el estado del navegador.** Si un harness no reproduce el fallo conocido, no sirve
+para confirmar el arreglo — hay que validar primero que el harness sabe fallar.

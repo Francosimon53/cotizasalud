@@ -119,3 +119,19 @@ Corolario de método, aprendido a base de un falso verde en este mismo PR: **un 
 contiene el componente bajo prueba no puede detectar problemas causados por el resto de la
 página ni por el estado del navegador.** Si un harness no reproduce el fallo conocido, no sirve
 para confirmar el arreglo — hay que validar primero que el harness sabe fallar.
+
+## `git checkout --theirs a b` sobrescribe TODOS los paths, y lo hace en silencio
+
+Encadenar `git checkout --theirs archivo-A archivo-B` (o dos invocaciones con `&&`) para
+"resolver A" arrasa también B con el lado de main, sin aviso y sin diff que lo delate: el
+archivo simplemente pierde el lado propio. Ocurrió al mergear #63 en la rama de cartera —
+`gotchas.md`, que debía conservar AMBOS lados, quedó solo con el de main y perdió 4 entradas.
+
+Regla: `--theirs`/`--ours` solo sobre el archivo cuya resolución es literalmente "quédate un
+lado entero", nunca en la misma línea que un archivo de resolución manual. Y verificar el
+resultado con una métrica del contenido (`grep -c '^## '`), no con `git status`, que sigue
+mostrando `UU` igual.
+
+Rescate: hasta el commit, los tres lados siguen en el índice —
+`git cat-file -p :1:archivo` (base), `:2:` (ours/HEAD), `:3:` (theirs). Nada se pierde de
+verdad mientras no se haya commiteado.

@@ -339,7 +339,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
       {/* Acción Hoy — same table format, red header */}
       {urgentLeads.length > 0 && (
         <div style={{ background: "#1E293B", borderRadius: 16, border: "1px solid rgba(239,68,68,0.2)", overflow: "hidden", marginBottom: 20 }}>
-          <div style={{ padding: "12px 18px", background: "rgba(239,68,68,0.08)", borderBottom: "1px solid rgba(239,68,68,0.15)", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ padding: "12px 18px", background: "rgba(239,68,68,0.08)", borderBottom: "1px solid rgba(239,68,68,0.15)", display: "flex", alignItems: "center", gap: 10, color: "#ef4444" }}>
             <Zap size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
             <span style={{ fontSize: 14, fontWeight: 800, color: "#ef4444" }}>Acción Hoy</span>
             <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 12, fontWeight: 800, color: "#ef4444", background: "rgba(239,68,68,0.15)" }}>{urgentLeads.length}</span>

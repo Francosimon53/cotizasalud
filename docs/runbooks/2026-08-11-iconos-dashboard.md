@@ -98,6 +98,9 @@ SHA-1 antes y después (`273e5fa0c5dcd3d7441a1b62e500890ff609e9f0`).
 - `flexShrink: 0` en todos los iconos, para que el flexbox no los deforme cuando el texto crece.
 - `aria-hidden="true"` en todo icono acompañado de texto; `aria-label` en los dos controles
   que quedan sin texto visible (`LeadsTable.tsx:233` y `:286`).
+- **`currentColor` exige que el contenedor declare un color.** Un icono en un contenedor sin
+  color cae al gris del `body`, no al color visual de la banda. Al migrar un emoji con color
+  propio a un SVG, verificar que el contenedor aporta el color correcto.
 
 ### Escala de tamaños
 
@@ -132,12 +135,15 @@ Duplica la sección "Acción Hoy" que hoy pinta `LeadsTable.tsx:339-353`, y es l
 que `_CSS_REMOVED`: código que parece vivo, se lee en las búsquedas y confunde el mapa mental
 del repo. **Se borra en un PR aparte**, no aquí — este PR es iconos y nada más.
 
-**3. Nota visual para revisar en el demo.** El ⚡ de "Acción Hoy" (`LeadsTable.tsx:342`) era
-un emoji amarillo; el `Zap` hereda `currentColor`, que en esa cabecera resuelve a `#E2E8F0`
-(el color del `<div>` raíz de `page.tsx`). Queda un rayo casi blanco junto al texto rojo
-"Acción Hoy". Es lo que manda la regla de color heredado, pero conviene mirarlo en pantalla:
-si no convence, la corrección limpia es poner `color` en el contenedor de la cabecera, no en
-el icono.
+**3. ~~Nota visual para revisar en el demo.~~ RESUELTO en el commit de arreglo.**
+El ⚡ de "Acción Hoy" (`LeadsTable.tsx:342`) era un emoji amarillo. Al migrarlo, el `Zap`
+heredó `currentColor`, que en esa cabecera resolvía a `#E2E8F0` —el color del `<div>` raíz de
+`page.tsx`— y dejaba un rayo casi blanco junto al texto rojo. La causa no era el icono sino el
+contenedor: la cabecera nunca declaró `color`, porque hasta ahora sus dos `<span>` lo traían
+cada uno por su cuenta y nadie más lo necesitaba. La corrección es `color: "#ef4444"` en el
+contenedor de la cabecera, no en el icono: así la banda queda de un solo color —icono, texto,
+badge y borde— y el `Zap` sigue sin color literal. De aquí sale la regla de `currentColor`
+añadida arriba.
 
 **4. Fuera de alcance por decisión explícita.** `src/app/cotizar/**`, `src/app/page.tsx`,
 `src/app/agentes/page.tsx` tienen ~95 emojis más. Son superficie de consumidor, no de agente:

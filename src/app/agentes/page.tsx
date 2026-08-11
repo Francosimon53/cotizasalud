@@ -1030,7 +1030,7 @@ export default function AgentesPage() {
 
         <div className="ag-hero-badge ag-reveal">
           <span className="ag-dot" />
-          OEP 2027: solo 45 días — 1 nov al 15 dic
+          OEP 2027: abre 1 nov — 15 dic para cobertura en enero
         </div>
 
         <h1 className="ag-reveal">
@@ -1063,7 +1063,7 @@ export default function AgentesPage() {
         </div>
         <div className="ag-stat">
           <div className="ag-stat-value">45</div>
-          <div className="ag-stat-label">Días de OEP 2027</div>
+          <div className="ag-stat-label">Días para cobertura en enero</div>
         </div>
         <div className="ag-stat">
           <div className="ag-stat-value">100%</div>
@@ -1245,8 +1245,8 @@ export default function AgentesPage() {
         <div className="ag-roi-cards">
           <div className="ag-roi-card ag-reveal">
             <div className="ag-roi-number">45</div>
-            <h4>Días de OEP 2027</h4>
-            <p>El OEP 2027 se acorta a solo 45 días (1 nov – 15 dic). Cada cotización que te toma una noche es un cliente que otro agente puede cerrar primero.</p>
+            <h4>Días para cobertura en enero</h4>
+            <p>El OEP 2027 abre el 1 de noviembre, pero quien no cierra antes del 15 de diciembre no tiene cobertura hasta el 1 de febrero. Son 45 días para asegurar el 1 de enero, y cada cotización que te toma una noche es un cliente que otro agente cierra primero.</p>
           </div>
           <div className="ag-roi-card ag-reveal">
             <div className="ag-roi-number">60/30/15</div>

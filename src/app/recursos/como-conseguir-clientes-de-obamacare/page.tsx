@@ -60,7 +60,8 @@ export default function ArticlePage() {
         </p>
 
         <p>
-          Y este año el margen de error se achicó. El OEP dura {ACA_STATS.oepDias} días, y tus
+          Y este año el margen de error se achicó. Tienes {ACA_STATS.diasHastaCoberturaEnero} días
+          para que un cliente arranque con cobertura en enero, y tus
           clientes están pagando en promedio un {ACA_STATS.pagoNetoPct}% más de su bolsillo que
           antes. Eso significa más dudas, más miedo al precio y más gente que necesita a un agente
           que le explique en su idioma qué le conviene. La demanda existe. La pregunta es cómo hacer
@@ -181,8 +182,10 @@ export default function ArticlePage() {
 
         <p>
           El error más caro del agente que trabaja solo es empezar a buscar clientes cuando abre la
-          inscripción. El OEP va del {ACA_STATS.oepInicio} al {ACA_STATS.oepFin} — y esos{" "}
-          {ACA_STATS.oepDias} días son para <em>cerrar</em>, no para empezar a sembrar. La lista de
+          inscripción. El OEP abre el {ACA_STATS.oepInicio} y quien cierra antes del{" "}
+          {ACA_STATS.oepLimiteEnero} arranca con cobertura el 1 de enero — y esos{" "}
+          {ACA_STATS.diasHastaCoberturaEnero} días son para <em>cerrar</em>, no para empezar a
+          sembrar. La lista de
           gente a contactar se construye antes del {ACA_STATS.oepInicio}: los referidos que fuiste
           pidiendo, los contactos que cotizaron con tu link durante el año, los que te escribieron
           por un estado de WhatsApp y quedaron en &quot;lo pienso&quot;. Llegar al primer día con
@@ -194,7 +197,8 @@ export default function ArticlePage() {
           nacimientos, matrimonios, pérdida de cobertura del trabajo — cada evento calificado es
           una inscripción posible fuera de temporada, y cada una de esas personas es además un
           cliente que renovará contigo en noviembre. El año del agente no tiene meses vacíos; tiene
-          meses de sembrar y {ACA_STATS.oepDias} días de cosechar.
+          meses de sembrar y {ACA_STATS.diasHastaCoberturaEnero} días de cosechar, los que deciden
+          quién arranca con cobertura en enero.
         </p>
 
         <p>

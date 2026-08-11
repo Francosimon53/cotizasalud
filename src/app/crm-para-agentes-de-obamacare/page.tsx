@@ -12,11 +12,11 @@ export const metadata = {
   },
   title: "CRM para Agentes de Obamacare | EnrollSalud",
   description:
-    "El OEP 2027 abre el 1 de noviembre: 45 días para asegurar cobertura desde enero. Captura leads con tu propio link de cotización, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
+    "CRM en español para agentes de Obamacare: captura leads con tu propio link, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
   openGraph: {
     title: "CRM para Agentes de Obamacare | EnrollSalud",
     description:
-      "El OEP 2027 abre el 1 de noviembre: 45 días para asegurar cobertura desde enero. Captura leads con tu propio link de cotización, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
+      "CRM en español para agentes de Obamacare: captura leads con tu propio link, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
     url: "https://enrollsalud.com/crm-para-agentes-de-obamacare",
     siteName: "EnrollSalud",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata = {
     card: "summary",
     title: "CRM para Agentes de Obamacare | EnrollSalud",
     description:
-      "El OEP 2027 abre el 1 de noviembre: 45 días para asegurar cobertura desde enero. Captura leads con tu propio link de cotización, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
+      "CRM en español para agentes de Obamacare: captura leads con tu propio link, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
   },
 };
 

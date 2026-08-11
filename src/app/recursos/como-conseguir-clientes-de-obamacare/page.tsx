@@ -185,8 +185,7 @@ export default function ArticlePage() {
           inscripción. El OEP abre el {ACA_STATS.oepInicio} y quien cierra antes del{" "}
           {ACA_STATS.oepLimiteEnero} arranca con cobertura el 1 de enero — y esos{" "}
           {ACA_STATS.diasHastaCoberturaEnero} días son para <em>cerrar</em>, no para empezar a
-          sembrar. Después sigue habiendo período hasta el {ACA_STATS.oepFinPeriodo}, pero ya con
-          cobertura desde febrero. La lista de
+          sembrar. La lista de
           gente a contactar se construye antes del {ACA_STATS.oepInicio}: los referidos que fuiste
           pidiendo, los contactos que cotizaron con tu link durante el año, los que te escribieron
           por un estado de WhatsApp y quedaron en &quot;lo pienso&quot;. Llegar al primer día con

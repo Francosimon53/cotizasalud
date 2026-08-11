@@ -56,7 +56,7 @@ export default function HomePage() {
         <div className="hero-grid" />
         <div className="hero-inner">
           <div>
-            <div className="hero-badge"><span className="pulse" /> OEP 2027 — Nov 1 a Dic 15</div>
+            <div className="hero-badge"><span className="pulse" /> OEP 2027 — Abre Nov 1 · Dic 15 para cobertura en enero</div>
             <h1>¿Tu seguro subió y nadie<br /><span className="accent">te explica por qué?</span></h1>
             <p className="hero-sub">Los subsidios mejorados expiraron y las familias están pagando más que nunca. Compara planes reales del Marketplace con tu subsidio estimado en 2 minutos — gratis, en español y sin crear cuenta en HealthCare.gov.</p>
             <div className="hero-actions">

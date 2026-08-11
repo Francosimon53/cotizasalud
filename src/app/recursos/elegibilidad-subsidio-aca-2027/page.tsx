@@ -79,7 +79,8 @@ export default function ArticlePage() {
           Este cambio afecta a cerca de 1.2 millones de inmigrantes legalmente presentes a nivel
           nacional que dejarán de calificar para el crédito fiscal en 2027, según estimaciones de
           HHS. No es una proyección lejana: aplica a la cobertura que tus clientes elijan durante el
-          OEP de este otoño (1 de noviembre – 15 de diciembre de 2026).
+          OEP de este otoño (abre el 1 de noviembre de 2026; hasta el 15 de diciembre para cobertura
+          desde el 1 de enero, y hasta el 15 de enero de 2027 en los estados de HealthCare.gov).
         </blockquote>
 
         <h2>Quién mantiene el subsidio en 2027</h2>

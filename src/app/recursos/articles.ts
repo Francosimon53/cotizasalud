@@ -29,7 +29,7 @@ export const articles: Article[] = [
   {
     slug: "como-conseguir-clientes-de-obamacare",
     title: "Cómo conseguir clientes de Obamacare: guía para agentes",
-    description: "Guía real para el agente ACA licenciado: referidos sistemáticos, WhatsApp, tu propio link de cotización y cómo prepararte para un OEP corto.",
+    description: "Guía real para el agente ACA licenciado: referidos sistemáticos, WhatsApp, tu propio link de cotización y cómo llegar listo a los 45 días que deciden la cobertura de enero.",
     publishedISO: "2026-07-20",
     category: "Crecimiento",
   },

@@ -20,6 +20,9 @@
   --radius: 16px;
   --radius-sm: 10px;
   --font-display: 'Instrument Serif', Georgia, serif;
+  /* Satoshi se carga desde Fontshare en el root layout, no desde Google Fonts.
+     Pedirla en una URL de fonts.googleapis.com no hace nada: Google la descarta
+     en silencio y responde 200. */
   --font-body: 'Satoshi', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }

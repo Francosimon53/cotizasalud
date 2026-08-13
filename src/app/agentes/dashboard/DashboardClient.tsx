@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Download, Plus } from "lucide-react";
 import LeadsTable from "./LeadsTable";
 import AddClientModal from "./AddClientModal";
 import { captureLeadsExportados } from "@/lib/analytics";
@@ -54,7 +55,8 @@ export default function DashboardClient({ leads, agentSlug }: { leads: any[]; ag
             display: "flex", alignItems: "center", gap: 8,
           }}
         >
-          + Agregar Cliente
+          <Plus size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+          Agregar Cliente
         </button>
         <button
           onClick={handleExport}
@@ -69,7 +71,12 @@ export default function DashboardClient({ leads, agentSlug }: { leads: any[]; ag
             display: "flex", alignItems: "center", gap: 8,
           }}
         >
-          {exporting ? "Exportando..." : "⬇ Exportar CSV"}
+          {exporting ? "Exportando..." : (
+            <>
+              <Download size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+              Exportar CSV
+            </>
+          )}
         </button>
         {exportError && (
           <span style={{ fontSize: 12, color: "#ef4444", fontWeight: 600 }}>

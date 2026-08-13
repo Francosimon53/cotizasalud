@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { Calendar, MessageCircle, Trash2, Zap } from "lucide-react";
 import StatusModal from "./StatusModal";
 import { FLAG_COPY, type EligibilityFlag } from "@/lib/eligibility/rules";
 
@@ -219,7 +220,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
         </td>
         <td style={{ ...tdStyle, fontWeight: 700 }}>
           {lead.contact_name ? displayName : <span style={{ fontStyle: "italic", color: "#94A3B8" }}>{displayName}</span>}
-          {lead.next_followup_date && <div style={{ fontSize: 10, color: "#8b5cf6", marginTop: 2 }}>📅 {lead.next_followup_date}</div>}
+          {lead.next_followup_date && <div style={{ fontSize: 10, color: "#8b5cf6", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}><Calendar size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />{lead.next_followup_date}</div>}
         </td>
         <td style={tdStyle}>
           {hasPhone ? (
@@ -229,8 +230,8 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
                 href={`https://wa.me/${lead.contact_phone.replace(/\D/g, "").length === 10 ? "1" : ""}${lead.contact_phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${displayName}, soy tu agente de seguros de salud.`)}`}
                 target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
                 style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 6, background: "#25D366", color: "#fff", fontSize: 14, textDecoration: "none", flexShrink: 0 }}
-                title="WhatsApp"
-              >💬</a>
+                title="WhatsApp" aria-label="WhatsApp"
+              ><MessageCircle size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} /></a>
             </div>
           ) : <span style={{ color: "#475569" }}>—</span>}
         </td>
@@ -283,7 +284,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
           </select>
         </td>
         <td style={{ ...tdStyle, width: 36, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => setDeleteTarget([lead.id])} style={{ background: "none", border: "none", color: "#94A3B8", fontSize: 16, cursor: "pointer", padding: 4 }} title="Eliminar">🗑️</button>
+          <button onClick={() => setDeleteTarget([lead.id])} style={{ background: "none", border: "none", color: "#94A3B8", fontSize: 16, cursor: "pointer", padding: 4, display: "inline-flex", alignItems: "center" }} title="Eliminar" aria-label="Eliminar"><Trash2 size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} /></button>
         </td>
       </tr>
     );
@@ -322,7 +323,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
       {deleteTarget && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setDeleteTarget(null)}>
           <div style={{ background: "#1E293B", borderRadius: 16, padding: 28, border: "1px solid rgba(239,68,68,0.3)", width: "100%", maxWidth: 400, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
+            <div style={{ fontSize: 36, marginBottom: 12, display: "flex", justifyContent: "center" }}><Trash2 size={36} strokeWidth={1.5} aria-hidden="true" style={{ flexShrink: 0 }} /></div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginBottom: 8 }}>
               {deleteTarget.length === 1 ? "¿Eliminar este contacto?" : `¿Eliminar ${deleteTarget.length} contactos?`}
             </div>
@@ -338,8 +339,8 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
       {/* Acción Hoy — same table format, red header */}
       {urgentLeads.length > 0 && (
         <div style={{ background: "#1E293B", borderRadius: 16, border: "1px solid rgba(239,68,68,0.2)", overflow: "hidden", marginBottom: 20 }}>
-          <div style={{ padding: "12px 18px", background: "rgba(239,68,68,0.08)", borderBottom: "1px solid rgba(239,68,68,0.15)", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 16 }}>⚡</span>
+          <div style={{ padding: "12px 18px", background: "rgba(239,68,68,0.08)", borderBottom: "1px solid rgba(239,68,68,0.15)", display: "flex", alignItems: "center", gap: 10, color: "#ef4444" }}>
+            <Zap size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
             <span style={{ fontSize: 14, fontWeight: 800, color: "#ef4444" }}>Acción Hoy</span>
             <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 12, fontWeight: 800, color: "#ef4444", background: "rgba(239,68,68,0.15)" }}>{urgentLeads.length}</span>
           </div>
@@ -361,8 +362,9 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
             <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600, marginLeft: 8 }}>{filtered.length}/{leads.length}</span>
           </div>
           {selected.size > 0 && (
-            <button onClick={() => setDeleteTarget(Array.from(selected))} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              🗑️ Eliminar seleccionados ({selected.size})
+            <button onClick={() => setDeleteTarget(Array.from(selected))} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <Trash2 size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+              Eliminar seleccionados ({selected.size})
             </button>
           )}
           <input style={{ ...inputStyle, width: 170 }} placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} />

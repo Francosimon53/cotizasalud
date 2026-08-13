@@ -1,7 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Camera,
+  Copy,
+  Download,
+  ExternalLink,
+  Link2,
+  Mail,
+  MessageCircle,
+  MessageSquare,
+  Music,
+  Printer,
+  Users,
+} from "lucide-react";
 import QRCode from "qrcode";
 import { jsPDF } from "jspdf";
 
@@ -18,16 +31,20 @@ type UtmPreset = {
   source: string;
   medium: string;
   color: string;
-  icon: string;
+  icon: ReactNode;
 };
 
+// Iconos de interfaz: heredan el color del botón (currentColor), por eso no
+// llevan color propio — el botón ya alterna entre p.color y el gris inactivo.
+const ICON_PROPS = { size: 16, strokeWidth: 2, "aria-hidden": true, style: { flexShrink: 0 } } as const;
+
 const UTM_PRESETS: UtmPreset[] = [
-  { key: "whatsapp", label: "WhatsApp", source: "whatsapp", medium: "social", color: "#25D366", icon: "💬" },
-  { key: "facebook", label: "Facebook", source: "facebook", medium: "social", color: "#1877F2", icon: "👤" },
-  { key: "instagram", label: "Instagram", source: "instagram", medium: "social", color: "#E4405F", icon: "📸" },
-  { key: "tiktok", label: "TikTok", source: "tiktok", medium: "social", color: "#ff0050", icon: "🎵" },
-  { key: "email", label: "Email", source: "email", medium: "email", color: "#8b5cf6", icon: "📧" },
-  { key: "print", label: "Tarjeta impresa", source: "print", medium: "offline", color: "#f59e0b", icon: "🖨️" },
+  { key: "whatsapp", label: "WhatsApp", source: "whatsapp", medium: "social", color: "#25D366", icon: <MessageCircle {...ICON_PROPS} /> },
+  { key: "facebook", label: "Facebook", source: "facebook", medium: "social", color: "#1877F2", icon: <Users {...ICON_PROPS} /> },
+  { key: "instagram", label: "Instagram", source: "instagram", medium: "social", color: "#E4405F", icon: <Camera {...ICON_PROPS} /> },
+  { key: "tiktok", label: "TikTok", source: "tiktok", medium: "social", color: "#ff0050", icon: <Music {...ICON_PROPS} /> },
+  { key: "email", label: "Email", source: "email", medium: "email", color: "#8b5cf6", icon: <Mail {...ICON_PROPS} /> },
+  { key: "print", label: "Tarjeta impresa", source: "print", medium: "offline", color: "#f59e0b", icon: <Printer {...ICON_PROPS} /> },
 ];
 
 function buildLink(slug: string, clientName: string, preset: UtmPreset | null, campaign: string): string {
@@ -178,7 +195,10 @@ export default function ShareClient({ slug, agentName }: Props) {
         color: "#8b8fa3", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
       }}>← Dashboard</button>
 
-      <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>🚀 Tu kit para compartir</h1>
+      <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+        <Link2 size={24} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+        Tu kit para compartir
+      </h1>
       <p style={{ fontSize: 14, color: "#5a5e72", marginBottom: 24 }}>
         Link personal, QR imprimible, mensajes listos y tracking por canal. Tus contactos entran directo a tu dashboard.
       </p>
@@ -202,15 +222,23 @@ export default function ShareClient({ slug, agentName }: Props) {
             border: "none", cursor: "pointer", fontFamily: "inherit",
             background: copied === "hero" ? "#10b981" : "#10b981",
             color: "#000", transition: "all .2s",
+            display: "inline-flex", alignItems: "center", gap: 8,
           }}>
-            {copied === "hero" ? "¡Copiado!" : "📋 Copiar link"}
+            {copied === "hero" ? "¡Copiado!" : (
+              <>
+                <Copy size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+                Copiar link
+              </>
+            )}
           </button>
           <button onClick={() => window.open(baseLink, "_blank")} style={{
             padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800,
             border: "1.5px solid rgba(16,185,129,0.4)", cursor: "pointer", fontFamily: "inherit",
             background: "transparent", color: "#10b981",
+            display: "inline-flex", alignItems: "center", gap: 8,
           }}>
-            🔗 Abrir en pestaña nueva
+            <ExternalLink size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+            Abrir en pestaña nueva
           </button>
         </div>
       </div>
@@ -248,7 +276,7 @@ export default function ShareClient({ slug, agentName }: Props) {
                 display: "flex", alignItems: "center", gap: 8,
                 transition: "all .2s",
               }}>
-                <span style={{ fontSize: 16 }}>{p.icon}</span>
+                {p.icon}
                 <span>Link para {p.label}</span>
               </button>
             );
@@ -299,24 +327,29 @@ export default function ShareClient({ slug, agentName }: Props) {
             padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer",
             background: "#25D366", color: "#000", fontSize: 13, fontWeight: 800,
             fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          }}>💬 WhatsApp</button>
+          }}><MessageCircle size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />WhatsApp</button>
           <button onClick={openSMS} style={{
             padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer",
             background: "#3b82f6", color: "#fff", fontSize: 13, fontWeight: 800,
             fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          }}>📱 SMS</button>
+          }}><MessageSquare size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />SMS</button>
           <button onClick={openEmail} style={{
             padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer",
             background: "#8b5cf6", color: "#fff", fontSize: 13, fontWeight: 800,
             fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          }}>📧 Email</button>
+          }}><Mail size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />Email</button>
           <button onClick={() => copyToClipboard(personalLink, "share-copy")} style={{
             padding: "12px 14px", borderRadius: 10, border: "1.5px solid rgba(16,185,129,0.4)", cursor: "pointer",
             background: copied === "share-copy" ? "#10b981" : "transparent",
             color: copied === "share-copy" ? "#000" : "#10b981",
             fontSize: 13, fontWeight: 800, fontFamily: "inherit",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all .2s",
-          }}>{copied === "share-copy" ? "¡Copiado!" : "🔗 Copiar link"}</button>
+          }}>{copied === "share-copy" ? "¡Copiado!" : (
+            <>
+              <Copy size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+              Copiar link
+            </>
+          )}</button>
         </div>
       </div>
 
@@ -325,11 +358,11 @@ export default function ShareClient({ slug, agentName }: Props) {
         <div style={sectionLabel}>Mensajes listos para copiar</div>
 
         {([
-          { key: "whatsapp", label: "💬 WhatsApp", text: messages.whatsapp, color: "#25D366" },
-          { key: "sms", label: "📱 SMS (corto)", text: messages.sms, color: "#3b82f6" },
-          { key: "emailSig", label: "📧 Firma de email", text: messages.emailSig, color: "#8b5cf6" },
-          { key: "social", label: "👤 Facebook / Instagram", text: messages.social, color: "#1877F2" },
-          { key: "tiktok", label: "🎵 Caption de TikTok", text: messages.tiktok, color: "#ff0050" },
+          { key: "whatsapp", label: <><MessageCircle {...ICON_PROPS} />WhatsApp</>, text: messages.whatsapp, color: "#25D366" },
+          { key: "sms", label: <><MessageSquare {...ICON_PROPS} />SMS (corto)</>, text: messages.sms, color: "#3b82f6" },
+          { key: "emailSig", label: <><Mail {...ICON_PROPS} />Firma de email</>, text: messages.emailSig, color: "#8b5cf6" },
+          { key: "social", label: <><Users {...ICON_PROPS} />Facebook / Instagram</>, text: messages.social, color: "#1877F2" },
+          { key: "tiktok", label: <><Music {...ICON_PROPS} />Caption de TikTok</>, text: messages.tiktok, color: "#ff0050" },
         ] as const).map((m) => (
           <div key={m.key} style={{
             background: "#0e1018", borderRadius: 12, padding: "14px 16px",
@@ -339,7 +372,7 @@ export default function ShareClient({ slug, agentName }: Props) {
               display: "flex", justifyContent: "space-between",
               alignItems: "center", gap: 10, marginBottom: 8,
             }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: m.color, display: "flex", alignItems: "center", gap: 6 }}>{m.label}</div>
               <button onClick={() => copyToClipboard(m.text, m.key)} style={copyBtn(m.key)}>
                 {copied === m.key ? "¡Copiado!" : "Copiar"}
               </button>
@@ -380,7 +413,8 @@ export default function ShareClient({ slug, agentName }: Props) {
               background: qrDataUrl ? "#10b981" : "rgba(255,255,255,0.08)",
               color: qrDataUrl ? "#000" : "#5a5e72",
               fontFamily: "inherit", marginTop: 8,
-            }}>⬇️ Descargar PDF imprimible</button>
+              display: "inline-flex", alignItems: "center", gap: 8,
+            }}><Download size={20} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />Descargar PDF imprimible</button>
           </div>
         </div>
       </div>

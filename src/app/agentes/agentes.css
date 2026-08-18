@@ -1125,6 +1125,11 @@ html { scroll-behavior: smooth; }
   border-color: rgba(139, 92, 246, 0.3);
 }
 .dh-btn-admin:hover { color: #a78bfa; border-color: rgba(139, 92, 246, 0.5); }
+.dh-btn-cartera {
+  color: var(--accent-2);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+.dh-btn-cartera:hover { color: #22d3ee; border-color: rgba(6, 182, 212, 0.5); }
 
 /* Bajo 760px la fila de 6 botones (~790px de ancho mínimo) desbordaba el
    viewport y dejaba Perfil y Salir fuera de pantalla. Se envuelve en una

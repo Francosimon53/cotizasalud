@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { isAdminSlug } from "@/lib/admin-slugs";
+import { isCarteraEnabled } from "@/lib/feature-flags";
 
 // El admin se resuelve aquí a partir del slug, no vía prop: antes cada página
 // tenía que acordarse de pasar `isAdmin` y solo una de las seis lo hacía, así
@@ -31,6 +32,11 @@ export default function DashboardHeader({ agentName, agencyName, agentSlug }: { 
         {isAdmin && (
           <button onClick={() => router.push("/agentes/dashboard/team")} className="dh-btn dh-btn-admin">
             Equipo
+          </button>
+        )}
+        {isCarteraEnabled() && (
+          <button onClick={() => router.push("/agentes/dashboard/cartera")} className="dh-btn dh-btn-cartera">
+            Mi Cartera
           </button>
         )}
         <button onClick={() => router.push("/agentes/dashboard/renewals")} className="dh-btn">

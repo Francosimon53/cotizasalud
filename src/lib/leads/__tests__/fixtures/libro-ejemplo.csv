@@ -1,0 +1,12 @@
+First Name,Last Name,Phone,Email,Plan Name,Monthly Premium,Effective Date,Status,Zip,Agent Notes
+Maria,"Lopez, Jose",(239) 555-0001,maria@example.com,"Ambetter - Clarity Silver, con dental","$116.24",01/01/2026,Active,34142,"nota, con coma"
+Jose,Perez,239-555-0002,jose@example.com,Ambetter - Everyday Bronze,$1.36,2026-01-01,Active,34142,
+Ana,"Martinez de la Cruz",+1 (239) 555-0003,ana@example.com,Oscar - Gold Simple,"$1,234.56",2023-01-01,Active,34120,
+Luis,"O""Brien",2395550004,,Oscar - Bronze Elite,$0,04/01/2026,Active,34120,
+Carmen,Diaz,(239) 555-0005,carmen@example.com,Ambetter - Elite Bronze,$169.91,,Active,34142,sin fecha efectiva
+Pedro,Gonzalez,(239) 555-0006,pedro@example.com,Ambetter - Clarity Silver,$41.35,2020-01-01,Terminated,34142,
+Rosa,Hernandez,(239) 555-0001,rosa@example.com,Ambetter - Everyday Bronze,$61.18,2025-01-01,Active,34142,repetida en el archivo
+Sin,Telefono,,sin@example.com,Ambetter - Clarity Silver,$50.00,2026-01-01,Active,34142,
+,,(239) 555-0009,,Ambetter,$10,2026-01-01,Active,34142,sin nombre
+Corto,Telefono,555,,Ambetter,$10,2026-01-01,Active,34142,
+,,,,,,,,,

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
 import { SUBSCRIPTION_PLANS, TRIAL_DAYS } from "@/lib/subscription-plans";
@@ -121,8 +122,12 @@ export default async function DashboardPage({
             color: "#10b981",
             fontWeight: 700,
             fontSize: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}>
-            ✅ ¡Pago confirmado! Tu plan se activa en unos segundos. Si no ves el cambio, refrescá la página.
+            <CheckCircle2 size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+            ¡Pago confirmado! Tu plan se activa en unos segundos. Si no ves el cambio, refrescá la página.
           </div>
         )}
         {checkoutResult === "cancelled" && (
@@ -135,8 +140,12 @@ export default async function DashboardPage({
             color: "#f59e0b",
             fontWeight: 700,
             fontSize: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}>
-            ⚠️ Cancelaste el pago. Tu plan actual sigue activo sin cambios.
+            <AlertTriangle size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+            Cancelaste el pago. Tu plan actual sigue activo sin cambios.
           </div>
         )}
 

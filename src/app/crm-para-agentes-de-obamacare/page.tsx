@@ -12,11 +12,11 @@ export const metadata = {
   },
   title: "CRM para Agentes de Obamacare | EnrollSalud",
   description:
-    "El OEP 2027 dura 45 días. Captura leads con tu propio link de cotización, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
+    "CRM en español para agentes de Obamacare: captura leads con tu propio link, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
   openGraph: {
     title: "CRM para Agentes de Obamacare | EnrollSalud",
     description:
-      "El OEP 2027 dura 45 días. Captura leads con tu propio link de cotización, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
+      "CRM en español para agentes de Obamacare: captura leads con tu propio link, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
     url: "https://enrollsalud.com/crm-para-agentes-de-obamacare",
     siteName: "EnrollSalud",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata = {
     card: "summary",
     title: "CRM para Agentes de Obamacare | EnrollSalud",
     description:
-      "El OEP 2027 dura 45 días. Captura leads con tu propio link de cotización, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
+      "CRM en español para agentes de Obamacare: captura leads con tu propio link, documenta el consentimiento CMS y no pierdas renovaciones. Desde $29/mes.",
   },
 };
 
@@ -84,7 +84,7 @@ export default function CrmParaAgentesDeObamacarePage() {
       {/* Fonts (mismas que /agentes) */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link
-        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Satoshi:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
         rel="stylesheet"
       />
 
@@ -110,7 +110,7 @@ export default function CrmParaAgentesDeObamacarePage() {
 
         <div className="ag-hero-badge">
           <span className="ag-dot" />
-          OEP 2027: {ACA_STATS.oepInicio} al {ACA_STATS.oepFin} — solo {ACA_STATS.oepDias} días
+          OEP 2027: abre el {ACA_STATS.oepInicio} — {ACA_STATS.oepLimiteEnero} para cobertura en enero
         </div>
 
         <h1>
@@ -126,9 +126,9 @@ export default function CrmParaAgentesDeObamacarePage() {
         </p>
 
         <p className="ag-hero-sub" style={{ marginTop: -24 }}>
-          Y este año duele más: el OEP dura {ACA_STATS.oepDias} días y tus clientes están pagando en
-          promedio {ACA_STATS.pagoNetoPct}% más de su bolsillo. Cada lead que se enfría es una venta
-          que otro agente cierra.
+          Y este año duele más: son {ACA_STATS.diasHastaCoberturaEnero} días para asegurar cobertura
+          desde el 1 de enero y tus clientes están pagando en promedio {ACA_STATS.pagoNetoPct}% más
+          de su bolsillo. Cada lead que se enfría es una venta que otro agente cierra.
         </p>
 
         <div className="ag-hero-actions">
@@ -147,7 +147,8 @@ export default function CrmParaAgentesDeObamacarePage() {
         <h2>Un CRM genérico no sabe qué es el OEP</h2>
         <p className="ag-triage-desc">
           Los CRM generales están hechos para vender lo que sea a quien sea, todo el año. Tu negocio
-          no funciona así: tu año se decide en {ACA_STATS.oepDias} días, cada venta necesita un
+          no funciona así: tu año se juega en los {ACA_STATS.diasHastaCoberturaEnero} días que
+          deciden quién arranca con cobertura en enero, cada venta necesita un
           consentimiento que CMS puede auditar, y tu cliente empieza &ldquo;viendo planes&rdquo; mucho
           antes de estar listo para inscribirse. Adaptar un CRM genérico a eso es trabajo tuyo, cada
           día, a mano.
@@ -160,7 +161,7 @@ export default function CrmParaAgentesDeObamacarePage() {
             <ul className="ag-triage-list">
               <li>No sabe qué es un consentimiento CMS ni por qué necesitas guardarlo firmado</li>
               <li>Su pipeline es &ldquo;contactado / cerrado&rdquo; — no distingue quién cotizó, quién eligió plan y quién falta por firmar</li>
-              <li>Sus recordatorios no entienden que tus renovaciones se concentran en una ventana de {ACA_STATS.oepDias} días</li>
+              <li>Sus recordatorios no entienden que tus renovaciones se concentran en la ventana de {ACA_STATS.diasHastaCoberturaEnero} días que asegura cobertura desde enero</li>
               <li>El español, si existe, es una traducción — no el idioma en el que trabaja tu cliente</li>
             </ul>
           </div>
@@ -170,7 +171,7 @@ export default function CrmParaAgentesDeObamacarePage() {
             <ul className="ag-triage-list">
               <li>El consentimiento CMS con firma digital es un paso del flujo, no un PDF que persigues por email</li>
               <li>El pipeline refleja el recorrido real: cotizó &rarr; eligió plan &rarr; firmó &rarr; inscrito</li>
-              <li>Las renovaciones se avisan solas, con la anticipación que exige un OEP corto</li>
+              <li>Las renovaciones se avisan solas, con la anticipación que exige una ventana corta para asegurar cobertura desde enero</li>
               <li>Español nativo para ti y para tu cliente, con inglés disponible cuando lo pida</li>
             </ul>
           </div>
@@ -262,7 +263,8 @@ export default function CrmParaAgentesDeObamacarePage() {
           ~{ACA_STATS.pagoNetoPct}%, y quien mantiene su mismo plan puede llegar a pagar hasta
           ~{ACA_STATS.mismoPlanPct}% más ({ACA_STATS.fuente}). Tus clientes tienen más dudas, más
           miedo al precio y más razones para comparar — y tú tienes del {ACA_STATS.oepInicio} al{" "}
-          {ACA_STATS.oepFin} para atenderlos a todos.
+          {ACA_STATS.oepLimiteEnero} para que arranquen con cobertura el 1 de enero; después, hasta
+          el {ACA_STATS.oepFinPeriodo}, pero ya con cobertura desde febrero.
         </p>
 
         <div className="ag-stats-bar" style={{ marginBottom: 40 }}>
@@ -279,8 +281,8 @@ export default function CrmParaAgentesDeObamacarePage() {
             <div className="ag-stat-label">Manteniendo el mismo plan</div>
           </div>
           <div className="ag-stat">
-            <div className="ag-stat-value">{ACA_STATS.oepDias}</div>
-            <div className="ag-stat-label">Días de OEP 2027</div>
+            <div className="ag-stat-value">{ACA_STATS.diasHastaCoberturaEnero}</div>
+            <div className="ag-stat-label">Días para cobertura en enero</div>
           </div>
         </div>
 
@@ -326,8 +328,9 @@ export default function CrmParaAgentesDeObamacarePage() {
           Este OEP, que no se te enfríe<br /><em>ni un solo cliente</em>
         </h2>
         <p className="ag-cta-desc">
-          Comparte tu link, deja que tus clientes coticen solos y dedica los {ACA_STATS.oepDias} días
-          a cerrar — no a perseguir firmas ni a repasar pestañas de Excel.
+          Comparte tu link, deja que tus clientes coticen solos y dedica los{" "}
+          {ACA_STATS.diasHastaCoberturaEnero} días que deciden la cobertura de enero a cerrar — no a
+          perseguir firmas ni a repasar pestañas de Excel.
         </p>
         <div>
           <Link href="/agentes/registro" className="ag-btn-primary" style={{ fontSize: 18, padding: "20px 48px" }}>

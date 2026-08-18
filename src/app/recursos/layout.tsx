@@ -30,7 +30,7 @@ export default function RecursosLayout({ children }: { children: ReactNode }) {
     <div className="rec-shell">
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Satoshi:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
       />
       <nav className="rec-nav">
         <Link href="/" className="rec-nav-brand">Enroll<span>Salud</span></Link>

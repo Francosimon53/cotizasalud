@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
+import { Gift } from "lucide-react";
 import {
   PLAN_CATALOG,
   getYearlySavings,
@@ -179,11 +180,17 @@ export default function BillingCard(props: Props) {
             fontSize: 13,
             color: CYAN,
             lineHeight: 1.5,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
-          🎁 <strong>Estás en período Early Adopter</strong> — Pro gratis
-          {graceEndDate && ` hasta el ${graceEndDate}`}. Después podés elegir el plan que prefieras.
-          Si querés cambiar antes, podés hacerlo desde aquí.
+          <Gift size={16} strokeWidth={2} aria-hidden="true" style={{ flexShrink: 0 }} />
+          <span>
+            <strong>Estás en período Early Adopter</strong> — Pro gratis
+            {graceEndDate && ` hasta el ${graceEndDate}`}. Después podés elegir el plan que prefieras.
+            Si querés cambiar antes, podés hacerlo desde aquí.
+          </span>
         </div>
       )}
 

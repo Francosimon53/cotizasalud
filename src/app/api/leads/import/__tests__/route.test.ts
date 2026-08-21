@@ -34,14 +34,16 @@ function mockAuthUser(user: { id: string } | null) {
 
 interface DbMockOpts {
   agent?: Agent | null;
-  existing?: { id: string } | null;
-  insertedId?: string;
+  /** Phones already in the agent's CRM. */
+  existingPhones?: string[];
   insertError?: unknown;
 }
 
 function makeDbMock(opts: DbMockOpts) {
-  const { agent = null, existing = null, insertedId = "lead-1", insertError = null } = opts;
-  const insertCalls: Record<string, unknown>[] = [];
+  const { agent = null, existingPhones = [], insertError = null } = opts;
+  const leadInserts: Record<string, unknown>[] = [];
+  const reminderInserts: Record<string, unknown>[] = [];
+  let leadSeq = 0;
 
   const db = {
     from: vi.fn((table: string) => {
@@ -56,31 +58,37 @@ function makeDbMock(opts: DbMockOpts) {
       }
       if (table === "leads") {
         return {
+          // Dedupe query: one SELECT for every phone the agent already has.
           select: () => ({
-            eq: () => ({
-              eq: () => ({
-                limit: () => ({
-                  single: async () => ({ data: existing, error: null }),
-                }),
-              }),
+            eq: async () => ({
+              data: existingPhones.map((p) => ({ contact_phone: p })),
+              error: null,
             }),
           }),
-          insert: (payload: Record<string, unknown>) => {
-            insertCalls.push(payload);
+          insert: (payload: Record<string, unknown>[]) => {
+            const rows = Array.isArray(payload) ? payload : [payload];
+            leadInserts.push(...rows);
             return {
-              select: () => ({
-                single: async () =>
-                  insertError
-                    ? { data: null, error: insertError }
-                    : { data: { id: insertedId }, error: null },
-              }),
+              select: async () =>
+                insertError
+                  ? { data: null, error: insertError }
+                  : {
+                      data: rows.map((r) => ({
+                        id: `lead-${++leadSeq}`,
+                        renewal_date: r.renewal_date,
+                      })),
+                      error: null,
+                    },
             };
           },
         };
       }
       if (table === "renewal_reminders") {
         return {
-          insert: vi.fn(async () => ({ data: null, error: null })),
+          insert: async (payload: Record<string, unknown>[]) => {
+            reminderInserts.push(...(Array.isArray(payload) ? payload : [payload]));
+            return { data: null, error: null };
+          },
         };
       }
       return {};
@@ -88,7 +96,13 @@ function makeDbMock(opts: DbMockOpts) {
   };
 
   (createServiceClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue(db);
-  return { db, insertCalls };
+  return { db, leadInserts, reminderInserts };
+}
+
+const ACTIVE_AGENT: Agent = { id: "a1", slug: "alice", is_active: true };
+
+function row(over: Record<string, unknown> = {}) {
+  return { name: "Maria Lopez", phone: "2395551234", ...over };
 }
 
 beforeEach(() => {
@@ -96,46 +110,57 @@ beforeEach(() => {
   (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: false });
 });
 
-describe("POST /api/leads/import", () => {
+describe("POST /api/leads/import — auth", () => {
   it("returns 401 when no auth user is present", async () => {
     mockAuthUser(null);
 
-    const res = await POST(makeRequest({ name: "Maria", phone: "1234567890" }));
+    const res = await POST(makeRequest(row()));
 
     expect(res.status).toBe(401);
-    const body = await res.json();
-    expect(body.error).toMatch(/auth/i);
+    expect((await res.json()).error).toMatch(/auth/i);
   });
 
   it("returns 403 when the auth user has no linked agent profile", async () => {
     mockAuthUser({ id: "u1" });
     makeDbMock({ agent: null });
 
-    const res = await POST(makeRequest({ name: "Maria", phone: "1234567890" }));
+    const res = await POST(makeRequest(row()));
 
     expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error).toMatch(/no agent profile/i);
+    expect((await res.json()).error).toMatch(/no agent profile/i);
   });
 
   it("returns 403 when the linked agent is inactive", async () => {
     mockAuthUser({ id: "u1" });
     makeDbMock({ agent: { id: "a1", slug: "alice", is_active: false } });
 
-    const res = await POST(makeRequest({ name: "Maria", phone: "1234567890" }));
+    const res = await POST(makeRequest(row()));
 
     expect(res.status).toBe(403);
-    const body = await res.json();
-    expect(body.error).toMatch(/inactive/i);
+    expect((await res.json()).error).toMatch(/inactive/i);
   });
 
-  it("creates a lead and uses agent_id/agent_slug derived from the authenticated user", async () => {
+  it("returns 429 when the rate limiter reports the user is limited", async () => {
     mockAuthUser({ id: "u1" });
-    const { insertCalls } = makeDbMock({
-      agent: { id: "a1", slug: "alice", is_active: true },
-      existing: null,
-      insertedId: "lead-99",
+    makeDbMock({ agent: ACTIVE_AGENT });
+    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: true });
+
+    const res = await POST(makeRequest(row()));
+
+    expect(res.status).toBe(429);
+    expect(rateLimit).toHaveBeenCalledWith("import:u1", {
+      max: 10,
+      windowMs: 60 * 60_000,
     });
+    // The agent must be told what to do, not just handed a status code.
+    expect((await res.json()).message).toMatch(/hora/i);
+  });
+});
+
+describe("POST /api/leads/import — single client (legacy shape)", () => {
+  it("creates a lead and derives agent_id/agent_slug from the session", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts } = makeDbMock({ agent: ACTIVE_AGENT });
 
     const res = await POST(
       makeRequest({
@@ -147,47 +172,270 @@ describe("POST /api/leads/import", () => {
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body).toEqual({ success: true, leadId: "lead-99" });
-    expect(insertCalls).toHaveLength(1);
-    expect(insertCalls[0].agent_id).toBe("a1");
-    expect(insertCalls[0].agent_slug).toBe("alice");
-    expect(insertCalls[0].contact_phone).toBe("2395551234"); // digits only
+    expect(await res.json()).toEqual({ success: true, leadId: "lead-1" });
+    expect(leadInserts).toHaveLength(1);
+    expect(leadInserts[0].agent_id).toBe("a1");
+    expect(leadInserts[0].agent_slug).toBe("alice");
+    expect(leadInserts[0].contact_phone).toBe("2395551234");
   });
 
   it("ignores agent_slug from the body (anti-spoofing)", async () => {
     mockAuthUser({ id: "u1" });
-    const { insertCalls } = makeDbMock({
-      agent: { id: "a1", slug: "alice", is_active: true },
-      existing: null,
-      insertedId: "lead-99",
+    const { leadInserts } = makeDbMock({ agent: ACTIVE_AGENT });
+
+    const res = await POST(
+      makeRequest(row({ agentSlug: "victim-agent", agent_slug: "victim-agent" }))
+    );
+
+    expect(res.status).toBe(200);
+    expect(leadInserts[0].agent_slug).toBe("alice");
+    expect(leadInserts[0].agent_id).toBe("a1");
+  });
+
+  it("reports a duplicate without inserting", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts } = makeDbMock({
+      agent: ACTIVE_AGENT,
+      existingPhones: ["2395551234"],
+    });
+
+    const res = await POST(makeRequest(row()));
+
+    expect(await res.json()).toEqual({ skipped: true, reason: "duplicate" });
+    expect(leadInserts).toHaveLength(0);
+  });
+
+  it("returns 400 when name or phone is missing", async () => {
+    mockAuthUser({ id: "u1" });
+    makeDbMock({ agent: ACTIVE_AGENT });
+
+    const res = await POST(makeRequest({ name: "Maria" }));
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/leads/import — batch", () => {
+  it("imports a whole book in ONE request", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts } = makeDbMock({ agent: ACTIVE_AGENT });
+
+    const rows = Array.from({ length: 200 }, (_, i) => ({
+      name: `Cliente ${i}`,
+      phone: `239555${String(i).padStart(4, "0")}`,
+    }));
+
+    const res = await POST(makeRequest({ rows }));
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.imported).toBe(200);
+    expect(body.total).toBe(200);
+    expect(leadInserts).toHaveLength(200);
+    // One call to the limiter for the whole file, not one per client.
+    expect(rateLimit).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips clients already in the agent's CRM without failing the file", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts } = makeDbMock({
+      agent: ACTIVE_AGENT,
+      existingPhones: ["2395550001"],
     });
 
     const res = await POST(
       makeRequest({
-        name: "Maria",
-        phone: "1234567890",
-        agentSlug: "victim-agent",
-        agent_slug: "victim-agent",
+        rows: [
+          { name: "Ya existe", phone: "(239) 555-0001" },
+          { name: "Nueva", phone: "2395550002" },
+        ],
       })
     );
 
-    expect(res.status).toBe(200);
-    expect(insertCalls[0].agent_slug).toBe("alice");
-    expect(insertCalls[0].agent_id).toBe("a1");
+    const body = await res.json();
+    expect(body.imported).toBe(1);
+    expect(body.skipped).toBe(1);
+    expect(leadInserts).toHaveLength(1);
+    expect(leadInserts[0].contact_name).toBe("Nueva");
   });
 
-  it("returns 429 when the rate limiter reports the user is limited", async () => {
+  it("dedupes against a phone stored with a country code", async () => {
     mockAuthUser({ id: "u1" });
-    makeDbMock({ agent: { id: "a1", slug: "alice", is_active: true } });
-    (rateLimit as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ limited: true });
-
-    const res = await POST(makeRequest({ name: "Maria", phone: "1234567890" }));
-
-    expect(res.status).toBe(429);
-    expect(rateLimit).toHaveBeenCalledWith("import:u1", {
-      max: 10,
-      windowMs: 60 * 60_000,
+    const { leadInserts } = makeDbMock({
+      agent: ACTIVE_AGENT,
+      existingPhones: ["12395550001"],
     });
+
+    const res = await POST(makeRequest({ rows: [{ name: "Ana", phone: "239-555-0001" }] }));
+
+    expect((await res.json()).skipped).toBe(1);
+    expect(leadInserts).toHaveLength(0);
+  });
+
+  it("dedupes repeats inside the same file", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts } = makeDbMock({ agent: ACTIVE_AGENT });
+
+    const res = await POST(
+      makeRequest({
+        rows: [
+          { name: "Ana", phone: "2395550001" },
+          { name: "Ana otra vez", phone: "(239) 555-0001" },
+        ],
+      })
+    );
+
+    const body = await res.json();
+    expect(body.imported).toBe(1);
+    expect(body.skipped).toBe(1);
+    expect(leadInserts).toHaveLength(1);
+  });
+
+  it("lets a bad row fail without blocking the rest of the file", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts } = makeDbMock({ agent: ACTIVE_AGENT });
+
+    const res = await POST(
+      makeRequest({
+        rows: [
+          { name: "Sin telefono", phone: "", line: 2 },
+          { name: "", phone: "2395550002", line: 3 },
+          { name: "Telefono corto", phone: "555", line: 4 },
+          { name: "Buena", phone: "2395550005", line: 5 },
+        ],
+      })
+    );
+
+    const body = await res.json();
+    expect(body.imported).toBe(1);
+    expect(body.errors).toBe(3);
+    expect(leadInserts).toHaveLength(1);
+    expect(body.details).toEqual([
+      { line: 2, reason: "missing_phone" },
+      { line: 3, reason: "missing_name" },
+      { line: 4, reason: "invalid_phone" },
+    ]);
+  });
+
+  it("never puts a client's data in the error details", async () => {
+    mockAuthUser({ id: "u1" });
+    makeDbMock({ agent: ACTIVE_AGENT });
+
+    const res = await POST(
+      makeRequest({
+        rows: [{ name: "Maria Secreta", phone: "", email: "secreta@example.com", line: 7 }],
+      })
+    );
+
+    const raw = JSON.stringify((await res.json()).details);
+    expect(raw).not.toMatch(/Secreta/);
+    expect(raw).not.toMatch(/example\.com/);
+    expect(raw).toContain('"line":7');
+  });
+
+  it("writes a renewal date that the cron can still reach", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts, reminderInserts } = makeDbMock({ agent: ACTIVE_AGENT });
+
+    const res = await POST(
+      makeRequest({ rows: [{ name: "Ana", phone: "2395550001", effectiveDate: "2023-01-01" }] })
+    );
+
+    expect(res.status).toBe(200);
+    const renewal = leadInserts[0].renewal_date as string;
+    // The old rule produced 2024-01-01 here — already past, so
+    // /api/cron/renewals (which matches renewal_date == today + 60/30/15)
+    // could never fire for this client.
+    expect(new Date(`${renewal}T00:00:00Z`).getTime()).toBeGreaterThan(Date.now());
+    expect(renewal.endsWith("-01-01")).toBe(true);
+    expect(reminderInserts).toHaveLength(1);
+    expect(reminderInserts[0].renewal_date).toBe(renewal);
+  });
+
+  it("imports a client with no effective date and counts it as unreachable", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts, reminderInserts } = makeDbMock({ agent: ACTIVE_AGENT });
+
+    const res = await POST(makeRequest({ rows: [{ name: "Ana", phone: "2395550001" }] }));
+
+    const body = await res.json();
+    expect(body.imported).toBe(1);
+    expect(body.missingEffectiveDate).toBe(1);
+    expect(leadInserts[0].renewal_date).toBeNull();
+    expect(reminderInserts).toHaveLength(0);
+  });
+
+  it("marks an active book client as enrolled", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts } = makeDbMock({ agent: ACTIVE_AGENT });
+
+    await POST(
+      makeRequest({
+        rows: [
+          { name: "Ana", phone: "2395550001", status: "Active" },
+          { name: "Luis", phone: "2395550002", status: "Terminated" },
+        ],
+      })
+    );
+
+    expect(leadInserts[0].status).toBe("enrolled");
+    expect(leadInserts[0].enrolled_at).not.toBeNull();
+    expect(leadInserts[1].status).toBe("new");
+    expect(leadInserts[1].enrolled_at).toBeNull();
+  });
+
+  it("derives agent identity from the session for every row in the batch", async () => {
+    mockAuthUser({ id: "u1" });
+    const { leadInserts } = makeDbMock({ agent: ACTIVE_AGENT });
+
+    await POST(
+      makeRequest({
+        agentSlug: "victim-agent",
+        rows: [
+          { name: "Ana", phone: "2395550001", agent_slug: "victim-agent", agent_id: "evil" },
+          { name: "Luis", phone: "2395550002", agent_slug: "victim-agent", agent_id: "evil" },
+        ],
+      })
+    );
+
+    for (const lead of leadInserts) {
+      expect(lead.agent_slug).toBe("alice");
+      expect(lead.agent_id).toBe("a1");
+    }
+  });
+
+  it("rejects a file above the per-request cap instead of truncating it", async () => {
+    mockAuthUser({ id: "u1" });
+    makeDbMock({ agent: ACTIVE_AGENT });
+
+    const rows = Array.from({ length: 1001 }, (_, i) => ({
+      name: `C${i}`,
+      phone: `23955${String(i).padStart(5, "0")}`,
+    }));
+
+    const res = await POST(makeRequest({ rows }));
+
+    expect(res.status).toBe(413);
+    expect((await res.json()).message).toMatch(/1001/);
+  });
+
+  it("returns 400 for an empty batch", async () => {
+    mockAuthUser({ id: "u1" });
+    makeDbMock({ agent: ACTIVE_AGENT });
+
+    const res = await POST(makeRequest({ rows: [] }));
+
+    expect(res.status).toBe(400);
+  });
+
+  it("counts a failed insert as an error instead of reporting success", async () => {
+    mockAuthUser({ id: "u1" });
+    makeDbMock({ agent: ACTIVE_AGENT, insertError: { message: "boom" } });
+
+    const res = await POST(makeRequest({ rows: [{ name: "Ana", phone: "2395550001" }] }));
+
+    const body = await res.json();
+    expect(body.imported).toBe(0);
+    expect(body.errors).toBe(1);
   });
 });

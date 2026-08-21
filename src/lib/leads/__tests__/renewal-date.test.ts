@@ -81,6 +81,21 @@ describe("mapStatus", () => {
       expect(mapStatus(v)).toBe("new");
     }
   });
+
+  it("never treats a negative status as enrolled", () => {
+    for (const v of [
+      "Inactive", "INACTIVE", "Inactivo", "Inactiva", "No activo", "Not active",
+      "Coverage ended", "Cancelled", "Expired", "Vencido", "Suspendido",
+    ]) {
+      expect(mapStatus(v)).toBe("new");
+    }
+  });
+
+  it("checks negative words before positive ones (substring trap)", () => {
+    // "Inactivo" contains "activo"; the negative list must win regardless.
+    expect("inactivo".includes("activo")).toBe(true);
+    expect(mapStatus("Inactivo")).toBe("new");
+  });
 });
 
 describe("coercePremium", () => {

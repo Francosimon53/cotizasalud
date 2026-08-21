@@ -75,16 +75,35 @@ export function coerceDate(raw: string | null | undefined): string | null {
   return `${year}-${pad(month)}-${pad(day)}`;
 }
 
+// Evaluated BEFORE `ENROLLED_WORDS`. Matching is by substring, and several
+// negative statuses contain a positive word: "Inactive" contains "active",
+// "Inactivo" contains "activo", "No activo" contains "activo", "Coverage
+// ended" contains "coverage". Without this list an ex-client was imported as
+// `enrolled`, got `enrolled_at` stamped and a renewal reminder created.
+const NOT_ENROLLED_WORDS = [
+  "inactiv", "no activ", "not activ", "termin", "cancel", "expir", "vencid",
+  "caducad", "lapsed", "suspend", "baja", "denied", "denegad", "declin",
+  "rechazad", "no coverage", "sin cobertura", "ended",
+];
+
 const ENROLLED_WORDS = [
   "active", "activo", "activa", "enrolled", "inscrito", "inscrita", "in force",
   "inforce", "effectuated", "efectuado", "efectuada", "vigente", "confirmed",
   "confirmado", "coverage", "con cobertura",
 ];
 
-/** An existing client from a book export is enrolled, not a fresh lead. */
+/**
+ * An existing client from a book export is enrolled, not a fresh lead.
+ *
+ * Negative words win over positive ones: because matching is by substring,
+ * "Inactive"/"Inactivo" would otherwise match "active"/"activo" and a former
+ * client would be stamped as enrolled. Anything that is not recognisably
+ * enrolled (including empty) is a plain "new" lead.
+ */
 export function mapStatus(raw: string | null | undefined): "enrolled" | "new" {
   const v = String(raw ?? "").trim().toLowerCase();
   if (!v) return "new";
+  if (NOT_ENROLLED_WORDS.some((w) => v.includes(w))) return "new";
   return ENROLLED_WORDS.some((w) => v.includes(w)) ? "enrolled" : "new";
 }
 

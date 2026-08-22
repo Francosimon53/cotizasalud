@@ -4,12 +4,27 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   FIELD_LABELS_ES,
+  parseLeadCells,
   parseLeadFile,
   type LeadImportField,
+  type ParsedFile,
   type ParsedLeadRow,
 } from "@/lib/leads/import-csv";
+import { sheetHasContent, sheetToCells } from "@/lib/leads/import-xlsx";
 
 const BATCH_SIZE = 500; // must stay <= MAX_ROWS in /api/leads/import
+
+// Guardrails for the Excel path. They protect the agent's browser — an .xlsx
+// is a zip that inflates several times over when parsed — not the server,
+// which keeps its own limits per request.
+const MAX_XLSX_BYTES = 10 * 1024 * 1024;
+const MAX_XLSX_DATA_ROWS = 5000;
+
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const ACCEPTED_FILES = `.csv,text/csv,.txt,.xlsx,${XLSX_MIME}`;
+
+const NO_ROWS_MESSAGE =
+  "No se encontró ningún cliente en el archivo. Revisa que la primera fila sean los encabezados de columna y que haya una columna de teléfono.";
 
 interface ImportSummary {
   total: number;
@@ -25,6 +40,9 @@ interface FileReport {
   missingFields: LeadImportField[];
   ignoredHeaders: string[];
   droppedRows: number;
+  /** Set only when an Excel book had several sheets with content: which one
+   *  was read, so the agent is never left guessing. */
+  sheetNote: string | null;
 }
 
 const REASON_LABELS: Record<string, string> = {
@@ -46,6 +64,79 @@ export default function ImportClient({ agentSlug }: { agentSlug: string }) {
   const [problems, setProblems] = useState<{ line: number; reason: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const showParsed = (parsed: ParsedFile, sheetNote: string | null) => {
+    if (parsed.rows.length === 0) {
+      setReport(null);
+      setError(NO_ROWS_MESSAGE);
+      return;
+    }
+    setReport({
+      rows: parsed.rows,
+      mappedFields: parsed.mappedFields,
+      missingFields: parsed.missingFields,
+      ignoredHeaders: parsed.ignoredHeaders,
+      droppedRows: parsed.droppedRows,
+      sheetNote,
+    });
+  };
+
+  const readCsv = (file: File) => {
+    const reader = new FileReader();
+    reader.onerror = () => setError("No se pudo leer el archivo. Intenta de nuevo.");
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      showParsed(parseLeadFile(text ?? ""), null);
+    };
+    reader.readAsText(file, "UTF-8");
+  };
+
+  // The .xlsx is parsed entirely in the browser; the binary never leaves the
+  // agent's machine. Only the same JSON rows the CSV path produces are sent.
+  const readXlsx = async (file: File) => {
+    if (file.size > MAX_XLSX_BYTES) {
+      setError(
+        `"${file.name}" pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB y el máximo para Excel es 10 MB. Divide la cartera en varios archivos o guárdala como CSV.`
+      );
+      return;
+    }
+
+    let sheets: { sheet: string; cells: string[][] }[];
+    try {
+      // Loaded on demand: agents who upload CSV never download the reader.
+      const { default: readXlsxFile } = await import("read-excel-file/browser");
+      const book = await readXlsxFile(file);
+      sheets = book
+        .map((s) => ({ sheet: s.sheet, cells: sheetToCells(s.data) }))
+        .filter((s) => sheetHasContent(s.cells));
+    } catch {
+      setError(
+        `No se pudo leer "${file.name}". Si el archivo está protegido con contraseña, quítasela; si no, ábrelo en Excel y usa Archivo → Guardar como → Libro de Excel (.xlsx) o CSV UTF-8, y vuelve a subirlo.`
+      );
+      return;
+    }
+
+    if (sheets.length === 0) {
+      setError(NO_ROWS_MESSAGE);
+      return;
+    }
+
+    const chosen = sheets[0];
+    const dataRows = chosen.cells.length - 1; // minus the header row
+    if (dataRows > MAX_XLSX_DATA_ROWS) {
+      setError(
+        `La hoja "${chosen.sheet}" tiene ${dataRows.toLocaleString("es")} filas y el máximo por archivo es ${MAX_XLSX_DATA_ROWS.toLocaleString("es")}. Divide la cartera en varios archivos y súbelos uno por uno.`
+      );
+      return;
+    }
+
+    const sheetNote =
+      sheets.length > 1
+        ? `Se leyó la hoja "${chosen.sheet}". El libro tiene ${sheets.length} hojas con datos; las demás (${sheets.slice(1).map((s) => `"${s.sheet}"`).join(", ")}) no se importan.`
+        : null;
+
+    showParsed(parseLeadCells(chosen.cells), sheetNote);
+  };
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -53,39 +144,23 @@ export default function ImportClient({ agentSlug }: { agentSlug: string }) {
     setResults(null);
     setProblems([]);
     setError(null);
+    setReport(null);
     setFileName(file.name);
 
-    // An .xlsx is a zip, not text: reading it as text yields binary noise and
-    // zero rows. Say so instead of showing an empty preview.
-    if (/\.(xlsx|xls|numbers|ods)$/i.test(file.name)) {
-      setReport(null);
+    // Legacy binary Excel, Numbers and OpenDocument are not readable here.
+    if (/\.(xls|numbers|ods)$/i.test(file.name)) {
       setError(
-        `"${file.name}" es una hoja de Excel, no un CSV. Ábrela y usa Archivo → Guardar como → CSV UTF-8, y sube ese archivo.`
+        `"${file.name}" está en un formato que no podemos leer. Ábrelo y usa Archivo → Guardar como → Libro de Excel (.xlsx) o CSV UTF-8, y sube ese archivo.`
       );
       return;
     }
 
-    const reader = new FileReader();
-    reader.onerror = () => setError("No se pudo leer el archivo. Intenta de nuevo.");
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const parsed = parseLeadFile(text ?? "");
-      if (parsed.rows.length === 0) {
-        setReport(null);
-        setError(
-          "No se encontró ningún cliente en el archivo. Revisa que la primera fila sean los encabezados de columna y que haya una columna de teléfono."
-        );
-        return;
-      }
-      setReport({
-        rows: parsed.rows,
-        mappedFields: parsed.mappedFields,
-        missingFields: parsed.missingFields,
-        ignoredHeaders: parsed.ignoredHeaders,
-        droppedRows: parsed.droppedRows,
-      });
-    };
-    reader.readAsText(file, "UTF-8");
+    if (/\.xlsx$/i.test(file.name)) {
+      void readXlsx(file);
+      return;
+    }
+
+    readCsv(file);
   };
 
   const handleImport = async () => {
@@ -160,12 +235,12 @@ export default function ImportClient({ agentSlug }: { agentSlug: string }) {
     <div className="ph-no-capture">
       <button onClick={() => router.push("/agentes/dashboard")} style={{ padding: "6px 14px", borderRadius: 8, marginBottom: 20, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#8b8fa3", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Dashboard</button>
       <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>Importar Clientes</h1>
-      <p style={{ fontSize: 14, color: "#5a5e72", marginBottom: 24 }}>Sube un CSV exportado de HealthSherpa para importar tus clientes. Puedes subir tu cartera completa de una vez.</p>
+      <p style={{ fontSize: 14, color: "#5a5e72", marginBottom: 24 }}>Sube un CSV o un Excel (.xlsx) exportado de HealthSherpa para importar tus clientes. Puedes subir tu cartera completa de una vez.</p>
 
       <div style={cardStyle}>
-        <input ref={fileRef} type="file" accept=".csv,text/csv,.txt" onChange={handleFile} style={{ display: "none" }} />
+        <input ref={fileRef} type="file" accept={ACCEPTED_FILES} onChange={handleFile} style={{ display: "none" }} />
         <button onClick={() => fileRef.current?.click()} disabled={importing} style={{ width: "100%", padding: "20px", borderRadius: 10, border: "2px dashed rgba(255,255,255,0.15)", background: "transparent", color: "#8b8fa3", fontSize: 16, fontWeight: 700, cursor: importing ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-          📄 {fileName || "Seleccionar archivo CSV"}
+          📄 {fileName || "Seleccionar archivo CSV o Excel"}
         </button>
       </div>
 
@@ -197,6 +272,11 @@ export default function ImportClient({ agentSlug }: { agentSlug: string }) {
             {report.droppedRows > 0 && (
               <div style={{ fontSize: 13, color: "#5a5e72", marginTop: 8 }}>
                 {report.droppedRows} fila(s) en blanco ignoradas.
+              </div>
+            )}
+            {report.sheetNote && (
+              <div style={{ fontSize: 13, color: "#8b8fa3", marginTop: 8, lineHeight: 1.5 }}>
+                {report.sheetNote}
               </div>
             )}
           </div>

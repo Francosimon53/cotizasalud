@@ -1,0 +1,101 @@
+Nombre,DOB,Codigo Postal,Condado,Miembros Hogar,Ingreso Anual,Aseguradora,Metal Level,Prima Mensual,Subsidio,Renovacion Automatica,Telefono,Email
+José Cruz,,34741,Hillsborough,6,,Molina,Bronce,120,900,Sí,(305) 555-1000,jose.0@example.com
+Jorge Ramos,1979-07-17,32801,Hillsborough,1,33357,Cigna,Bronce,200,500,No,(305) 555-1001,jorge.1@example.com
+Alicia Flores,1991-08-12,32202,Osceola,2,47931,AmeriHealth,Gold,400,200,No,(305) 555-1002,alicia.2@example.com
+José Pérez,1990-05-25,33701,Pinellas,2,33218,Aetna CVS,Silver,500,0,No,(305) 555-1003,jose.3@example.com
+María González,1970-08-08,32801,Miami-Dade,3,135000,Ambetter,Bronce,80,820,Sí,(305) 555-1004,maria.4@example.com
+Jorge Chávez,1968-11-04,34741,Hillsborough,5,88356,Molina,Bronce,300,400,Sí,(305) 555-1005,jorge.5@example.com
+Lucía García,1998-09-13,33901,Lee,2,31358,Oscar,Gold,300,300,Sí,(305) 555-1006,lucia.6@example.com
+Silvia Gómez,1985-08-23,33401,Osceola,2,30830,Aetna CVS,Silver,450,50,No,(305) 555-1007,silvia.7@example.com
+Luisa Pérez,1970-07-05,33401,Lee,3,200000,Cigna,Bronce,0,680,Sí,(305) 555-1008,luisa.8@example.com
+Luisa Ramírez,1962-10-17,33701,Polk,5,,AmeriHealth,Silver,200,500,No,(305) 555-1009,luisa.9@example.com
+Ana Pérez,1978-05-07,33401,Duval,2,41354,AmeriHealth,Silver,350,250,No,(305) 555-1010,ana.10@example.com
+Paula Pérez,1992-02-08,33401,Pinellas,2,33357,Ambetter,Gold,500,0,No,(305) 555-1011,paula.11@example.com
+Ana Cruz,1971-10-28,33401,Polk,6,180000,Florida Blue,Bronce,120,900,Sí,(305) 555-1012,ana.12@example.com
+José Martínez,,32202,Orange,4,75300,Oscar,Bronce,200,500,Sí,(305) 555-1013,jose.13@example.com
+María Ramos,1985-03-01,34741,Lee,2,23536,Cigna,Silver,300,300,Sí,(305) 555-1014,maria.14@example.com
+Marta Flores,1991-12-08,33012,Duval,1,36271,Oscar,Platinum,450,50,No,(305) 555-1015,marta.15@example.com
+José González,1969-07-08,33801,Polk,4,135000,Ambetter,Bronce,80,820,Sí,(305) 555-1016,jose.16@example.com
+Tomás Cruz,1990-04-23,34741,Palm Beach,1,28057,Aetna CVS,Silver,200,500,Sí,(305) 555-1017,tomas.17@example.com
+María Sánchez,1977-10-19,33401,Lee,2,,AmeriHealth,Silver,350,250,No,(305) 555-1018,maria.18@example.com
+Alicia Rodríguez,1988-05-03,33401,Miami-Dade,1,36258,Florida Blue,Silver,420,80,No,(305) 555-1019,alicia.19@example.com
+Luisa Ramos,1967-11-21,33101,Miami-Dade,4,150000,Ambetter,Bronce,120,900,Sí,(305) 555-1020,luisa.20@example.com
+Alicia González,1978-03-21,33901,Duval,1,38296,Cigna,Silver,300,300,No,(305) 555-1021,alicia.21@example.com
+Iván Pérez,1989-02-12,33401,Lee,5,53602,Florida Blue,Silver,200,500,No,(305) 555-1022,ivan.22@example.com
+Lucía Rodríguez,1990-06-16,33901,Palm Beach,5,77022,Cigna,Bronce,200,500,No,(305) 555-1023,lucia.23@example.com
+Raúl Flores,1995-08-03,33801,Orange,5,78896,Florida Blue,Bronce,150,450,Sí,(305) 555-1024,raul.24@example.com
+Irene Morales,1984-05-13,33401,Palm Beach,1,50866,Florida Blue,Silver,500,0,No,(305) 555-1025,irene.25@example.com
+María Rivera,,33901,Duval,6,66826,Cigna,Silver,200,500,No,(305) 555-1026,maria.26@example.com
+Paula Martínez,2000-11-04,33801,Polk,2,,Oscar,Gold,450,50,No,(305) 555-1027,paula.27@example.com
+Pedro Ortiz,1964-07-17,33101,Lee,3,135000,Oscar,Bronce,0,680,Sí,(305) 555-1028,pedro.28@example.com
+Silvia Rivera,1987-09-18,33701,Broward,1,27665,Ambetter,Silver,400,200,No,(305) 555-1029,silvia.29@example.com
+Lucía Ortiz,1967-07-16,33701,Duval,5,75308,Molina,Bronce,300,400,No,(305) 555-1030,lucia.30@example.com
+Ana Gutiérrez,1965-07-28,34741,Lee,4,135000,Florida Blue,Bronce,120,900,Sí,(305) 555-1031,ana.31@example.com
+Félix Morales,1962-10-07,33801,Miami-Dade,4,88696,Aetna CVS,Bronce,300,400,No,(305) 555-1032,felix.32@example.com
+Ana Gómez,1997-03-25,33401,Hillsborough,2,40790,Oscar,Gold,420,80,No,(305) 555-1033,ana.33@example.com
+Lucía Torres,1977-01-14,33701,Duval,1,34298,Molina,Bronce,150,450,No,(305) 555-1034,lucia.34@example.com
+Sofía Ortiz,1962-09-13,33801,Palm Beach,4,180000,Ambetter,Bronce,80,820,Sí,(305) 555-1035,sofia.35@example.com
+Diego Cruz,1969-03-19,32202,Orange,5,,Cigna,Bronce,0,680,Sí,(305) 555-1036,diego.36@example.com
+Ana Torres,1998-01-15,33012,Miami-Dade,1,28964,Cigna,Bronce,150,450,No,(305) 555-1037,ana.37@example.com
+Silvia Gutiérrez,1967-08-13,33101,Palm Beach,4,180000,Ambetter,Bronce,0,680,Sí,(305) 555-1038,silvia.38@example.com
+Raúl Morales,,34741,Hillsborough,5,66744,Ambetter,Silver,300,400,No,(305) 555-1039,raul.39@example.com
+Sofía Flores,1996-11-01,32202,Miami-Dade,2,29663,Ambetter,Gold,350,250,No,(305) 555-1040,sofia.40@example.com
+María Martínez,1973-07-18,32202,Broward,1,26144,Oscar,Bronce,300,400,Sí,(305) 555-1041,maria.41@example.com
+Elena Hernández,1987-06-22,33401,Duval,2,48639,AmeriHealth,Gold,400,200,No,(305) 555-1042,elena.42@example.com
+Lucía Ramírez,1988-11-14,34741,Duval,2,32236,Cigna,Bronce,300,400,Sí,(305) 555-1043,lucia.43@example.com
+Bruno Sánchez,1979-08-02,32801,Broward,6,62758,Oscar,Bronce,150,450,No,(305) 555-1044,bruno.44@example.com
+Diego Flores,1985-07-26,33801,Palm Beach,1,,Cigna,Silver,150,450,Sí,(305) 555-1045,diego.45@example.com
+Iván Flores,1981-08-18,32801,Palm Beach,2,41461,Aetna CVS,Silver,400,200,No,(305) 555-1046,ivan.46@example.com
+Carlos Hernández,1996-07-24,32202,Osceola,5,61544,Florida Blue,Bronce,150,450,No,(305) 555-1047,carlos.47@example.com
+Gloria Rodríguez,1993-08-24,33701,Broward,2,38726,Florida Blue,Silver,450,50,No,(305) 555-1048,gloria.48@example.com
+Félix Torres,1982-06-06,32202,Osceola,2,33736,Molina,Silver,300,300,No,(305) 555-1049,felix.49@example.com
+Rosa Pérez,1966-04-24,34741,Hillsborough,4,200000,Cigna,Bronce,80,820,Sí,(305) 555-1050,rosa.50@example.com
+Carmen Gómez,1992-04-08,33801,Duval,2,37936,Oscar,Silver,150,450,Sí,(305) 555-1051,carmen.51@example.com
+Alicia Chávez,,32202,Osceola,4,200000,Cigna,Bronce,50,750,Sí,(305) 555-1052,alicia.52@example.com
+Jorge Díaz,1964-10-06,33604,Lee,5,180000,Molina,Bronce,80,820,Sí,(305) 555-1053,jorge.53@example.com
+Pedro Torres,1999-05-17,33101,Miami-Dade,1,,Aetna CVS,Silver,450,50,No,(305) 555-1054,pedro.54@example.com
+Rosa Gutiérrez,1967-10-18,32801,Polk,5,200000,AmeriHealth,Bronce,80,820,Sí,(305) 555-1055,rosa.55@example.com
+Rubén García,1998-06-09,32801,Miami-Dade,2,36871,Molina,Gold,350,250,No,(305) 555-1056,ruben.56@example.com
+Carlos Ortiz,1991-02-02,33801,Hillsborough,1,32173,Aetna CVS,Silver,150,450,No,(305) 555-1057,carlos.57@example.com
+Miguel Díaz,1971-12-12,33901,Palm Beach,4,180000,Ambetter,Bronce,0,680,Sí,(305) 555-1058,miguel.58@example.com
+Félix Díaz,1985-06-15,33604,Palm Beach,1,42324,Florida Blue,Silver,420,80,No,(305) 555-1059,felix.59@example.com
+Rubén Gutiérrez,1996-02-02,32202,Palm Beach,6,74984,Molina,Silver,200,500,No,(305) 555-1060,ruben.60@example.com
+Paula Flores,1970-03-01,33901,Orange,4,135000,Oscar,Bronce,0,680,Sí,(305) 555-1061,paula.61@example.com
+Tomás Morales,1971-10-12,34741,Lee,6,135000,Florida Blue,Bronce,0,680,Sí,(305) 555-1062,tomas.62@example.com
+Pedro Díaz,1977-06-15,34741,Polk,2,,Cigna,Bronce,200,500,No,(305) 555-1063,pedro.63@example.com
+Carmen García,1967-07-15,33801,Pinellas,5,150000,Ambetter,Bronce,80,820,Sí,(305) 555-1064,carmen.64@example.com
+María Ortiz,,33604,Duval,3,200000,Florida Blue,Bronce,0,680,Sí,(305) 555-1065,maria.65@example.com
+Héctor Ramírez,1964-07-07,32801,Hillsborough,4,59574,Molina,Bronce,200,500,No,(305) 555-1066,hector.66@example.com
+María Pérez,1964-04-21,32801,Polk,4,200000,AmeriHealth,Bronce,50,750,Sí,(305) 555-1067,maria.67@example.com
+Ana Sánchez,1980-06-17,33101,Polk,2,37403,AmeriHealth,Bronce,150,450,Sí,(305) 555-1068,ana.68@example.com
+Pedro Gómez,1991-05-09,33401,Osceola,1,48338,Florida Blue,Silver,500,0,No,(305) 555-1069,pedro.69@example.com
+Alicia Díaz,1969-03-06,33901,Palm Beach,3,200000,Molina,Bronce,120,900,Sí,(305) 555-1070,alicia.70@example.com
+Carlos Rodríguez,1965-04-12,33012,Broward,2,42724,AmeriHealth,Bronce,200,500,No,(305) 555-1071,carlos.71@example.com
+Carlos Ramos,1993-06-26,32801,Pinellas,6,,Florida Blue,Bronce,200,500,No,(305) 555-1072,carlos.72@example.com
+Miguel Rivera,1965-03-17,33401,Hillsborough,6,150000,Aetna CVS,Bronce,80,820,Sí,(305) 555-1073,miguel.73@example.com
+Elena Rivera,1995-01-22,33901,Miami-Dade,2,48689,Aetna CVS,Gold,450,50,No,(305) 555-1074,elena.74@example.com
+Paula Díaz,1963-09-18,33401,Duval,5,180000,AmeriHealth,Bronce,50,750,Sí,(305) 555-1075,paula.75@example.com
+Silvia Ramírez,1982-12-16,32801,Polk,1,25232,Florida Blue,Silver,300,400,Sí,(305) 555-1076,silvia.76@example.com
+Andrés Rodríguez,1994-07-17,33101,Miami-Dade,2,35677,Aetna CVS,Silver,300,400,Sí,(305) 555-1077,andres.77@example.com
+Pedro Pérez,,32202,Hillsborough,4,135000,Ambetter,Bronce,120,900,Sí,(305) 555-1078,pedro.78@example.com
+Tomás Flores,1993-03-21,34741,Miami-Dade,2,26403,Cigna,Silver,400,200,No,(305) 555-1079,tomas.79@example.com
+Rubén Martínez,1999-05-11,33604,Duval,1,51396,Molina,Platinum,450,50,No,(305) 555-1080,ruben.80@example.com
+Rosa Morales,1993-06-11,33801,Palm Beach,1,,Ambetter,Gold,300,300,Sí,(305) 555-1081,rosa.81@example.com
+Héctor Ortiz,1978-09-24,33801,Pinellas,5,84198,Cigna,Bronce,300,400,Sí,(305) 555-1082,hector.82@example.com
+Nora Gutiérrez,1991-04-04,33801,Duval,3,79474,Oscar,Bronce,150,450,Sí,(305) 555-1083,nora.83@example.com
+Óscar Ortiz,1967-05-23,33604,Hillsborough,2,36219,Florida Blue,Bronce,200,500,No,(305) 555-1084,oscar.84@example.com
+Iván Ramos,1967-07-13,32801,Hillsborough,1,33280,Florida Blue,Silver,200,500,Sí,(305) 555-1085,ivan.85@example.com
+José Ortiz,1967-08-25,33101,Pinellas,4,200000,Florida Blue,Bronce,50,750,Sí,(305) 555-1086,jose.86@example.com
+Nora Gómez,1969-06-12,33012,Osceola,3,150000,Aetna CVS,Bronce,50,750,Sí,(305) 555-1087,nora.87@example.com
+Sofía López,1966-04-08,34741,Miami-Dade,3,200000,Florida Blue,Bronce,80,820,Sí,(305) 555-1088,sofia.88@example.com
+Andrés Martínez,1969-06-19,33701,Orange,6,180000,Florida Blue,Bronce,0,680,Sí,(305) 555-1089,andres.89@example.com
+Andrés Díaz,1983-07-28,32801,Lee,2,,Aetna CVS,Gold,400,200,Sí,(305) 555-1090,andres.90@example.com
+Carmen Torres,,33901,Broward,1,49135,Molina,Silver,400,200,No,(305) 555-1091,carmen.91@example.com
+Héctor López,1992-05-24,34741,Polk,3,64034,Florida Blue,Bronce,200,500,Sí,(305) 555-1092,hector.92@example.com
+Tomás Hernández,1998-08-01,32202,Polk,4,56196,Ambetter,Silver,300,400,Sí,(305) 555-1093,tomas.93@example.com
+Carlos Díaz,1993-02-26,33012,Osceola,2,54830,Oscar,Silver,450,50,No,(305) 555-1094,carlos.94@example.com
+Raúl López,1998-10-02,34741,Miami-Dade,6,65290,Molina,Bronce,200,500,Sí,(305) 555-1095,raul.95@example.com
+Carmen Sánchez,1984-11-20,33012,Orange,1,48192,Cigna,Platinum,450,50,No,(305) 555-1096,carmen.96@example.com
+Alicia Gutiérrez,1989-10-09,33801,Duval,5,83950,Ambetter,Bronce,150,450,No,(305) 555-1097,alicia.97@example.com
+José Ramos,1967-09-08,33012,Pinellas,5,180000,Ambetter,Bronce,80,820,Sí,(305) 555-1098,jose.98@example.com
+José Chávez,2000-03-24,32801,Lee,2,,Florida Blue,Gold,500,0,No,(305) 555-1099,jose.99@example.com

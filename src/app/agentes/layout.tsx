@@ -1,18 +1,19 @@
 import type { ReactNode } from "react";
 
 // Default metadata for the public /agentes landing (B2B / agent audience).
+// /agentes is an alias of the home: same content, canonical "/" (no redirect).
 // Subroutes (dashboard, registro, share, …) inherit this unless they export
 // their own metadata, which would override it — the correct precedence.
 export const metadata = {
   alternates: {
-    canonical: "/agentes",
+    canonical: "/",
   },
   title: "EnrollSalud para Agentes | Cotizador ACA con tu marca + CRM",
   description: "Cotizador ACA bilingüe con planes reales del Marketplace, CRM de leads y consentimiento CMS con firma digital. La plataforma del agente de salud hispano.",
   openGraph: {
     title: "EnrollSalud para Agentes | Cotizador ACA con tu marca + CRM",
     description: "Cotizador ACA bilingüe con planes reales del Marketplace, CRM de leads y consentimiento CMS con firma digital. La plataforma del agente de salud hispano.",
-    url: "https://enrollsalud.com/agentes",
+    url: "https://enrollsalud.com/",
     siteName: "EnrollSalud",
     type: "website",
     locale: "es_US",

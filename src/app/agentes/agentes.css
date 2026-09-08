@@ -279,6 +279,17 @@ html { scroll-behavior: smooth; }
   background: rgba(255,255,255,0.04);
   border-color: rgba(255,255,255,0.2);
 }
+.ag-hero-link {
+  display: inline-block;
+  margin-top: 20px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.2s;
+}
+.ag-hero-link:hover { color: var(--text-primary); }
 
 /* ===== STATS BAR ===== */
 .ag-stats-bar {

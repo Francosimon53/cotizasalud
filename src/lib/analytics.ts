@@ -12,12 +12,21 @@ function enabled(): boolean {
   return Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
 }
 
-export function capturePlanCtaClick(plan: PlanTier, interval: BillingInterval) {
+// Dónde se hizo clic en la landing. Los botones de PricingSection no lo envían
+// (la propiedad queda ausente); hero y cierre sí, para distinguirlos en PostHog.
+export type PlanCtaUbicacion = "hero" | "cierre";
+
+export function capturePlanCtaClick(
+  plan: PlanTier,
+  interval: BillingInterval,
+  ubicacion?: PlanCtaUbicacion,
+) {
   if (!enabled()) return;
   posthog.capture("plan_cta_click", {
     plan,
     interval,
     precio_usd: PLAN_CATALOG[plan].prices[interval].amount_usd,
+    ...(ubicacion ? { ubicacion } : {}),
   });
 }
 

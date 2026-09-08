@@ -7,20 +7,20 @@ export const metadata = {
   alternates: {
     canonical: "/",
   },
-  title: "EnrollSalud | Cotiza tu seguro médico ACA en español",
-  description: "Cotiza tu seguro médico ACA en español y calcula tu subsidio en minutos — los mismos planes de Healthcare.gov, con un agente que te ayuda en tu idioma.",
+  title: "EnrollSalud para Agentes | Cotizador ACA con tu marca + CRM",
+  description: "Cotizador ACA bilingüe con planes reales del Marketplace, CRM de leads y consentimiento CMS con firma digital. La plataforma del agente de salud hispano.",
   openGraph: {
-    title: "EnrollSalud | Cotiza tu seguro médico ACA en español",
-    description: "Cotiza tu seguro médico ACA en español y calcula tu subsidio en minutos — los mismos planes de Healthcare.gov, con un agente que te ayuda en tu idioma.",
-    url: "https://enrollsalud.com",
+    title: "EnrollSalud para Agentes | Cotizador ACA con tu marca + CRM",
+    description: "Cotizador ACA bilingüe con planes reales del Marketplace, CRM de leads y consentimiento CMS con firma digital. La plataforma del agente de salud hispano.",
+    url: "https://enrollsalud.com/",
     siteName: "EnrollSalud",
     type: "website",
     locale: "es_US",
   },
   twitter: {
     card: "summary",
-    title: "EnrollSalud | Cotiza tu seguro médico ACA en español",
-    description: "Cotiza tu seguro médico ACA en español y calcula tu subsidio en minutos — los mismos planes de Healthcare.gov, con un agente que te ayuda en tu idioma.",
+    title: "EnrollSalud para Agentes | Cotizador ACA con tu marca + CRM",
+    description: "Cotizador ACA bilingüe con planes reales del Marketplace, CRM de leads y consentimiento CMS con firma digital. La plataforma del agente de salud hispano.",
   },
   robots: {
     index: true,

@@ -82,3 +82,20 @@ Corolario de método, aprendido a base de un falso verde en este mismo PR: **un 
 contiene el componente bajo prueba no puede detectar problemas causados por el resto de la
 página ni por el estado del navegador.** Si un harness no reproduce el fallo conocido, no sirve
 para confirmar el arreglo — hay que validar primero que el harness sabe fallar.
+
+## `npx vitest run` cuenta también los tests de `.claude/worktrees/*`
+
+Los worktrees en `.claude/worktrees/` están git-ignorados pero vitest los recorre: el total
+sube de 294 (solo `src/`) a 772. El número de referencia del repo es el de `src/`:
+`npx vitest run --exclude ".claude/**"`. Un "baseline 289/294" que de pronto marca 772 no es
+una regresión ni tests nuevos, son copias.
+
+## Previews con Deployment Protection: `vercel curl` (CLI 51.8) y el token OIDC caducan
+
+- `vercel curl` en 51.8.0 no acepta flags de curl antes de la ruta y no toma la URL del
+  preview como path: la forma que funciona es
+  `vercel curl /ruta --deployment https://<preview>.vercel.app --yes`.
+- Para navegador (Playwright) hay que mandar `x-vercel-trusted-oidc-idp-token` con el
+  `VERCEL_OIDC_TOKEN` de `.env.local`, y ese token **caduca en 12 h**. Si el preview
+  responde `Login – Vercel` con el header puesto, es el token viejo: `vercel env pull
+  .env.local --yes` y repetir. Se comprueba sin imprimirlo decodificando el `exp` del JWT.

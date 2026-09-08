@@ -82,13 +82,33 @@ B2C que proteger.
 - `npx vitest run`: 772/772 (igual que baseline); solo `src/`: 294/294. Ningún test asumía
   el H1 o título antiguos de `/`; no se tocó ningún test.
 
-### 7. PR
-- Commit y push de `feat/home-b2b-agentes`; PR contra `main` en draft, sin merge.
-- Capturas del Preview en `docs/img/home-b2b-{home,agentes,seguro-medico}.jpg`.
+### 7. PR y Preview
+- Commit y push de `feat/home-b2b-agentes`; PR #69 contra `main` en draft, sin merge.
+- Preview: `https://cotizasalud-git-feat-home-b2b-e6f3f6-francosimon-7079s-projects.vercel.app`
+  (Deployment Protection activa: verificado con `vercel curl /ruta --deployment <url> --yes`).
+- (a)-(e) repetidos contra el Preview: mismos resultados que en local (tabla abajo).
+- Capturas full-page del Preview con Playwright + header `x-vercel-trusted-oidc-idp-token`
+  en `docs/img/home-b2b-{home,agentes,seguro-medico}.jpg`.
+
+### Hallazgo: PostHog no está activo en Preview
+`vercel env ls` muestra `NEXT_PUBLIC_POSTHOG_KEY` solo en **Development** y **Production**;
+no existe para **Preview**. Confirmado en el bundle del Preview: el chunk que inicializa
+PostHog (`api_host: "/srx"`) no contiene ninguna clave `phc_`. Con la clave ausente,
+`capturePlanCtaClick` es no-op (`enabled()` devuelve false), así que **la prueba final
+"clic en un plan desde / llega como plan_cta_click" no puede pasar en el Preview** hasta
+que se cargue la variable para Preview. No se cargó desde esta sesión (cambio de
+configuración del proyecto con valor secreto). Comando (ver gotchas sobre `env add`):
+
+```sh
+vercel env add NEXT_PUBLIC_POSTHOG_KEY preview "" --value "$(pbpaste)" --yes
+```
+
+Tras cargarla hay que redesplegar el Preview (push vacío o `vercel redeploy`) y verificar
+`phc_` en el chunk de instrumentación, no fiarse de "Added".
 
 ## Reporte de verificación
 
-| Criterio | Esperado | Obtenido (local, `next start`) |
+| Criterio | Esperado | Obtenido (local `next start` **y** Preview) |
 |---|---|---|
 | (a) `/` | H1 agentes, título agentes, canonical `/` | ✅ H1 «Deja de perder clientes por cotizar tarde», título correcto, canonical `https://enrollsalud.com` |
 | (b) `/agentes` | mismo contenido, canonical `/`, sin redirect | ✅ HTTP 200 sin redirect, mismo head y body, canonical `https://enrollsalud.com` |
@@ -96,6 +116,8 @@ B2C que proteger.
 | (d) CTAs | hero y cierre → `/agentes/registro`, 1 solo `/cotizar` (secundario) | ✅ 2 × `ag-btn-primary` a `/agentes/registro`, 1 × `/cotizar` «Ver el cotizador…» |
 | (e) sitemap | 13 `<loc>` | ✅ 13 |
 | (f) build + tests | verde | ✅ build verde, 772/772 (294/294 en `src/`) |
+
+| Prueba final PostHog | `plan_cta_click` en Live desde `/` | ⏳ Bloqueada: falta `NEXT_PUBLIC_POSTHOG_KEY` en Preview (ver hallazgo) |
 
 ## Notas / riesgos
 - `src/app/agentes/layout.tsx` sigue aplicando su metadata a las subrutas sin metadata propia

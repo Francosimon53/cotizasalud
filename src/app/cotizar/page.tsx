@@ -8,11 +8,14 @@ import { lookupCounties, getFPL, getFPLpct } from "@/lib/data";
 import { generateQuote } from "@/lib/plans";
 import { normalizeAgentSlug } from "@/lib/normalize-slug";
 import { captureInvalidAgentSlug } from "@/lib/slug-logging";
+import { captureStoryContinued, captureStoryViewed } from "@/lib/analytics";
+import { getStoryCampaign } from "@/lib/story-campaigns";
 import type { County, HouseholdMember, Plan, QuoteResults, AgentBrand } from "@/lib/types";
 import CMSConsentForm, { type ConsentRecord } from "./CMSConsentForm";
 import SignaturePad from "./SignaturePad";
 import DobSelect from "./DobSelect";
 import PreCarta from "./PreCarta";
+import StoryLanding from "./StoryLanding";
 
 const AIPlanAdvisor = dynamic(() => import("./AIPlanAdvisor"), {
   loading: () => <div style={{ padding: 16, textAlign: "center", fontSize: 12, color: "#94A3B8" }}>Loading advisor...</div>,
@@ -250,8 +253,8 @@ const S = {
   wrap: { maxWidth: 640, margin: "-24px auto 0", padding: "0 14px 40px", position: "relative" as const } as React.CSSProperties,
   card: { background: "#FFFFFF", borderRadius: 14, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04)", border: "1px solid #E2E8F0" } as React.CSSProperties,
   label: { display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "#1E293B", textTransform: "uppercase" as const, letterSpacing: 0.5 } as React.CSSProperties,
-  input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 15, outline: "none", boxSizing: "border-box" as const, fontFamily: "inherit", background: "#FFFFFF", color: "#1E293B" } as React.CSSProperties,
-  select: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 15, outline: "none", boxSizing: "border-box" as const, background: "#FFFFFF", fontFamily: "inherit", color: "#1E293B" } as React.CSSProperties,
+  input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 16, outline: "none", boxSizing: "border-box" as const, fontFamily: "inherit", background: "#FFFFFF", color: "#1E293B" } as React.CSSProperties,
+  select: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 16, outline: "none", boxSizing: "border-box" as const, background: "#FFFFFF", fontFamily: "inherit", color: "#1E293B" } as React.CSSProperties,
   btn: { display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "15px 28px", borderRadius: 10, border: "none", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minHeight: 48 } as React.CSSProperties,
   pri: { background: "#0D9488", color: "#fff" },
   sec: { background: "#FFFFFF", color: "#1E3A5F", border: "1px solid #CBD5E1" },
@@ -279,9 +282,9 @@ const chip = (active: boolean): React.CSSProperties => ({
 });
 
 // ==================== MAIN COMPONENT ====================
-export default function QuoterPage() {
+export default function QuoterPage({ storyFirst = false }: { storyFirst?: boolean }) {
   const [lang, setLang] = useState<Lang>("es");
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(storyFirst ? -1 : 0);
   const [preCartaSigned, setPreCartaSigned] = useState(false);
   const [preCartaSigData, setPreCartaSigData] = useState("");
   const [zip, setZip] = useState("");
@@ -328,6 +331,8 @@ export default function QuoterPage() {
   const [selectedPlanData, setSelectedPlanData] = useState<{ name: string; issuer: string; metal: string; premium: number; afterSubsidy: number; deductible: number; oopMax: number } | null>(null);
   const [urlParams, setUrlParams] = useState<ReturnType<typeof parseSmartLink>>({ name: "", zip: "", phone: "", email: "", agentSlug: "", lang: "", utm_source: "", utm_medium: "", utm_campaign: "" });
   const [agentBrand, setAgentBrand] = useState<AgentBrand | null>(null);
+  const [agentLoading, setAgentLoading] = useState(true);
+  const [agentLoadFailed, setAgentLoadFailed] = useState(false);
 
   // Drug & doctor search
   const [drugQuery, setDrugQuery] = useState("");
@@ -349,6 +354,9 @@ export default function QuoterPage() {
   useEffect(() => {
     const params = parseSmartLink();
     setUrlParams(params);
+    if (storyFirst) {
+      captureStoryViewed(getStoryCampaign(params.utm_campaign).key, params.utm_source || undefined);
+    }
     // Restore the lead write session (leadId + capability token) after an
     // accidental reload in the same tab. A fresh quote still creates a new
     // lead because browseLeadCreated is not restored.
@@ -366,11 +374,9 @@ export default function QuoterPage() {
     if (params.phone) setLeadPhone(params.phone);
     if (params.email) setLeadEmail(decodeURIComponent(params.email));
     if (params.zip && /^\d{5}$/.test(params.zip)) setZip(params.zip);
-    // Fetch agent profile — from URL slug or default agent
+    // Fetch agent profile — from URL slug or default agent. Do not render a
+    // slug placeholder in the consent screen while the real identity loads.
     const slugToFetch = params.agentSlug || "";
-    if (slugToFetch) {
-      setAgentBrand({ slug: slugToFetch, name: slugToFetch, npn: "" });
-    }
     // Always try to fetch agent (URL slug or default via API)
     const fetchSlug = slugToFetch || "default";
     const applyAgent = (agent: any) => {
@@ -387,21 +393,25 @@ export default function QuoterPage() {
         });
       }
     };
-    fetch(`/api/agents?slug=${encodeURIComponent(fetchSlug)}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((agent) => {
-        if (agent) {
-          applyAgent(agent);
-        } else if (fetchSlug === "default") {
-          // Fallback: if DEFAULT_AGENT_SLUG env var not set, use hardcoded default
-          fetch("/api/agents?slug=delbert")
-            .then((r) => r.ok ? r.json() : null)
-            .then(applyAgent)
-            .catch(() => {});
+    let cancelled = false;
+    (async () => {
+      try {
+        let res = await fetch(`/api/agents?slug=${encodeURIComponent(fetchSlug)}`);
+        let agent = res.ok ? await res.json() : null;
+        if (!agent && fetchSlug === "default") {
+          res = await fetch("/api/agents?slug=delbert");
+          agent = res.ok ? await res.json() : null;
         }
-      })
-      .catch(() => {});
-  }, []);
+        if (!cancelled && agent) applyAgent(agent);
+        if (!cancelled && !agent) setAgentLoadFailed(true);
+      } catch {
+        if (!cancelled) setAgentLoadFailed(true);
+      } finally {
+        if (!cancelled) setAgentLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [storyFirst]);
 
   // Pre-carta completion handler
   const handlePreCarta = (data: { firstName: string; lastName: string; dob: string; signatureDataUrl: string; pdfStorageUrl?: string }) => {
@@ -954,6 +964,12 @@ export default function QuoterPage() {
       </div>
 
       {/* Hero */}
+      {step === -1 && (
+        <div style={{ ...S.hero, paddingBottom: 36 }}>
+          <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{lang === "es" ? "Antes de decidir" : "Before deciding"}</div>
+          <div style={{ color: "rgba(255,255,255,.7)", fontSize: 13, marginTop: 4 }}>{lang === "es" ? "Una conversación empieza escuchando." : "A conversation starts by listening."}</div>
+        </div>
+      )}
       {step === 0 && (
         <div style={{ ...S.hero, paddingBottom: 44 }}>
           <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{lang === "es" ? "📋 Autorización para Cotización" : "📋 Quote Authorization"}</div>
@@ -1003,15 +1019,34 @@ export default function QuoterPage() {
           </div>
         )}
 
+        {/* Story bridge — no PII is requested on this screen. */}
+        {step === -1 && (
+          <StoryLanding
+            campaign={urlParams.utm_campaign}
+            lang={lang}
+            onContinue={() => {
+              captureStoryContinued(getStoryCampaign(urlParams.utm_campaign).key);
+              setStep(0);
+            }}
+          />
+        )}
+
         {/* Step 0: Pre-Carta */}
         {step === 0 && (
-          <PreCarta
-            agentName={agentBrand?.name || "EnrollSalud Agent"}
-            agentNPN={agentBrand?.npn || ""}
-            agentPhone={agentBrand?.phone || ""}
-            lang={lang}
-            onComplete={handlePreCarta}
-          />
+          agentLoading ? (
+            <div style={S.card}><div style={{ textAlign: "center", color: "#64748B", fontSize: 14, padding: 24 }}>{lang === "es" ? "Preparando la información del agente..." : "Preparing agent information..."}</div></div>
+          ) : agentLoadFailed || !agentBrand ? (
+            <div style={S.card}><div role="alert" style={{ textAlign: "center", color: "#B91C1C", fontSize: 14, lineHeight: 1.6, padding: 24 }}>{lang === "es" ? "No pudimos cargar la identidad del agente. Vuelve a intentarlo o usa el enlace oficial de contacto." : "We could not load the agent identity. Please try again or use the official contact link."}</div></div>
+          ) : (
+            <PreCarta
+              agentName={agentBrand.name}
+              agentNPN={agentBrand.npn}
+              agentPhone={agentBrand.phone || ""}
+              agentEmail={agentBrand.email || ""}
+              lang={lang}
+              onComplete={handlePreCarta}
+            />
+          )
         )}
 
         {/* Step 1: Location */}

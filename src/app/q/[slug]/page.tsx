@@ -1,2 +1,2 @@
 import QuoterPage from "@/app/cotizar/page";
-export default function AgentPage() { return <QuoterPage />; }
+export default function AgentPage() { return <QuoterPage storyFirst />; }

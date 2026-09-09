@@ -53,7 +53,7 @@ const CONTENT = {
           </AlertBox>
           <div className="my-4 rounded-xl border-2 border-red-300 bg-red-50/30 p-5">
             <p className="text-sm text-slate-800 leading-relaxed">
-              <strong className="text-red-700">ATTENTION:</strong> This website is operated by [EnrollSalud / Company Name] and is not the Health Insurance Marketplace™ website. In offering this website, [Company Name] is required to comply with all applicable federal law, including the standards established under 45 CFR 155.220(c) and (d) and standards established under 45 CFR 155.260 to protect the privacy and security of personally identifiable information. This website may not display all data on Qualified Health Plans being offered in your state through the Health Insurance Marketplace™ website. To see all available data on Qualified Health Plan options in your state, go to the Health Insurance Marketplace™ website at <a href="https://www.healthcare.gov" className="text-teal-600 underline">HealthCare.gov</a>.
+              <strong className="text-red-700">ATTENTION:</strong> This website is operated by EnrollSalud and is not the Health Insurance Marketplace™ website. In offering this website, EnrollSalud is required to comply with all applicable federal law, including the standards established under 45 CFR 155.220(c) and (d) and standards established under 45 CFR 155.260 to protect the privacy and security of personally identifiable information. This website may not display all data on Qualified Health Plans being offered in your state through the Health Insurance Marketplace™ website. To see all available data on Qualified Health Plan options in your state, go to the Health Insurance Marketplace™ website at <a href="https://www.healthcare.gov" className="text-teal-600 underline">HealthCare.gov</a>.
             </p>
           </div>
         </>
@@ -131,7 +131,7 @@ const CONTENT = {
         <>
           <H3>Footer Disclaimer</H3>
           <CodeBlock>{`EnrollSalud is not the Health Insurance Marketplace™ website. 
-This website is operated by [Company Name] and provides 
+This website is operated by EnrollSalud and provides
 health insurance plan comparison for educational purposes only. 
 Plan details and pricing are subject to change. For official 
 enrollment, visit HealthCare.gov or contact a licensed 
@@ -167,7 +167,7 @@ Individual results may vary.`}</CodeBlock>
           </AlertBox>
           <div className="my-4 rounded-xl border-2 border-red-300 bg-red-50/30 p-5">
             <p className="text-sm text-slate-800 leading-relaxed">
-              <strong className="text-red-700">ATENCIÓN:</strong> Este sitio web es operado por [EnrollSalud / Nombre de la Empresa] y no es el sitio web del Mercado de Seguros Médicos™. Al ofrecer este sitio web, [Nombre de la Empresa] está obligado a cumplir con todas las leyes federales aplicables, incluyendo los estándares establecidos bajo 45 CFR 155.220(c) y (d) y los estándares establecidos bajo 45 CFR 155.260 para proteger la privacidad y seguridad de la información de identificación personal. Este sitio web puede no mostrar todos los datos sobre los Planes de Salud Calificados que se ofrecen en su estado a través del sitio web del Mercado de Seguros Médicos™. Para ver todos los datos disponibles, visite <a href="https://www.cuidadodesalud.gov" className="text-teal-600 underline">CuidadoDeSalud.gov</a>.
+              <strong className="text-red-700">ATENCIÓN:</strong> Este sitio web es operado por EnrollSalud y no es el sitio web del Mercado de Seguros Médicos™. Al ofrecer este sitio web, EnrollSalud está obligado a cumplir con todas las leyes federales aplicables, incluyendo los estándares establecidos bajo 45 CFR 155.220(c) y (d) y los estándares establecidos bajo 45 CFR 155.260 para proteger la privacidad y seguridad de la información de identificación personal. Este sitio web puede no mostrar todos los datos sobre los Planes de Salud Calificados que se ofrecen en su estado a través del sitio web del Mercado de Seguros Médicos™. Para ver todos los datos disponibles, visite <a href="https://www.cuidadodesalud.gov" className="text-teal-600 underline">CuidadoDeSalud.gov</a>.
             </p>
           </div>
         </>

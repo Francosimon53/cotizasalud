@@ -255,7 +255,7 @@ export default function CMSConsentForm({
       </div>
 
       <div style={legalText}>
-        Debo notificar a mi representante inmediatamente si ocurren estos cambios y sean actualizados en el Sistema. De la misma manera confirmo no tener otro seguro médico.
+        Debo notificar a mi representante inmediatamente si ocurren estos cambios para que sean actualizados en el sistema. Confirmo que la información que he proporcionado para esta solicitud es correcta según mi leal saber y entender.
       </div>
 
       <div style={sectionDivider} />

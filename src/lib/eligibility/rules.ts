@@ -2,7 +2,7 @@
 //
 // From 2027-01-01 (OEP Nov-Dec 2026) only citizens, lawful permanent
 // residents, Cuban/Haitian entrants and COFA migrants keep ACA subsidies.
-// Asylum (pending or granted), refugees, TPS and humanitarian parole remain
+// Asylum (pending with a current EAD, or granted), refugees, TPS and humanitarian parole remain
 // eligible through 2026 but LOSE the subsidy on 2027-01-01. DACA is out of
 // the Marketplace since Aug-2025.
 //

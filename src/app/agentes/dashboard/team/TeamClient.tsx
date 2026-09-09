@@ -27,8 +27,6 @@ export default function TeamClient({ agents, totalLeads, totalEnrolled, totalRev
 }) {
   const router = useRouter();
   const [toggling, setToggling] = useState<string | null>(null);
-  const [announcementState, setAnnouncementState] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [announcementResult, setAnnouncementResult] = useState<string>("");
 
   const handleToggle = async (agentId: string, currentActive: boolean) => {
     setToggling(agentId);
@@ -39,20 +37,6 @@ export default function TeamClient({ agents, totalLeads, totalEnrolled, totalRev
     });
     router.refresh();
     setToggling(null);
-  };
-
-  const sendStoryFirstAnnouncement = async () => {
-    setAnnouncementState("sending");
-    setAnnouncementResult("");
-    const response = await fetch("/api/admin/announce-story-first", { method: "POST" });
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setAnnouncementState("error");
-      setAnnouncementResult(body.error || "No se pudo enviar");
-      return;
-    }
-    setAnnouncementState("sent");
-    setAnnouncementResult(`${body.sent} agentes recibieron la activación.`);
   };
 
   const cardStyle: React.CSSProperties = {
@@ -66,17 +50,6 @@ export default function TeamClient({ agents, totalLeads, totalEnrolled, totalRev
 
       <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>Equipo EnrollSalud</h1>
       <p style={{ fontSize: 14, color: "#5a5e72", marginBottom: 20 }}>{agents.length} agentes registrados</p>
-
-      <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.22)", borderRadius: 12, padding: "14px 16px", marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "#d1fae5" }}>Activación story-first</div>
-          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 3 }}>Envía una sola invitación por Resend a los agentes operativos.</div>
-          {announcementResult && <div style={{ fontSize: 12, color: announcementState === "error" ? "#fca5a5" : "#6ee7b7", marginTop: 6 }}>{announcementResult}</div>}
-        </div>
-        <button onClick={sendStoryFirstAnnouncement} disabled={announcementState === "sending" || announcementState === "sent"} style={{ flexShrink: 0, padding: "9px 14px", borderRadius: 8, border: "1px solid rgba(16,185,129,0.35)", background: announcementState === "sent" ? "rgba(16,185,129,0.18)" : "#059669", color: "#fff", fontSize: 12, fontWeight: 800, cursor: announcementState === "sent" ? "default" : "pointer", fontFamily: "inherit" }}>
-          {announcementState === "sending" ? "Enviando..." : announcementState === "sent" ? "Enviado" : "Enviar activación"}
-        </button>
-      </div>
 
       {/* Platform Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>

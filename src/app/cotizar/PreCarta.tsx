@@ -7,11 +7,12 @@ interface PreCartaProps {
   agentName: string;
   agentNPN: string;
   agentPhone: string;
+  agentEmail: string;
   lang: string;
   onComplete: (data: { firstName: string; lastName: string; dob: string; signatureDataUrl: string; pdfStorageUrl?: string }) => void;
 }
 
-export default function PreCarta({ agentName, agentNPN, agentPhone, lang, onComplete }: PreCartaProps) {
+export default function PreCarta({ agentName, agentNPN, agentPhone, agentEmail, lang, onComplete }: PreCartaProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [dob, setDob] = useState("");
@@ -150,8 +151,8 @@ export default function PreCarta({ agentName, agentNPN, agentPhone, lang, onComp
   const S = {
     card: { background: "#FFFFFF", borderRadius: 14, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04)", border: "1px solid #E2E8F0", maxWidth: 640, margin: "0 auto" } as React.CSSProperties,
     label: { display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6, color: "#1E293B", textTransform: "uppercase" as const, letterSpacing: 0.5 } as React.CSSProperties,
-    input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 15, outline: "none", boxSizing: "border-box" as const, fontFamily: "inherit", background: "#FFFFFF", color: "#1E293B" } as React.CSSProperties,
-    select: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 15, outline: "none", boxSizing: "border-box" as const, background: "#FFFFFF", fontFamily: "inherit", color: "#1E293B" } as React.CSSProperties,
+    input: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 16, outline: "none", boxSizing: "border-box" as const, fontFamily: "inherit", background: "#FFFFFF", color: "#1E293B" } as React.CSSProperties,
+    select: { width: "100%", padding: "11px 14px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: 16, outline: "none", boxSizing: "border-box" as const, background: "#FFFFFF", fontFamily: "inherit", color: "#1E293B" } as React.CSSProperties,
   };
 
   // ===== SIGNED STATE — clean, no download button =====
@@ -208,8 +209,8 @@ export default function PreCarta({ agentName, agentNPN, agentPhone, lang, onComp
         {isEs ? "Yo, " : "I, "}
         <strong>{clientName || (isEs ? "[Nombre del Cliente]" : "[Client Name]")}</strong>
         {isEs
-          ? " estoy solicitando asistencia para recibir una COTIZACIÓN de Seguro de Salud por Medio del Mercado de Seguros Médicos. Certifico que he recibido y entendido la asesoría brindada por:"
-          : " am requesting assistance to receive a Health Insurance QUOTE through the Health Insurance Marketplace. I certify that I have received and understood the advice provided by:"}
+          ? " estoy solicitando asistencia para recibir una cotización de cobertura médica a través del Mercado de Seguros. Autorizo al agente identificado abajo a recopilar y usar mi información únicamente para revisar opciones, preparar una cotización y ayudarme con los próximos pasos que yo solicite:"
+          : " am requesting assistance to receive a health coverage quote through the Marketplace. I authorize the agent identified below to collect and use my information only to review options, prepare a quote, and help with next steps I request:"}
       </div>
 
       <div style={{ background: "#F8FAFC", borderRadius: 10, padding: 16, border: "1px solid #E2E8F0", marginBottom: 24 }}>
@@ -217,6 +218,7 @@ export default function PreCarta({ agentName, agentNPN, agentPhone, lang, onComp
           <div><span style={{ fontWeight: 700 }}>{isEs ? "Agente Autorizado" : "Authorized Agent"}:</span> {agentName}</div>
           <div><span style={{ fontWeight: 700 }}>NPN:</span> {agentNPN}</div>
           <div><span style={{ fontWeight: 700 }}>{isEs ? "Teléfono" : "Phone"}:</span> {agentPhone}</div>
+          <div><span style={{ fontWeight: 700 }}>Email:</span> {agentEmail || (isEs ? "No disponible" : "Not available")}</div>
         </div>
       </div>
 
@@ -262,8 +264,8 @@ export default function PreCarta({ agentName, agentNPN, agentPhone, lang, onComp
 
       <div style={{ fontSize: 11, color: "#94A3B8", lineHeight: 1.6, marginBottom: 20 }}>
         {isEs
-          ? "Al firmar, autorizo al agente mencionado a recopilar mi información personal únicamente para el propósito de generar una cotización de seguro de salud a través del Mercado de Seguros."
-          : "By signing, I authorize the mentioned agent to collect my personal information solely for the purpose of generating a health insurance quote through the Marketplace."}
+          ? `Al firmar, autorizo al agente mencionado a recopilar y usar mi información personal únicamente para los propósitos descritos arriba. Esta autorización permanece vigente hasta que la revoque. Para revocarla o modificarla, puedo llamar o escribir al agente usando los datos mostrados arriba.`
+          : "By signing, I authorize the agent named above to collect and use my personal information only for the purposes described above. This authorization remains in effect until I revoke it. To revoke or modify it, I may call or email the agent using the contact information shown above."}
       </div>
 
       <button

@@ -56,3 +56,14 @@ export function identifyAgent(supabaseUserId: string) {
   if (!enabled()) return;
   posthog.identify(supabaseUserId);
 }
+
+// Story events contain only campaign/channel identifiers, never consumer PII.
+export function captureStoryViewed(campaign: string, source?: string) {
+  if (!enabled()) return;
+  posthog.capture("story_viewed", { campaign, ...(source ? { source } : {}) });
+}
+
+export function captureStoryContinued(campaign: string) {
+  if (!enabled()) return;
+  posthog.capture("story_continued", { campaign });
+}

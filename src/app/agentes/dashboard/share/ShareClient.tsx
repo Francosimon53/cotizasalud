@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { jsPDF } from "jspdf";
+import { STORY_CAMPAIGNS, getStoryCampaign } from "@/lib/story-campaigns";
 
 const BASE = "https://www.enrollsalud.com";
 
@@ -62,7 +63,7 @@ function buildLink(slug: string, clientName: string, preset: UtmPreset | null, c
 export default function ShareClient({ slug, agentName }: Props) {
   const router = useRouter();
   const [clientName, setClientName] = useState("");
-  const [campaign, setCampaign] = useState("oep-2026");
+  const [campaign, setCampaign] = useState(STORY_CAMPAIGNS[0].key);
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
@@ -98,14 +99,15 @@ export default function ShareClient({ slug, agentName }: Props) {
   };
 
   const greetingName = clientName.trim() || "[Nombre]";
+  const story = getStoryCampaign(campaign);
 
   const messages = useMemo(() => ({
-    whatsapp: `Hola ${greetingName}! 👋 Soy ${agentName}, tu agente de seguros.\nCotiza tu plan de salud gratis en 2 minutos aquí: ${personalLink}\nCualquier pregunta, escríbeme.`,
-    sms: `Cotiza tu seguro de salud gratis: ${personalLink}`,
-    emailSig: `¿Necesitas seguro de salud? Cotiza gratis en español: ${personalLink}`,
-    social: `💙 ¿Sabías que puedes tener seguro de salud por menos de lo que pagas al mes en café? ☕ Cotiza gratis en español 👉 ${personalLink}`,
-    tiktok: `Seguros de salud en español 🏥 Link en bio para cotizar gratis 💚 #SeguroDeSalud #Obamacare #ACA #SaludHispana`,
-  }), [agentName, personalLink, greetingName]);
+    whatsapp: `Hola ${greetingName}. 👋 Soy ${agentName}.\n\nHay cartas que uno deja cerradas sobre la mesa, no porque no importen, sino porque da miedo abrirlas y encontrar una cifra que cambie el presupuesto de la familia.\n\nA veces el primer paso no es elegir. Es entender. Si quieres revisar tu situación con calma, aquí puedes empezar: ${personalLink}`,
+    sms: `A veces el primer paso no es elegir, sino entender. Puedes revisar tu situación con calma aquí: ${personalLink}`,
+    emailSig: `A veces el primer paso no es elegir, sino entender. Puedes revisar tu situación con calma aquí: ${personalLink}`,
+    social: `${story.title}\n\n${story.scene}\n\n${story.turningPoint}\n\nSi te resulta familiar, empieza por entender tu situación: ${personalLink}`,
+    tiktok: `${story.title} ${story.turningPoint} Empieza por entender tu situación. #HistoriasDeFamilia #SaludEnEspañol`,
+  }), [agentName, personalLink, greetingName, story]);
 
   const openWhatsApp = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(messages.whatsapp)}`, "_blank");
@@ -114,7 +116,7 @@ export default function ShareClient({ slug, agentName }: Props) {
     window.location.href = `sms:?&body=${encodeURIComponent(messages.sms)}`;
   };
   const openEmail = () => {
-    const subject = "Cotiza tu seguro de salud gratis";
+    const subject = story.label;
     const body = `Hola ${greetingName},\n\n${messages.emailSig}\n\n— ${agentName}`;
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
@@ -200,7 +202,7 @@ export default function ShareClient({ slug, agentName }: Props) {
         Tu kit para compartir
       </h1>
       <p style={{ fontSize: 14, color: "#5a5e72", marginBottom: 24 }}>
-        Link personal, QR imprimible, mensajes listos y tracking por canal. Tus contactos entran directo a tu dashboard.
+        Historias, mensajes y links con tracking por canal. La conversación empieza antes de pedir datos.
       </p>
 
       {/* 1. SMART LINK HERO */}
@@ -245,6 +247,27 @@ export default function ShareClient({ slug, agentName }: Props) {
 
       {/* 5. CLIENT NAME PERSONALIZATION */}
       <div style={cardStyle}>
+        <div style={sectionLabel}>Elegir una historia</div>
+        <p style={{ fontSize: 13, color: "#8b8fa3", marginTop: -4, marginBottom: 12 }}>
+          Elige la situación que mejor conecta con la conversación que quieres abrir.
+        </p>
+        <div style={{ display: "grid", gap: 8, marginBottom: 18 }}>
+          {STORY_CAMPAIGNS.map((item) => {
+            const active = campaign === item.key;
+            return (
+              <button key={item.key} type="button" onClick={() => setCampaign(item.key)} style={{
+                padding: "12px 14px", borderRadius: 10, textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                border: active ? "1.5px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
+                background: active ? "rgba(16,185,129,0.1)" : "transparent", color: active ? "#10b981" : "#8b8fa3",
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 800 }}>{item.label}</div>
+                <div style={{ fontSize: 12, lineHeight: 1.45, marginTop: 3, color: active ? "#b7f7df" : "#5a5e72" }}>{item.title}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={sectionLabel}>Tracking por canal</div>
         <div style={sectionLabel}>Personalizar para un cliente (opcional)</div>
         <input
           style={inputStyle}
@@ -289,16 +312,16 @@ export default function ShareClient({ slug, agentName }: Props) {
             style={{ ...inputStyle, flex: "1 1 160px", minWidth: 120 }}
             value={campaign}
             onChange={(e) => setCampaign(e.target.value.replace(/[^a-z0-9-]/gi, "-").toLowerCase())}
-            placeholder="oep-2026"
+            placeholder="historia-carta-mesa-v1"
           />
-          {["oep-2026", "sep-medicaid", "referidos"].map((c) => (
-            <button key={c} onClick={() => setCampaign(c)} style={{
+          {STORY_CAMPAIGNS.slice(0, 3).map((item) => (
+            <button key={item.key} onClick={() => setCampaign(item.key)} style={{
               padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-              border: campaign === c ? "1.5px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
-              background: campaign === c ? "rgba(16,185,129,0.1)" : "transparent",
-              color: campaign === c ? "#10b981" : "#8b8fa3",
+              border: campaign === item.key ? "1.5px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
+              background: campaign === item.key ? "rgba(16,185,129,0.1)" : "transparent",
+              color: campaign === item.key ? "#10b981" : "#8b8fa3",
               cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-            }}>{c}</button>
+            }}>{item.label}</button>
           ))}
         </div>
 

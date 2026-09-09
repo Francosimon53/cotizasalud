@@ -119,8 +119,7 @@ ${section2025es}
 ESTO ES CRÍTICO:
 - Explica su situación de descuento del gobierno en lenguaje simple (SIN siglas)
 - Si están por encima del límite: explica qué significa para su bolsillo, cuánto más están pagando
-- Si este plan es elegible para cuenta de ahorros médicos Y están cerca/por encima del límite: explica exactamente cómo abrir una cuenta de ahorros médicos con este plan podría ayudarles a recuperar el descuento del gobierno. Usa sus números REALES.
-- Da un ejemplo concreto: "Si eliges este plan y depositas $X en tu cuenta de ahorros médicos, tu ingreso para el gobierno baja de $Y a $Z. Eso te devuelve el descuento y tu prima podría bajar a $0/mes. Te ahorras $W al año."
+- No recomiendes depósitos a HSA, IRA, 401(k) ni ninguna maniobra fiscal para cambiar elegibilidad. Si mencionas una cuenta de ahorros médicos, explica únicamente qué es y remite a un agente licenciado o profesional de impuestos para evaluar si aplica.
 - Si están bien por debajo del límite: explica que tienen el descuento del gobierno y cuánto están ahorrando
 
 ${selectedDrug || selectedDoctor ? `## Tu Medicamento y Doctor
@@ -129,8 +128,8 @@ Si el usuario proporcionó un medicamento y/o doctor, incluye esta sección:
 - Di claramente si su doctor está en la red de este plan
 - Si alguno NO está cubierto, explica qué opciones tiene
 - Mantén esta sección corta: 2-3 oraciones máximo
-` : ""}## Lo Que Te Recomiendo
-UNA recomendación clara que combine la mejor opción de plan CON la mejor estrategia financiera.${selectedDrug || selectedDoctor ? " Si el medicamento no está cubierto o el doctor no está en la red, incluye eso como factor en tu recomendación." : ""} Si aplica, incluye los pasos exactos.
+` : ""}## Qué conviene revisar
+Resume las diferencias y las preguntas que la persona debe revisar con un agente licenciado. No elijas un plan por la persona, no des una recomendación fiscal y no prometas elegibilidad, ahorros ni una prima específica.${selectedDrug || selectedDoctor ? " Si el medicamento no está cubierto o el doctor no está en la red, incluye ese dato como punto de verificación." : ""}
 
 REGLAS:
 - NUNCA uses MAGI, FPL, APTC, ACA, IRA como siglas solas. Siempre explica en lenguaje simple.
@@ -140,7 +139,7 @@ REGLAS:
 - Habla como un amigo que se preocupa, usa "tú"
 - Usa cifras reales en dólares del plan y del ingreso del usuario
 - Máximo 500 palabras
-- Si el plan es elegible para cuenta de ahorros médicos y el usuario está por encima/cerca del límite, esto es lo MÁS importante a resaltar
+- No des instrucciones para abrir cuentas ni hacer aportes con el fin de alterar elegibilidad o impuestos
 - Usa ## para títulos de sección
 - Usa **texto** para resaltar cifras clave
 - Usa viñetas (- ) para listas cortas
@@ -170,8 +169,8 @@ If the user provided a medication and/or doctor, include this section:
 - Clearly state whether their doctor is in this plan's network
 - If either is NOT covered, explain what options they have
 - Keep this section short: 2-3 sentences max
-` : ""}## What I Recommend
-ONE clear recommendation that combines the best plan choice WITH the best financial strategy.${selectedDrug || selectedDoctor ? " If the medication is not covered or the doctor is not in-network, include that as a factor in your recommendation." : ""} If applicable, include exact steps.
+` : ""}## What to Review
+Summarize the differences and the questions the person should review with a licensed agent. Do not choose a plan for the person, provide tax advice, or promise eligibility, savings, or a specific premium.${selectedDrug || selectedDoctor ? " If the medication is not covered or the doctor is not in-network, include that as a verification point." : ""}
 
 RULES:
 - NEVER use MAGI, FPL, APTC, ACA, IRA as standalone acronyms. Always explain in plain language.
@@ -181,7 +180,7 @@ RULES:
 - Speak like a caring friend, use "you"
 - Use real dollar amounts from the plan and the user's income
 - Maximum 500 words
-- If the plan is medical savings account eligible and the user is over/near the cliff, this is the MOST important thing to highlight
+- Do not give instructions to open accounts or make contributions to change eligibility or taxes
 - Use ## for section headers
 - Use **text** to highlight key dollar amounts
 - Use bullets (- ) for short lists

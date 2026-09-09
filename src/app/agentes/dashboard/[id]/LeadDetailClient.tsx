@@ -437,6 +437,16 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
           </div>
         </div>
 
+        {/* Story attribution — campaign/channel identifiers only, never consumer PII. */}
+        <div style={cardStyle}>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>📖 Origen de la conversación</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 13, color: "#94A3B8" }}>
+            <span><strong style={{ color: "#E2E8F0" }}>Canal:</strong> {lead.utm_source || "Sin origen"}</span>
+            <span><strong style={{ color: "#E2E8F0" }}>Historia:</strong> {lead.utm_campaign || "Sin historia"}</span>
+            {lead.utm_medium && <span><strong style={{ color: "#E2E8F0" }}>Medio:</strong> {lead.utm_medium}</span>}
+          </div>
+        </div>
+
         {/* Elegibilidad Migratoria (triage OBBBA — agent-only, never shown to the client) */}
         <div style={cardStyle}>
           <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14 }}>🛂 Elegibilidad Migratoria</div>

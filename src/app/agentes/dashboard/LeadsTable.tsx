@@ -26,6 +26,9 @@ interface Lead {
   quoted_at: string | null;
   next_followup_date: string | null;
   eligibility_flag?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
 }
 
 const STATUSES = [
@@ -115,6 +118,8 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
   const [leads, setLeads] = useState(initialLeads);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [campaignFilter, setCampaignFilter] = useState("all");
   const [sortKey, setSortKey] = useState<"date" | "status">("date");
   const [modal, setModal] = useState<{ leadId: string; leadName: string; currentStatus: string; newStatus: string } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -168,6 +173,8 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
   const filtered = useMemo(() => {
     let result = leads;
     if (statusFilter !== "all") result = result.filter((l) => l.status === statusFilter);
+    if (sourceFilter !== "all") result = result.filter((l) => (l.utm_source || "sin-origen") === sourceFilter);
+    if (campaignFilter !== "all") result = result.filter((l) => (l.utm_campaign || "sin-historia") === campaignFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((l) =>
@@ -183,7 +190,10 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
       result = [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
     return result;
-  }, [leads, search, statusFilter, sortKey]);
+  }, [leads, search, statusFilter, sourceFilter, campaignFilter, sortKey]);
+
+  const sources = useMemo(() => Array.from(new Set(leads.map((l) => l.utm_source || "sin-origen"))).sort(), [leads]);
+  const campaigns = useMemo(() => Array.from(new Set(leads.map((l) => l.utm_campaign || "sin-historia"))).sort(), [leads]);
 
   const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
 
@@ -264,6 +274,10 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
             );
           })()}
         </td>
+        <td style={{ ...tdStyle, color: "#94A3B8", maxWidth: 180 }}>
+          <div style={{ fontSize: 11, fontWeight: 700 }}>{lead.utm_source || "Sin origen"}</div>
+          <div style={{ fontSize: 10, color: "#64748B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={lead.utm_campaign || "Sin historia"}>{lead.utm_campaign || "Sin historia"}</div>
+        </td>
         <td style={{ ...tdStyle, color: "#94A3B8", whiteSpace: "nowrap" }}>{formatDate(lead.created_at)}</td>
         <td style={tdStyle}>
           {slaInfo ? (
@@ -305,6 +319,7 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
         <th style={thStyle}>Ingreso</th>
         <th style={thStyle}>Plan</th>
         <th style={thStyle}>Elegibilidad</th>
+        <th style={thStyle}>Origen / historia</th>
         <th style={thStyle}>Fecha</th>
         <th style={thStyle}>SLA</th>
         <th style={thStyle}>Estado</th>
@@ -371,6 +386,14 @@ export default function LeadsTable({ leads: initialLeads, onRefresh }: { leads: 
           <select style={{ ...inputStyle, cursor: "pointer" }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">Todos</option>
             {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          <select style={{ ...inputStyle, cursor: "pointer" }} value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} aria-label="Filtrar por origen">
+            <option value="all">Todos los orígenes</option>
+            {sources.map((source) => <option key={source} value={source}>{source}</option>)}
+          </select>
+          <select style={{ ...inputStyle, cursor: "pointer", maxWidth: 220 }} value={campaignFilter} onChange={(e) => setCampaignFilter(e.target.value)} aria-label="Filtrar por historia">
+            <option value="all">Todas las historias</option>
+            {campaigns.map((campaign) => <option key={campaign} value={campaign}>{campaign}</option>)}
           </select>
           <select style={{ ...inputStyle, cursor: "pointer" }} value={sortKey} onChange={(e) => setSortKey(e.target.value as "date" | "status")}>
             <option value="date">Fecha</option>

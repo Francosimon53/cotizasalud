@@ -185,8 +185,16 @@ export function normalizePhone(raw: string): string {
   return digits;
 }
 
-export function parseLeadFile(text: string): ParsedFile {
-  const { headers, rows } = parseCsv(text);
+/**
+ * Shared stage: matrix of cells (row 0 = headers) → mapped rows.
+ *
+ * Both file formats end here: the CSV parser hands over the text split into
+ * cells, the Excel reader hands over the normalized sheet. Everything that
+ * decides what a row *means* (header aliases, name assembly, dropped rows,
+ * missing fields) lives here and only here, so the two paths cannot drift.
+ */
+export function parseLeadCells(cells: string[][]): ParsedFile {
+  const [headers = [], ...rows] = cells;
   const mapping = suggestMapping(headers);
 
   const col = (field: LeadImportField): number => mapping.indexOf(field);
@@ -236,4 +244,10 @@ export function parseLeadFile(text: string): ParsedFile {
   });
 
   return { headers, mapping, mappedFields, missingFields, ignoredHeaders, rows: parsed, droppedRows };
+}
+
+/** CSV text → parsed file. Text parsing on top, shared mapping underneath. */
+export function parseLeadFile(text: string): ParsedFile {
+  const { headers, rows } = parseCsv(text);
+  return parseLeadCells([headers, ...rows]);
 }

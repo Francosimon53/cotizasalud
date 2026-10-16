@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
 import { isProductTrack } from "@/lib/eligibility/rules";
+import { buscarEvidencia } from "@/lib/consent-evidence";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -47,8 +48,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       .eq("lead_id", id)
       .order("created_at", { ascending: false });
 
+    // Solo un booleano: la interfaz decide si muestra los PDF de firma.
+    const tiene_consentimiento = (await buscarEvidencia(supabase, lead)) !== null;
+
     return NextResponse.json(
-      { lead, activity: activity || [] },
+      { lead, activity: activity || [], tiene_consentimiento },
       { headers: NO_STORE_HEADERS }
     );
   } catch (err) {
@@ -196,6 +200,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
+const CONSENT_DELETE_BLOCKED =
+  "Este cliente tiene un consentimiento firmado. La ley pide guardarlo 10 años, así que no se puede borrar.";
+const RELATED_DELETE_BLOCKED =
+  "Este cliente tiene otros registros guardados que impiden borrarlo. Escríbele a soporte.";
+
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuthenticatedAgent();
   if (auth instanceof NextResponse) return auth;
@@ -225,8 +234,19 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    await supabase.from("lead_activity").delete().eq("lead_id", id);
+    // Un solo DELETE: lead_activity y renewal_reminders se borran en cascada.
+    // consents y ai_queries no tienen cascada; si hay filas, Postgres rechaza
+    // el borrado completo (23503) y no se pierde nada.
     const { error } = await supabase.from("leads").delete().eq("id", id);
+    if (error?.code === "23503") {
+      const porConsentimiento = /consents/.test(`${error.message ?? ""} ${error.details ?? ""}`);
+      return NextResponse.json(
+        {
+          error: porConsentimiento ? CONSENT_DELETE_BLOCKED : RELATED_DELETE_BLOCKED,
+        },
+        { status: 409, headers: NO_STORE_HEADERS }
+      );
+    }
     if (error) {
       console.error("Delete lead error:", error);
       return NextResponse.json(

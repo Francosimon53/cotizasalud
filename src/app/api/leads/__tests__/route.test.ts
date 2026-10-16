@@ -118,7 +118,7 @@ describe("POST /api/leads — immigration status triage", () => {
     expect(db._insertCalls).toHaveLength(1);
     expect(db._insertCalls[0].immigration_status).toBe("citizen");
     expect(db._insertCalls[0].eligibility_flag).toBe("green");
-    expect(db._insertCalls[0].eligibility_rules_version).toBe("2026-07");
+    expect(db._insertCalls[0].eligibility_rules_version).toBe("2026-10");
   });
 
   it("discards a non-whitelisted value without breaking the flow", async () => {

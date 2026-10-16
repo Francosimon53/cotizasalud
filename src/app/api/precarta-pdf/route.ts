@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { jsPDF } from "jspdf";
+import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
+import { buscarEvidencia, formatearFechaFirma } from "@/lib/consent-evidence";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,6 +29,7 @@ function buildPdf(
   signatureDataUrl: string,
   signedDate: string,
   ip: string,
+  typedSignature = "",
 ): Buffer {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
   const W = doc.internal.pageSize.getWidth();
@@ -98,6 +101,13 @@ function buildPdf(
       y += 24;
     } catch { /* skip */ }
   }
+  if (typedSignature) {
+    doc.setFont("helvetica", "bolditalic");
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59);
+    doc.text(typedSignature, margin, y);
+    y += 3;
+  }
 
   doc.setDrawColor(30, 41, 59);
   doc.line(margin, y, margin + 80, y);
@@ -119,7 +129,11 @@ function buildPdf(
   doc.setFont("helvetica", "italic");
   doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);
-  doc.text(`Firmado digitalmente desde IP ${ip} el ${signedDate}`, margin, y);
+  doc.text(
+    ip ? `Firmado digitalmente desde IP ${ip} el ${signedDate}` : `Firmado digitalmente el ${signedDate}`,
+    margin,
+    y
+  );
 
   // Footer
   const footerY = doc.internal.pageSize.getHeight() - 15;
@@ -134,8 +148,14 @@ function buildPdf(
   return Buffer.from(doc.output("arraybuffer"));
 }
 
-// GET — agent dashboard: generate pre-carta PDF from lead data
+// GET — agent dashboard: generate pre-carta PDF from lead data. Same guard as
+// consent-pdf: authenticated agent who owns the lead, and real signature
+// evidence (never the client's name as signature nor created_at as date).
 export async function GET(request: NextRequest) {
+  const auth = await requireAuthenticatedAgent();
+  if (auth instanceof NextResponse) return auth;
+  const callerAgent = auth.agent;
+
   const leadId = request.nextUrl.searchParams.get("leadId");
   if (!leadId) return NextResponse.json(
     { error: "leadId required" },
@@ -150,12 +170,25 @@ export async function GET(request: NextRequest) {
       { status: 404, headers: NO_STORE_HEADERS }
     );
 
+    if (lead.agent_id !== callerAgent.id) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403, headers: NO_STORE_HEADERS }
+      );
+    }
+
+    const evidencia = await buscarEvidencia(supabase, lead);
+    if (!evidencia) {
+      return NextResponse.json(
+        { error: "sin_consentimiento" },
+        { status: 404, headers: NO_STORE_HEADERS }
+      );
+    }
+
     const { data: agent } = await supabase.from("agents").select("name, npn, phone").eq("slug", lead.agent_slug).single();
 
     const clientName = lead.contact_name || `${lead.first_name || ""} ${lead.last_name || ""}`.trim() || "N/A";
-    const signedDate = lead.consent_timestamp
-      ? new Date(lead.consent_timestamp).toLocaleString("es-US", { dateStyle: "long", timeStyle: "medium", timeZone: "America/New_York" })
-      : fmtDate(lead.created_at);
+    const signedDate = formatearFechaFirma(evidencia.fecha);
 
     const pdfBuffer = buildPdf(
       clientName,
@@ -163,15 +196,17 @@ export async function GET(request: NextRequest) {
       agent?.name || "EnrollSalud Agent",
       agent?.npn || "N/A",
       agent?.phone || "N/A",
-      lead.signature_data || "",
+      evidencia.firmaImagen || "",
       signedDate,
-      lead.consent_ip || "N/A",
+      evidencia.ip || "",
+      evidencia.firmaTexto || "",
     );
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="PreCarta_${clientName.replace(/\s+/g, "_")}_${lead.created_at.split("T")[0]}.pdf"`,
+        // Solo ASCII seguro: un nombre con comillas o fuera de latin1 rompería la cabecera.
+        "Content-Disposition": `attachment; filename="PreCarta_${clientName.normalize("NFD").replace(/[^A-Za-z0-9]+/g, "_")}_${String(lead.created_at).split("T")[0]}.pdf"`,
         ...NO_STORE_HEADERS,
       },
     });
@@ -194,6 +229,13 @@ export async function POST(request: NextRequest) {
       { error: "clientName required" },
       { status: 400, headers: NO_STORE_HEADERS }
     );
+    // Sin firma dibujada no hay pre-carta firmada.
+    if (typeof signatureDataUrl !== "string" || !signatureDataUrl.startsWith("data:image")) {
+      return NextResponse.json(
+        { error: "sin_firma" },
+        { status: 400, headers: NO_STORE_HEADERS }
+      );
+    }
 
     const signedDate = signedAt
       ? new Date(signedAt).toLocaleString("es-US", { dateStyle: "long", timeStyle: "medium", timeZone: "America/New_York" })

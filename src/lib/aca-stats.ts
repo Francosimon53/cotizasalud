@@ -19,6 +19,8 @@ export const ACA_STATS = {
   mismoPlanPct: 114, // proyección para quien mantiene el mismo plan
   oepInicio: "1 de noviembre",
   oepLimiteEnero: "15 de diciembre",
+  // Misma fecha que oepLimiteEnero, en forma numérica para la lógica (mes 1-12).
+  oepLimiteEneroFecha: { mes: 12, dia: 15 },
   oepFinPeriodo: "15 de enero",
   diasHastaCoberturaEnero: 45,
   fuente: "KFF / CMS 2026",

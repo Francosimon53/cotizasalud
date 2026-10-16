@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
+import { buscarEvidencia } from "@/lib/consent-evidence";
+import { ventanaEnero } from "@/lib/renewal-reminder";
 import LeadDetailClient from "./LeadDetailClient";
 import "../../agentes.css";
 
@@ -13,7 +15,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   if (!user) redirect("/agentes/login");
 
   const db = createServiceClient();
-  const { data: agent } = await db.from("agents").select("slug, name, npn, agency_name, healthsherpa_agent_id").eq("auth_user_id", user.id).single();
+  const { data: agent } = await db.from("agents").select("slug, name, npn, agency_name, healthsherpa_agent_id, phone").eq("auth_user_id", user.id).single();
   if (!agent) redirect("/agentes/dashboard");
 
   const { data: lead } = await db.from("leads").select("*").eq("id", id).eq("agent_slug", agent.slug).single();
@@ -37,5 +39,22 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     conversation = data;
   } catch {}
 
-  return <LeadDetailClient lead={lead} activity={activity || []} conversation={conversation} agent={agent} />;
+  const tieneConsentimiento = (await buscarEvidencia(db, lead)) !== null;
+
+  // Botón del mensaje de renovación: solo del 1-nov al 15-dic y si el cliente
+  // tiene una renovación del 1 de enero de ese año.
+  let renovacionAnio: number | null = null;
+  const ventana = ventanaEnero(new Date());
+  if (ventana?.antesDelLimite) {
+    const { data: renewal } = await db
+      .from("renewal_reminders")
+      .select("id")
+      .eq("lead_id", id)
+      .eq("renewal_date", `${ventana.anioRenovacion}-01-01`)
+      .limit(1)
+      .maybeSingle();
+    if (renewal) renovacionAnio = ventana.anioRenovacion;
+  }
+
+  return <LeadDetailClient lead={lead} activity={activity || []} conversation={conversation} agent={agent} tieneConsentimiento={tieneConsentimiento} renovacionAnio={renovacionAnio} />;
 }

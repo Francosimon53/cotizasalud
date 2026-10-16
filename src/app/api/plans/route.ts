@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getFPLpct } from "@/lib/data";
 import { rateLimit } from "@/lib/rate-limit";
+import { derivePlanYear } from "@/lib/plan-year";
+import { normalizeImmigrationStatus, primaryLosesSubsidy } from "@/lib/eligibility/rules";
 
 // Freshness is non-negotiable for the cotizador — every response must match CMS live data.
 export const dynamic = "force-dynamic";
@@ -65,30 +67,30 @@ interface CMSRequest {
 // cuidadodesalud.gov). Default conservador: aptc_eligible=true si
 // el flag está ausente o false.
 //
+// Estatus migratorio: el cotizador lo pregunta solo al solicitante principal
+// (miembro 0). Desde planes 2027, si ese estatus pierde el subsidio o queda
+// fuera del Mercado, el principal va con aptc_eligible=false; los demás
+// miembros no cambian (puede haber hijos ciudadanos). Ver primaryLosesSubsidy.
+//
 // Otros disqualifiers (dependiente en otra declaración, TRICARE,
-// incarceración, immigration status) NO son capturados hoy por la UI.
-// Si la UI los agrega en el futuro, extender esta función.
-function determineAptcEligible(m: any): boolean {
+// incarceración) NO son capturados hoy por la UI.
+function determineAptcEligible(
+  m: any,
+  opts: { isPrimary?: boolean; immigrationStatus?: unknown; planYear?: number } = {},
+): boolean {
   if (m?.hasEmployerCoverage === true) return false;
+  if (
+    opts.isPrimary &&
+    opts.planYear !== undefined &&
+    primaryLosesSubsidy(normalizeImmigrationStatus(opts.immigrationStatus), opts.planYear)
+  ) {
+    return false;
+  }
   return true;
 }
 
-// ────────────────────────────────────────────────────────────────
-// FIX #2: Year derivation — maneja el boundary de OEP (Nov 1 – Jan 15).
-// ────────────────────────────────────────────────────────────────
-// `new Date().getFullYear()` devuelve el año actual; durante OEP los
-// usuarios compran planes del AÑO SIGUIENTE. Soporta PLAN_YEAR env
-// var como override manual para testing o emergencias.
-function derivePlanYear(now: Date = new Date()): number {
-  const envOverride = process.env.PLAN_YEAR;
-  if (envOverride && /^\d{4}$/.test(envOverride)) {
-    return Number(envOverride);
-  }
-  const month = now.getMonth(); // 0-indexed: Nov = 10, Dec = 11
-  const year = now.getFullYear();
-  if (month >= 10) return year + 1; // Nov/Dec → shop next year
-  return year;
-}
+// Año del plan: ver derivePlanYear en src/lib/plan-year.ts (maneja el
+// boundary del OEP y el override PLAN_YEAR).
 
 function parseDollar(s: string | number | undefined | null): number {
   if (s == null) return 0;
@@ -244,7 +246,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { zipcode, countyfips, state, income, household } = body;
+    const { zipcode, countyfips, state, income, household, immigrationStatus } = body;
 
     if (!zipcode || !countyfips || !state || !income || !household?.length) {
       return NextResponse.json(
@@ -261,19 +263,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const planYear = derivePlanYear();
     const cmsBody: CMSRequest = {
       household: {
         income: Number(income),
-        people: household.map((m: any) => ({
+        people: household.map((m: any, i: number) => ({
           age: Number(m.age),
           gender: m.gender || "Female",
           uses_tobacco: !!m.tobacco,
-          aptc_eligible: determineAptcEligible(m),
+          aptc_eligible: determineAptcEligible(m, {
+            isPrimary: i === 0,
+            immigrationStatus,
+            planYear,
+          }),
         })),
       },
       market: "Individual",
       place: { countyfips, state, zipcode },
-      year: derivePlanYear(),
+      year: planYear,
       // NOTE: CMS Marketplace API silently caps server-side to 10/page regardless
       // of the limit requested. Setting limit=10 explicitly to match server
       // behavior, reduce confusion, and allow accurate roundtrip accounting.

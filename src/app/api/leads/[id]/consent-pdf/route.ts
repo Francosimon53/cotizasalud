@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { requireAuthenticatedAgent } from "@/lib/auth/require-agent";
 import { jsPDF } from "jspdf";
+import { evaluarEvidencia, formatearFechaFirma, ultimoConsentimiento } from "@/lib/consent-evidence";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -49,15 +50,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       );
     }
 
-    const { data: agent } = await supabase.from("agents").select("name, npn, agency_name, phone").eq("slug", lead.agent_slug).single();
+    // Sin evidencia real de firma no hay PDF: nunca se inventa una firma con
+    // el nombre del cliente ni una fecha con lead.created_at.
+    const consentRow = await ultimoConsentimiento(supabase, id);
+    const evidencia = evaluarEvidencia(consentRow, lead);
+    if (!evidencia) {
+      return NextResponse.json(
+        { error: "sin_consentimiento" },
+        { status: 404, headers: NO_STORE_HEADERS }
+      );
+    }
+    const consent = evidencia.consent;
 
-    const { data: consent } = await supabase
-      .from("consents")
-      .select("*")
-      .eq("lead_id", id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+    const { data: agent } = await supabase.from("agents").select("name, npn, agency_name, phone").eq("slug", lead.agent_slug).single();
 
     const clientName = lead.contact_name || `${lead.first_name || ""} ${lead.last_name || ""}`.trim() || "N/A";
     const agentName = agent?.name || "EnrollSalud Agent";
@@ -78,12 +83,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const clientPhone = lead.contact_phone || "N/A";
     const clientEmail = lead.contact_email || "N/A";
 
-    const typedSig = consent?.typed_signature || clientName;
-    const consentTs = consent?.consent_date
-      ? new Date(consent.consent_date).toLocaleString("es-US", { dateStyle: "long", timeStyle: "medium", timeZone: "America/New_York" })
-      : lead.consent_timestamp
-        ? new Date(lead.consent_timestamp).toLocaleString("es-US", { dateStyle: "long", timeStyle: "medium", timeZone: "America/New_York" })
-        : fmtDate(lead.created_at);
+    const consentTs = formatearFechaFirma(evidencia.fecha);
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
     const W = doc.internal.pageSize.getWidth();
@@ -262,19 +262,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
     // Signature image if available
     doc.setTextColor(30, 41, 59);
-    if (lead.signature_data && lead.signature_data.startsWith("data:image")) {
+    if (evidencia.firmaImagen) {
       try {
-        doc.addImage(lead.signature_data, "PNG", margin, y, 55, 18);
+        doc.addImage(evidencia.firmaImagen, "PNG", margin, y, 55, 18);
         y += 20;
       } catch {
-        // fallback to typed sig below
+        // imagen inválida: queda solo la firma escrita, si la hay
       }
     }
 
-    // Typed signature
-    doc.setFont("helvetica", "bolditalic");
-    doc.setFontSize(14);
-    doc.text(typedSig, margin, y);
+    // Typed signature (only the one the client actually typed)
+    if (evidencia.firmaTexto) {
+      doc.setFont("helvetica", "bolditalic");
+      doc.setFontSize(14);
+      doc.text(evidencia.firmaTexto, margin, y);
+    }
     y += 3;
     doc.setDrawColor(30, 41, 59);
     doc.line(margin, y, margin + 75, y);
@@ -296,8 +298,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     doc.setFont("helvetica", "italic");
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
-    const consentIp = consent?.ip_address || lead.consent_ip || "N/A";
-    doc.text(`Firmado digitalmente desde IP ${consentIp} el ${consentTs}`, margin, y);
+    doc.text(
+      evidencia.ip
+        ? `Firmado digitalmente desde IP ${evidencia.ip} el ${consentTs}`
+        : `Firmado digitalmente el ${consentTs}`,
+      margin,
+      y
+    );
 
     // Add footer to current (last) page
     addFooter();
@@ -307,7 +314,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Consentimiento_${clientName.replace(/\s+/g, "_")}_${lead.created_at.split("T")[0]}.pdf"`,
+        // Solo ASCII seguro: un nombre con comillas o fuera de latin1 rompería la cabecera.
+        "Content-Disposition": `attachment; filename="Consentimiento_${clientName.normalize("NFD").replace(/[^A-Za-z0-9]+/g, "_")}_${String(lead.created_at).split("T")[0]}.pdf"`,
         ...NO_STORE_HEADERS,
       },
     });

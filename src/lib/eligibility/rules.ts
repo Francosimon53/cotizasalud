@@ -2,25 +2,27 @@
 //
 // From 2027-01-01 (OEP Nov-Dec 2026) only citizens, lawful permanent
 // residents, Cuban/Haitian entrants and COFA migrants keep ACA subsidies.
-// Asylum (pending with a current EAD, or granted), refugees, TPS and humanitarian parole remain
-// eligible through 2026 but LOSE the subsidy on 2027-01-01. DACA is out of
-// the Marketplace since Aug-2025.
+// Asylum (pending with a current EAD, or granted), refugees, TPS, humanitarian
+// parole and temporary work/study visas remain eligible through 2026 but LOSE
+// the subsidy on 2027-01-01. DACA is out of the Marketplace since Aug-2025.
 //
 // The flag is a triage aid for the agent, never a legal determination, and
 // is never shown to the consumer. Every stored flag is stamped with
 // RULES_VERSION so rows can be re-triaged when the rules change.
 
-export const RULES_VERSION = "2026-07";
+export const RULES_VERSION = "2026-10";
 
 export const IMMIGRATION_STATUSES = [
   "citizen",
   "lpr",
   "cuban_haitian_entrant",
+  "cofa",
   "asylum_pending",
   "asylum_granted",
   "refugee",
   "tps",
   "humanitarian_parole",
+  "temporary_visa",
   "daca",
   "no_status",
   "prefer_not_to_say",
@@ -35,12 +37,14 @@ const FLAG_BY_STATUS: Record<ImmigrationStatus, EligibilityFlag> = {
   citizen: "green",
   lpr: "green",
   cuban_haitian_entrant: "green",
+  cofa: "green",
   // yellow — eligible in 2026, LOSES the subsidy on 2027-01-01
   asylum_pending: "yellow",
   asylum_granted: "yellow",
   refugee: "yellow",
   tps: "yellow",
   humanitarian_parole: "yellow",
+  temporary_visa: "yellow",
   // red — out of the Marketplace
   daca: "red",
   no_status: "red",
@@ -62,6 +66,22 @@ export function normalizeImmigrationStatus(value: unknown): ImmigrationStatus | 
 export function eligibilityFlagFor(status: ImmigrationStatus | null | undefined): EligibilityFlag {
   if (!status) return "unknown";
   return FLAG_BY_STATUS[status];
+}
+
+// First plan year in which yellow statuses lose the subsidy (OBBBA).
+export const SUBSIDY_LOSS_PLAN_YEAR = 2027;
+
+// True when the primary applicant must be quoted WITHOUT the subsidy: plan
+// year 2027 or later and a status that loses it (yellow) or is out of the
+// Marketplace (red). Applies only to the primary applicant — the status is
+// asked once and other household members (e.g. citizen children) keep theirs.
+export function primaryLosesSubsidy(
+  status: ImmigrationStatus | null | undefined,
+  planYear: number,
+): boolean {
+  if (!status || planYear < SUBSIDY_LOSS_PLAN_YEAR) return false;
+  const flag = FLAG_BY_STATUS[status];
+  return flag === "yellow" || flag === "red";
 }
 
 // Agent-dashboard copy per flag. Never shown to the consumer.

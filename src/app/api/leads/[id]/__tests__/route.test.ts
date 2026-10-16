@@ -36,11 +36,12 @@ function setAuthError(status: number, message: string) {
 }
 
 function installDb(opts: {
-  lead?: { id?: string; agent_id?: string } | null;
+  lead?: Record<string, unknown> | null;
   activity?: unknown[];
   deleteError?: unknown;
+  consent?: Record<string, unknown> | null;
 }) {
-  const { lead = null, activity = [], deleteError = null } = opts;
+  const { lead = null, activity = [], deleteError = null, consent = null } = opts;
   const deleteCalls: { table: string; eq: [string, unknown] }[] = [];
 
   const db = {
@@ -57,6 +58,19 @@ function installDb(opts: {
               deleteCalls.push({ table: "leads", eq: [col, val] });
               return Promise.resolve({ data: null, error: deleteError });
             },
+          }),
+        };
+      }
+      if (table === "consents") {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: () => ({
+                  single: async () => ({ data: consent, error: consent ? null : { code: "PGRST116" } }),
+                }),
+              }),
+            }),
           }),
         };
       }
@@ -120,6 +134,38 @@ describe("GET /api/leads/[id]", () => {
     expect(body.activity).toHaveLength(1);
   });
 
+  it("tiene_consentimiento: false sin evidencia de firma", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    installDb({ lead: { id: "lead-1", agent_id: "a1", signature_data: "", consent_timestamp: "2026-04-30T14:00:00Z" } });
+
+    const body = await (await GET(makeRequest(), makeParams("lead-1"))).json();
+
+    expect(body.tiene_consentimiento).toBe(false);
+  });
+
+  it("tiene_consentimiento: true con una fila de consents firmada", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    installDb({
+      lead: { id: "lead-1", agent_id: "a1" },
+      consent: { typed_signature: "Maria Lopez", consent_date: "2026-03-15" },
+    });
+
+    const body = await (await GET(makeRequest(), makeParams("lead-1"))).json();
+
+    expect(body.tiene_consentimiento).toBe(true);
+  });
+
+  it("tiene_consentimiento: true con firma legacy en el lead", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    installDb({
+      lead: { id: "lead-1", agent_id: "a1", signature_data: "data:image/png;base64,AAA", consent_timestamp: "2026-04-30T14:00:00Z" },
+    });
+
+    const body = await (await GET(makeRequest(), makeParams("lead-1"))).json();
+
+    expect(body.tiene_consentimiento).toBe(true);
+  });
+
   it("returns 403 (NOT 404) when the lead exists but belongs to another agent", async () => {
     setAuthOk({ id: "a1", slug: "alice" });
     installDb({
@@ -156,7 +202,7 @@ describe("DELETE /api/leads/[id]", () => {
     expect(db._deleteCalls).toHaveLength(0);
   });
 
-  it("deletes the lead and its activity when ownership matches", async () => {
+  it("sin consentimiento: un solo DELETE sobre leads (la actividad se borra en cascada) y 200", async () => {
     setAuthOk({ id: "a1", slug: "alice" });
     const db = installDb({
       lead: { id: "lead-1", agent_id: "a1" },
@@ -165,8 +211,57 @@ describe("DELETE /api/leads/[id]", () => {
     const res = await DELETE(makeRequest(), makeParams("lead-1"));
 
     expect(res.status).toBe(200);
-    const tables = db._deleteCalls.map((c) => c.table);
-    expect(tables).toEqual(["lead_activity", "leads"]);
+    expect(db._deleteCalls).toEqual([{ table: "leads", eq: ["id", "lead-1"] }]);
+  });
+
+  it("con consentimiento: 409 con el texto para el agente y ningún borrado parcial", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    const db = installDb({
+      lead: { id: "lead-1", agent_id: "a1" },
+      deleteError: {
+        code: "23503",
+        message:
+          'update or delete on table "leads" violates foreign key constraint "consents_lead_id_fkey" on table "consents"',
+        details: 'Key (id)=(lead-1) is still referenced from table "consents".',
+      },
+    });
+
+    const res = await DELETE(makeRequest(), makeParams("lead-1"));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      error:
+        "Este cliente tiene un consentimiento firmado. La ley pide guardarlo 10 años, así que no se puede borrar.",
+    });
+    // Solo se intentó el DELETE de leads (que Postgres rechazó entero): el
+    // historial no se borró antes.
+    expect(db._deleteCalls.map((c) => c.table)).toEqual(["leads"]);
+  });
+
+  it("otra llave foránea (p. ej. ai_queries): 409 sin decir que hay consentimiento", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    installDb({
+      lead: { id: "lead-1", agent_id: "a1" },
+      deleteError: {
+        code: "23503",
+        message: 'violates foreign key constraint "ai_queries_lead_id_fkey" on table "ai_queries"',
+      },
+    });
+
+    const res = await DELETE(makeRequest(), makeParams("lead-1"));
+
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).not.toMatch(/consentimiento/);
+  });
+
+  it("otro error de base: 500", async () => {
+    setAuthOk({ id: "a1", slug: "alice" });
+    installDb({ lead: { id: "lead-1", agent_id: "a1" }, deleteError: { code: "XX000", message: "boom" } });
+
+    const res = await DELETE(makeRequest(), makeParams("lead-1"));
+
+    expect(res.status).toBe(500);
   });
 });
 

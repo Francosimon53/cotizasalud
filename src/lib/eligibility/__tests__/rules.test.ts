@@ -7,22 +7,25 @@ import {
   eligibilityFlagFor,
   isProductTrack,
   normalizeImmigrationStatus,
+  primaryLosesSubsidy,
 } from "../rules";
 
-describe("eligibility rules — 2026-07 (OBBBA/H.R.1)", () => {
+describe("eligibility rules — 2026-10 (OBBBA/H.R.1)", () => {
   it("pins the rules version stamped on every stored flag", () => {
-    expect(RULES_VERSION).toBe("2026-07");
+    expect(RULES_VERSION).toBe("2026-10");
   });
 
   it.each([
     ["citizen", "green"],
     ["lpr", "green"],
     ["cuban_haitian_entrant", "green"],
+    ["cofa", "green"],
     ["asylum_pending", "yellow"],
     ["asylum_granted", "yellow"],
     ["refugee", "yellow"],
     ["tps", "yellow"],
     ["humanitarian_parole", "yellow"],
+    ["temporary_visa", "yellow"],
     ["daca", "red"],
     ["no_status", "red"],
     ["prefer_not_to_say", "unknown"],
@@ -62,7 +65,7 @@ describe("normalizeImmigrationStatus — strict whitelist", () => {
     "CITIZEN", // case must match exactly
     "green card holder", // free text
     "citizen; DROP TABLE leads", // injection-shaped
-    "cofa", // not in the 2026-07 whitelist
+    "student_visa", // not in the whitelist (the value is temporary_visa)
     "",
     " citizen",
   ])("discards non-whitelisted string %j as null", (value) => {
@@ -88,5 +91,42 @@ describe("isProductTrack — whitelist", () => {
     expect(isProductTrack("PRIVATE")).toBe(false);
     expect(isProductTrack("")).toBe(false);
     expect(isProductTrack(null)).toBe(false);
+  });
+});
+
+describe("estatus nuevos (2026-10)", () => {
+  it("temporary_visa y cofa están en la lista blanca", () => {
+    expect(normalizeImmigrationStatus("temporary_visa")).toBe("temporary_visa");
+    expect(normalizeImmigrationStatus("cofa")).toBe("cofa");
+    expect(IMMIGRATION_STATUSES).toContain("refugee");
+  });
+});
+
+describe("primaryLosesSubsidy — solo desde planes 2027", () => {
+  it.each([
+    "asylum_pending",
+    "asylum_granted",
+    "refugee",
+    "tps",
+    "humanitarian_parole",
+    "temporary_visa",
+    "daca",
+    "no_status",
+  ] as const)("%s pierde el subsidio en 2027 y no en 2026", (status) => {
+    expect(primaryLosesSubsidy(status, 2027)).toBe(true);
+    expect(primaryLosesSubsidy(status, 2028)).toBe(true);
+    expect(primaryLosesSubsidy(status, 2026)).toBe(false);
+  });
+
+  it.each(["citizen", "lpr", "cuban_haitian_entrant", "cofa", "prefer_not_to_say"] as const)(
+    "%s mantiene el subsidio en 2027",
+    (status) => {
+      expect(primaryLosesSubsidy(status, 2027)).toBe(false);
+    }
+  );
+
+  it("sin estatus no cambia nada", () => {
+    expect(primaryLosesSubsidy(null, 2027)).toBe(false);
+    expect(primaryLosesSubsidy(undefined, 2027)).toBe(false);
   });
 });

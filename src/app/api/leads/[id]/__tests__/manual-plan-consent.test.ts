@@ -59,8 +59,13 @@ function installPatchDb(existingSelectedPlan: Record<string, unknown> | null) {
 
 // DB mock for the consent-pdf handler. lead.selected_plan holds the jsonb the
 // PATCH just produced; no consent row exists (forces the lead.selected_plan
-// fallback path, incl. effectiveDate).
-function installPdfDb(selectedPlan: Record<string, unknown>) {
+// fallback path, incl. effectiveDate). By default the lead carries a legacy
+// signature (signature_data + consent_timestamp) so a PDF can be generated;
+// signatureData "" means no signature evidence at all.
+const PNG_1X1 =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
+function installPdfDb(selectedPlan: Record<string, unknown>, signatureData: string = PNG_1X1) {
   const lead = {
     id: "lead-1",
     agent_id: AGENT.id,
@@ -72,7 +77,7 @@ function installPdfDb(selectedPlan: Record<string, unknown>) {
     contact_email: "maria@example.com",
     dob: "1985-04-12",
     annual_income: 28000,
-    signature_data: "",
+    signature_data: signatureData,
     consent_ip: "203.0.113.50",
     consent_timestamp: "2026-04-30T14:00:00Z",
     selected_plan: selectedPlan,
@@ -213,5 +218,26 @@ describe("manual plan entry -> consent PDF", () => {
     expect(stored.pcp).toBe(25);
     // selected_premium follows afterSubsidy when present (matches plan-select).
     expect(captured.update!.selected_premium).toBe(80);
+  });
+
+  it("with consents = null and no signature, the consent PDF is a 404 (no invented signature)", async () => {
+    setAuthOk();
+    const captured = installPatchDb(null);
+    await patchPlan({
+      name: "QA Manual Plan PPO",
+      issuer: "Florida Blue",
+      premium: 450,
+      deductible: 3500,
+      oopMax: 9100,
+      effectiveDate: "2026-07-01",
+    });
+
+    setAuthOk();
+    installPdfDb(captured.update!.selected_plan, "");
+    const pdfRes = await CONSENT_PDF({} as any, makeParams("lead-1"));
+
+    expect(pdfRes.status).toBe(404);
+    expect(pdfRes.headers.get("content-type")).not.toBe("application/pdf");
+    expect(await pdfRes.json()).toEqual({ error: "sin_consentimiento" });
   });
 });

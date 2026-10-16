@@ -534,6 +534,7 @@ export default function QuoterPage({ storyFirst = false }: { storyFirst?: boolea
           state: county.state,
           income: Number(income),
           household: house,
+          immigrationStatus: immigrationStatus || undefined,
         }),
       });
       if (!res.ok) throw new Error(`API ${res.status}`);
@@ -1207,10 +1208,13 @@ export default function QuoterPage({ storyFirst = false }: { storyFirst?: boolea
                     <option value="citizen">{t.imgCitizen}</option>
                     <option value="lpr">{t.imgLpr}</option>
                     <option value="cuban_haitian_entrant">{t.imgCubanHaitian}</option>
+                    <option value="cofa">{t.imgCofa}</option>
                     <option value="asylum_pending">{t.imgAsylumPending}</option>
                     <option value="asylum_granted">{t.imgAsylumGranted}</option>
+                    <option value="refugee">{t.imgRefugee}</option>
                     <option value="tps">{t.imgTps}</option>
                     <option value="humanitarian_parole">{t.imgParole}</option>
+                    <option value="temporary_visa">{t.imgTemporaryVisa}</option>
                     <option value="daca">{t.imgDaca}</option>
                     <option value="prefer_not_to_say">{t.imgPreferNot}</option>
                   </select>

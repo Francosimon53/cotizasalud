@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import StatusModal from "../StatusModal";
 import ActivityTimeline from "../ActivityTimeline";
 import { FLAG_COPY, type EligibilityFlag } from "@/lib/eligibility/rules";
+import { buildHealthSherpaQuoteUrl, healthSherpaInputFromLead } from "@/lib/healthsherpa-link";
+import { mensajeRenovacion } from "@/lib/renewal-reminder";
 
 // Eligibility triage (OBBBA) — agent-only panel config.
 const FLAG_COLORS: Record<EligibilityFlag, string> = {
@@ -23,6 +25,8 @@ const IMMIGRATION_LABELS: Record<string, string> = {
   refugee: "Refugiado",
   tps: "TPS",
   humanitarian_parole: "Parole humanitario",
+  temporary_visa: "Visa de trabajo o de estudio",
+  cofa: "Ciudadano/a de un país COFA",
   daca: "DACA",
   no_status: "Sin estatus",
   prefer_not_to_say: "Prefirió no decir",
@@ -65,7 +69,7 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("es-US", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" });
 }
 
-export default function LeadDetailClient({ lead: initialLead, activity: initialActivity, conversation, agent }: { lead: any; activity: any[]; conversation?: any; agent?: any }) {
+export default function LeadDetailClient({ lead: initialLead, activity: initialActivity, conversation, agent, tieneConsentimiento = false, renovacionAnio = null }: { lead: any; activity: any[]; conversation?: any; agent?: any; tieneConsentimiento?: boolean; renovacionAnio?: number | null }) {
   const router = useRouter();
   const [lead, setLead] = useState(initialLead);
   const [activity, setActivity] = useState(initialActivity);
@@ -75,6 +79,7 @@ export default function LeadDetailClient({ lead: initialLead, activity: initialA
   const [savingNote, setSavingNote] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [savingPlan, setSavingPlan] = useState(false);
@@ -128,33 +133,14 @@ export default function LeadDetailClient({ lead: initialLead, activity: initialA
   const firstName = lead.first_name || (lead.contact_name || "").split(" ")[0] || "";
   const lastName = lead.last_name || (lead.contact_name || "").split(" ").slice(1).join(" ") || "";
 
-  // HealthSherpa deeplink
+  // HealthSherpa: cotización del Mercado pre-llenada (ver src/lib/healthsherpa-link.ts).
+  // Sin un dato obligatorio la URL es null y el botón no aparece.
   const hsAgentId = agent?.healthsherpa_agent_id || agent?.npn || "";
-  const hsPlanId = planObj?.id || conversation?.selected_plan_hios_id || "";
-  const canOpenHS = !!(hsAgentId && hsPlanId && lead.zipcode);
-  const openHealthSherpa = () => {
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "https://www.healthsherpa.com/public/ichra/off_ex";
-    form.target = "_blank";
-    const fields: Record<string, string> = {
-      plan_hios_id: hsPlanId,
-      _agent_id: hsAgentId,
-      agent_of_record_npn: agent?.npn || hsAgentId,
-      zip_code: lead.zipcode || "",
-      fip_code: lead.county_fips || "",
-      phone_number: waPhone.length === 10 ? waPhone : "",
-      plan_year: String(new Date().getFullYear()),
-    };
-    for (const [k, v] of Object.entries(fields)) {
-      const input = document.createElement("input");
-      input.type = "hidden"; input.name = k; input.value = v;
-      form.appendChild(input);
-    }
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-  };
+  const hsAgentUrl = buildHealthSherpaQuoteUrl(healthSherpaInputFromLead(lead, hsAgentId, "agent"));
+  const hsClientUrl = buildHealthSherpaQuoteUrl(healthSherpaInputFromLead(lead, hsAgentId, "consumer"));
+  const hsClientWaMsg = hsClientUrl
+    ? `Hola ${lead.contact_name || ""}, aquí puedes ver los planes del Mercado con tus datos ya puestos: ${hsClientUrl} — Si tienes dudas, escríbeme.`
+    : "";
 
   const handleStatusSaved = (_leadId: string, newStatus: string) => {
     setLead((prev: any) => ({ ...prev, status: newStatus }));
@@ -182,8 +168,15 @@ export default function LeadDetailClient({ lead: initialLead, activity: initialA
 
   const handleDelete = async () => {
     setDeleting(true);
-    await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
-    router.push("/agentes/dashboard");
+    setDeleteError(null);
+    const res = await fetch(`/api/leads/${lead.id}`, { method: "DELETE" }).catch(() => null);
+    if (res?.ok) {
+      router.push("/agentes/dashboard");
+      return;
+    }
+    const data = res ? await res.json().catch(() => null) : null;
+    setDeleteError(data?.error || "No se pudo borrar. Inténtalo otra vez.");
+    setDeleting(false);
   };
 
   const openPlanForm = () => {
@@ -312,13 +305,16 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
 
       {/* Delete confirmation */}
       {showDeleteConfirm && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowDeleteConfirm(false)}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => { setShowDeleteConfirm(false); setDeleteError(null); }}>
           <div style={{ background: "#1E293B", borderRadius: 16, padding: 28, border: "1px solid rgba(239,68,68,0.3)", width: "100%", maxWidth: 400, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#E2E8F0", marginBottom: 8 }}>¿Eliminar este contacto?</div>
             <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 24 }}>Esta acción no se puede deshacer.</div>
+            {deleteError && (
+              <div role="alert" style={{ fontSize: 13, color: "#FCA5A5", background: "rgba(239,68,68,0.12)", borderRadius: 8, padding: "10px 12px", marginBottom: 16, textAlign: "left" }}>{deleteError}</div>
+            )}
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#94A3B8", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
+              <button onClick={() => { setShowDeleteConfirm(false); setDeleteError(null); }} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#94A3B8", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
               <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "none", background: "#ef4444", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{deleting ? "..." : "Eliminar"}</button>
             </div>
           </div>
@@ -388,12 +384,20 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
         {lead.contact_email && (
           <a href={`mailto:${lead.contact_email}?subject=Tu seguro médico - EnrollSalud&body=${encodeURIComponent(`Hola ${lead.contact_name || ""},\n\nSoy tu agente de seguros de salud.${planName ? ` Vi que te interesó el plan ${planName}.` : ""}\n\n¿Tienes unos minutos para hablar sobre tu cobertura?\n\nSaludos`)}`} style={actionBtn("#3b82f6", "#fff")}>📧 Email</a>
         )}
-        {canOpenHS && <button onClick={openHealthSherpa} style={actionBtn("linear-gradient(135deg, #f59e0b, #d97706)", "#fff")}>🏥 Abrir en HealthSherpa</button>}
+        {renovacionAnio && lead.contact_phone && (
+          <a href={`https://wa.me/${waNum}?text=${encodeURIComponent(mensajeRenovacion({ nombre: lead.contact_name || "", agente: agent?.name || "", telefono: agent?.phone || "", anio: renovacionAnio }))}`} target="_blank" rel="noopener noreferrer" style={actionBtn("#25D366", "#fff")}>🔁 Mensaje de renovación {renovacionAnio}</a>
+        )}
+        {hsAgentUrl && <a href={hsAgentUrl} target="_blank" rel="noopener noreferrer" style={actionBtn("linear-gradient(135deg, #f59e0b, #d97706)", "#fff")}>🏥 Abrir en HealthSherpa</a>}
+        {hsClientUrl && lead.contact_phone && <a href={`https://wa.me/${waNum}?text=${encodeURIComponent(hsClientWaMsg)}`} target="_blank" rel="noopener noreferrer" style={actionBtn("#25D366", "#fff")}>📲 Enviar enlace al cliente por WhatsApp</a>}
         <button onClick={() => copyText(allData, "datos")} style={actionBtn("rgba(255,255,255,0.08)", copied === "datos" ? "#10b981" : "#94A3B8")}>{copied === "datos" ? "✓ Copiado" : "📋 Copiar datos"}</button>
         <button onClick={() => copyText(healthSherpaData, "sherpa")} style={actionBtn("rgba(245,158,11,0.15)", copied === "sherpa" ? "#10b981" : "#f59e0b")}>{copied === "sherpa" ? "✓ Copiado" : "📋 HealthSherpa"}</button>
-        <a href={`/api/precarta-pdf?leadId=${lead.id}`} download style={actionBtn("transparent", "#8B5CF6")}><span style={{ borderBottom: "1px solid #8B5CF6" }}>📋 Pre-Carta PDF</span></a>
-        {lead.status !== "browsing" && (
-          <a href={`/api/leads/${lead.id}/consent-pdf`} download style={actionBtn("transparent", "#3B82F6")}><span style={{ borderBottom: "1px solid #3B82F6" }}>📄 Consent PDF</span></a>
+        {tieneConsentimiento ? (
+          <>
+            <a href={`/api/precarta-pdf?leadId=${lead.id}`} download style={actionBtn("transparent", "#8B5CF6")}><span style={{ borderBottom: "1px solid #8B5CF6" }}>📋 Pre-Carta PDF</span></a>
+            <a href={`/api/leads/${lead.id}/consent-pdf`} download style={actionBtn("transparent", "#3B82F6")}><span style={{ borderBottom: "1px solid #3B82F6" }}>📄 Consent PDF</span></a>
+          </>
+        ) : (
+          <span style={{ ...actionBtn("transparent", "#94A3B8"), cursor: "default", fontWeight: 600 }}>Sin consentimiento firmado</span>
         )}
       </div>
 

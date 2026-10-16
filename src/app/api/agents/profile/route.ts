@@ -4,6 +4,7 @@ import { createServerAuthClient } from "@/lib/supabase-auth";
 import { createServiceClient } from "@/lib/supabase";
 import { escapeHtml } from "@/lib/security/escape-html";
 import { sanitizePlainText } from "@/lib/security/sanitize-plain-text";
+import { parseHealthSherpaAgentId } from "@/lib/healthsherpa-link";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -14,7 +15,7 @@ export async function GET() {
   const db = createServiceClient();
   const { data: agent } = await db
     .from("agents")
-    .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url")
+    .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url, healthsherpa_agent_id")
     .eq("auth_user_id", user.id)
     .single();
 
@@ -50,6 +51,23 @@ export async function PATCH(request: NextRequest) {
   if (appointed_carriers) update.appointed_carriers = appointed_carriers;
   if (preferred_language) update.preferred_language = preferred_language;
   if (onboarding_complete !== undefined) update.onboarding_complete = onboarding_complete;
+  // Enlace de marketing de HealthSherpa (o el ID suelto). Solo se toca si el
+  // campo viene en el pedido: el registro y el onboarding no lo mandan.
+  if (body.healthsherpa_link !== undefined) {
+    const enlace = typeof body.healthsherpa_link === "string" ? body.healthsherpa_link.trim() : "";
+    if (!enlace) {
+      update.healthsherpa_agent_id = null;
+    } else {
+      const hsId = parseHealthSherpaAgentId(enlace);
+      if (!hsId) {
+        return NextResponse.json(
+          { error: "No encontré tu ID de HealthSherpa en ese enlace. Pega el enlace de tu pestaña Marketing, el que dice _agent_id=" },
+          { status: 400 }
+        );
+      }
+      update.healthsherpa_agent_id = hsId;
+    }
+  }
   if (slug?.trim()) {
     // Verify slug uniqueness
     const { data: slugOwner } = await db.from("agents").select("auth_user_id").eq("slug", slug.trim()).single();

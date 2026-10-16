@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { parseHealthSherpaAgentId, resolveHealthSherpaAgentId } from "@/lib/healthsherpa-link";
 
 interface Agent {
   slug: string;
@@ -12,6 +13,7 @@ interface Agent {
   agency_name: string | null;
   brand_color: string | null;
   logo_url: string | null;
+  healthsherpa_agent_id?: string | null;
 }
 
 export default function ProfileForm({ agent }: { agent: Agent }) {
@@ -22,14 +24,19 @@ export default function ProfileForm({ agent }: { agent: Agent }) {
   const [agencyName, setAgencyName] = useState(agent.agency_name || "");
   const [brandColor, setBrandColor] = useState(agent.brand_color || "#10b981");
   const [logoUrl, setLogoUrl] = useState(agent.logo_url || "");
+  // Un valor guardado igual al NPN es el error conocido y se muestra vacío.
+  const [hsLink, setHsLink] = useState(resolveHealthSherpaAgentId(agent.healthsherpa_agent_id, agent.npn) || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
+  const hsId = parseHealthSherpaAgentId(hsLink);
+  const hsInvalido = hsLink.trim() !== "" && !hsId;
   const isComplete = npn.trim() && email.trim() && phone.trim() && agencyName.trim();
 
   const handleSave = async () => {
     if (!isComplete) { setError("Completa todos los campos requeridos"); return; }
+    if (hsInvalido) { setError("No encontré tu ID de HealthSherpa en ese enlace. Pega el enlace de tu pestaña Marketing, el que dice _agent_id="); return; }
     setError("");
     setSaving(true);
 
@@ -44,6 +51,7 @@ export default function ProfileForm({ agent }: { agent: Agent }) {
           agency_name: agencyName.trim(),
           brand_color: brandColor,
           logo_url: logoUrl.trim() || null,
+          healthsherpa_link: hsLink.trim(),
         }),
       });
       if (res.ok) {
@@ -127,6 +135,29 @@ export default function ProfileForm({ agent }: { agent: Agent }) {
         <div style={{ marginBottom: 24 }}>
           <label htmlFor="prof-agency" style={labelStyle}>Nombre de Agencia *</label>
           <input id="prof-agency" style={inputStyle} value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder="Mi Agencia de Seguros" />
+        </div>
+
+        {/* HealthSherpa */}
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 20, marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 16 }}>
+            HealthSherpa
+          </div>
+          <label htmlFor="prof-hs" style={labelStyle}>Tu enlace de HealthSherpa</label>
+          <input
+            id="prof-hs"
+            style={{ ...inputStyle, borderColor: hsInvalido ? "rgba(239,68,68,0.6)" : "rgba(255,255,255,0.1)" }}
+            value={hsLink}
+            onChange={(e) => setHsLink(e.target.value)}
+            placeholder="https://www.healthsherpa.com/?_agent_id=tu-nombre"
+            autoComplete="off"
+          />
+          <div style={{ fontSize: 12, color: hsInvalido ? "#ef4444" : "#8b8fa3", marginTop: 6, lineHeight: 1.5 }}>
+            {hsInvalido
+              ? "Ese enlace no trae tu ID. Busca el que dice _agent_id= y pégalo completo."
+              : hsId
+                ? `Tu ID de HealthSherpa: ${hsId}`
+                : "Cópialo de la pestaña Marketing de tu cuenta de HealthSherpa. Sin él, los botones de HealthSherpa no aparecen en tus clientes."}
+          </div>
         </div>
 
         {/* Optional fields */}

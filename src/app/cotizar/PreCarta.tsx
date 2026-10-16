@@ -9,7 +9,7 @@ interface PreCartaProps {
   agentPhone: string;
   agentEmail: string;
   lang: string;
-  onComplete: (data: { firstName: string; lastName: string; dob: string; signatureDataUrl: string; pdfStorageUrl?: string }) => void;
+  onComplete: (data: { firstName: string; lastName: string; dob: string; signatureDataUrl: string }) => void;
 }
 
 export default function PreCarta({ agentName, agentNPN, agentPhone, agentEmail, lang, onComplete }: PreCartaProps) {
@@ -24,7 +24,6 @@ export default function PreCarta({ agentName, agentNPN, agentPhone, agentEmail, 
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
   const sigDataRef = useRef("");
-  const storageUrlRef = useRef("");
 
   const isEs = lang === "es";
   const clientName = `${firstName} ${lastName}`.trim();
@@ -113,7 +112,8 @@ export default function PreCarta({ agentName, agentNPN, agentPhone, agentEmail, 
     setSigned(true);
     setGenerating(true);
 
-    // Generate and upload PDF in background
+    // Genera y guarda la pre-carta en el bucket privado (registro de la firma).
+    // Si falla, el flujo sigue: el cliente no se queda trabado.
     try {
       const res = await fetch("/api/precarta-pdf", {
         method: "POST",
@@ -128,10 +128,7 @@ export default function PreCarta({ agentName, agentNPN, agentPhone, agentEmail, 
           signedAt: new Date().toISOString(),
         }),
       });
-      if (res.ok) {
-        const json = await res.json();
-        storageUrlRef.current = json.storageUrl || "";
-      }
+      if (!res.ok) console.error("Pre-carta PDF: respuesta", res.status);
     } catch (err) {
       console.error("Pre-carta PDF generation error:", err);
     }
@@ -144,7 +141,6 @@ export default function PreCarta({ agentName, agentNPN, agentPhone, agentEmail, 
       lastName: lastName.trim(),
       dob,
       signatureDataUrl: sigDataRef.current,
-      pdfStorageUrl: storageUrlRef.current,
     });
   };
 

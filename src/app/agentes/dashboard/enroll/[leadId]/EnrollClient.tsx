@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildHealthSherpaQuoteUrl, healthSherpaInputFromLead } from "@/lib/healthsherpa-link";
+import { buildHealthSherpaQuoteUrl, healthSherpaInputFromLead, resolveHealthSherpaAgentId } from "@/lib/healthsherpa-link";
 
 function CopyField({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
@@ -51,10 +51,14 @@ HIOS ID: ${conversation?.selected_plan_hios_id || "N/A"}`;
   const waMsg = encodeURIComponent(`Hola ${lead.contact_name}, soy ${agent.name} tu agente de seguros de salud en EnrollSalud. Estoy preparando tu inscripción. ¿Tienes unos minutos para confirmar tus datos?`);
 
   // HealthSherpa: cotización del Mercado pre-llenada (ver src/lib/healthsherpa-link.ts).
-  // Sin un dato obligatorio la URL es null y el botón no aparece.
-  const hsAgentId = agent.healthsherpa_agent_id || agent.npn || "";
+  // Sin un dato obligatorio la URL es null y el botón no aparece. El ID de
+  // HealthSherpa sale del perfil del agente; nunca se usa el NPN en su lugar.
+  const hsAgentId = resolveHealthSherpaAgentId(agent.healthsherpa_agent_id, agent.npn);
   const hsAgentUrl = buildHealthSherpaQuoteUrl(healthSherpaInputFromLead(lead, hsAgentId, "agent"));
   const hsClientUrl = buildHealthSherpaQuoteUrl(healthSherpaInputFromLead(lead, hsAgentId, "consumer"));
+  // El lead tiene todo para el enlace y solo falta el ID del agente.
+  const hsFaltaIdAgente =
+    !hsAgentId && buildHealthSherpaQuoteUrl(healthSherpaInputFromLead(lead, "id-pendiente", "agent")) !== null;
   const hsClientWaMsg = hsClientUrl
     ? encodeURIComponent(`Hola ${lead.contact_name}, aquí puedes ver los planes del Mercado con tus datos ya puestos: ${hsClientUrl} — Si tienes dudas, escríbeme.`)
     : "";
@@ -84,6 +88,9 @@ HIOS ID: ${conversation?.selected_plan_hios_id || "N/A"}`;
           )}
           {hsClientUrl && waNum && (
             <a href={`https://wa.me/${waNum}?text=${hsClientWaMsg}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: "12px 20px", borderRadius: 10, background: "#25D366", color: "#fff", fontSize: 14, fontWeight: 800, textDecoration: "none", textAlign: "center", minWidth: 140 }}>📲 Enviar enlace al cliente por WhatsApp</a>
+          )}
+          {hsFaltaIdAgente && (
+            <a href="/agentes/dashboard/profile" style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "1px solid rgba(245,158,11,0.4)", background: "transparent", color: "#f59e0b", fontSize: 14, fontWeight: 800, textDecoration: "none", textAlign: "center", minWidth: 140 }}>🏥 Agrega tu enlace de HealthSherpa en tu perfil</a>
           )}
           <button onClick={async () => { await navigator.clipboard.writeText(allData); }} style={{ flex: 1, padding: "12px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#8b8fa3", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minWidth: 140 }}>📋 Copiar Todo</button>
         </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import StatusModal from "../StatusModal";
 import ActivityTimeline from "../ActivityTimeline";
 import { FLAG_COPY, type EligibilityFlag } from "@/lib/eligibility/rules";
-import { buildHealthSherpaQuoteUrl, healthSherpaInputFromLead } from "@/lib/healthsherpa-link";
+import { buildHealthSherpaQuoteUrl, healthSherpaInputFromLead, resolveHealthSherpaAgentId } from "@/lib/healthsherpa-link";
 import { mensajeRenovacion } from "@/lib/renewal-reminder";
 
 // Eligibility triage (OBBBA) — agent-only panel config.
@@ -134,10 +134,14 @@ export default function LeadDetailClient({ lead: initialLead, activity: initialA
   const lastName = lead.last_name || (lead.contact_name || "").split(" ").slice(1).join(" ") || "";
 
   // HealthSherpa: cotización del Mercado pre-llenada (ver src/lib/healthsherpa-link.ts).
-  // Sin un dato obligatorio la URL es null y el botón no aparece.
-  const hsAgentId = agent?.healthsherpa_agent_id || agent?.npn || "";
+  // Sin un dato obligatorio la URL es null y el botón no aparece. El ID de
+  // HealthSherpa sale del perfil del agente; nunca se usa el NPN en su lugar.
+  const hsAgentId = resolveHealthSherpaAgentId(agent?.healthsherpa_agent_id, agent?.npn);
   const hsAgentUrl = buildHealthSherpaQuoteUrl(healthSherpaInputFromLead(lead, hsAgentId, "agent"));
   const hsClientUrl = buildHealthSherpaQuoteUrl(healthSherpaInputFromLead(lead, hsAgentId, "consumer"));
+  // El lead tiene todo para el enlace y solo falta el ID del agente.
+  const hsFaltaIdAgente =
+    !hsAgentId && buildHealthSherpaQuoteUrl(healthSherpaInputFromLead(lead, "id-pendiente", "agent")) !== null;
   const hsClientWaMsg = hsClientUrl
     ? `Hola ${lead.contact_name || ""}, aquí puedes ver los planes del Mercado con tus datos ya puestos: ${hsClientUrl} — Si tienes dudas, escríbeme.`
     : "";
@@ -389,6 +393,7 @@ Best Call Time: ${lead.best_call_time || "N/A"}`;
         )}
         {hsAgentUrl && <a href={hsAgentUrl} target="_blank" rel="noopener noreferrer" style={actionBtn("linear-gradient(135deg, #f59e0b, #d97706)", "#fff")}>🏥 Abrir en HealthSherpa</a>}
         {hsClientUrl && lead.contact_phone && <a href={`https://wa.me/${waNum}?text=${encodeURIComponent(hsClientWaMsg)}`} target="_blank" rel="noopener noreferrer" style={actionBtn("#25D366", "#fff")}>📲 Enviar enlace al cliente por WhatsApp</a>}
+        {hsFaltaIdAgente && <a href="/agentes/dashboard/profile" style={actionBtn("transparent", "#f59e0b")}><span style={{ borderBottom: "1px solid #f59e0b" }}>🏥 Agrega tu enlace de HealthSherpa en tu perfil</span></a>}
         <button onClick={() => copyText(allData, "datos")} style={actionBtn("rgba(255,255,255,0.08)", copied === "datos" ? "#10b981" : "#94A3B8")}>{copied === "datos" ? "✓ Copiado" : "📋 Copiar datos"}</button>
         <button onClick={() => copyText(healthSherpaData, "sherpa")} style={actionBtn("rgba(245,158,11,0.15)", copied === "sherpa" ? "#10b981" : "#f59e0b")}>{copied === "sherpa" ? "✓ Copiado" : "📋 HealthSherpa"}</button>
         {tieneConsentimiento ? (

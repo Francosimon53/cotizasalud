@@ -4,6 +4,8 @@ import {
   HEALTHSHERPA_SHOP_URL,
   buildHealthSherpaQuoteUrl,
   healthSherpaInputFromLead,
+  parseHealthSherpaAgentId,
+  resolveHealthSherpaAgentId,
   type HealthSherpaQuoteInput,
 } from "../healthsherpa-link";
 
@@ -94,5 +96,52 @@ describe("buildHealthSherpaQuoteUrl", () => {
 
   it("un ingreso de 0 es válido", () => {
     expect(buildHealthSherpaQuoteUrl({ ...base, householdIncome: 0 })).not.toBeNull();
+  });
+});
+
+describe("parseHealthSherpaAgentId", () => {
+  it("saca el ID del enlace de marketing completo", () => {
+    expect(parseHealthSherpaAgentId("https://www.healthsherpa.com/?_agent_id=juan-perez")).toBe("juan-perez");
+  });
+
+  it("acepta el enlace sin https y con otros parámetros", () => {
+    expect(parseHealthSherpaAgentId("www.healthsherpa.com/?utm_source=fb&_agent_id=maria_lopez.fl")).toBe("maria_lopez.fl");
+  });
+
+  it("acepta el ID suelto", () => {
+    expect(parseHealthSherpaAgentId("  delbert-useches  ")).toBe("delbert-useches");
+  });
+
+  it("rechaza un enlace de HealthSherpa sin _agent_id", () => {
+    expect(parseHealthSherpaAgentId("https://www.healthsherpa.com/")).toBeNull();
+  });
+
+  it("rechaza enlaces de otros sitios aunque traigan _agent_id", () => {
+    expect(parseHealthSherpaAgentId("https://healthsherpa.com.evil.example/?_agent_id=juan")).toBeNull();
+    expect(parseHealthSherpaAgentId("https://example.com/?_agent_id=juan")).toBeNull();
+  });
+
+  it("rechaza IDs con caracteres raros, vacíos o de un solo carácter", () => {
+    expect(parseHealthSherpaAgentId("juan perez")).toBeNull();
+    expect(parseHealthSherpaAgentId("<script>")).toBeNull();
+    expect(parseHealthSherpaAgentId("a")).toBeNull();
+    expect(parseHealthSherpaAgentId("")).toBeNull();
+    expect(parseHealthSherpaAgentId(null)).toBeNull();
+  });
+});
+
+describe("resolveHealthSherpaAgentId", () => {
+  it("devuelve el ID guardado cuando es válido", () => {
+    expect(resolveHealthSherpaAgentId("juan-perez", "12345678")).toBe("juan-perez");
+  });
+
+  it("un valor igual al NPN cuenta como vacío (error conocido)", () => {
+    expect(resolveHealthSherpaAgentId("18748069", "18748069")).toBeNull();
+    expect(resolveHealthSherpaAgentId(" 18748069 ", "18748069")).toBeNull();
+  });
+
+  it("sin valor guardado no cae al NPN", () => {
+    expect(resolveHealthSherpaAgentId(null, "18748069")).toBeNull();
+    expect(resolveHealthSherpaAgentId("", "18748069")).toBeNull();
   });
 });

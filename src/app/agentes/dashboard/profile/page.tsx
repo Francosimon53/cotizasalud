@@ -16,7 +16,7 @@ export default async function ProfilePage() {
   const db = createServiceClient();
   let { data: agent } = await db
     .from("agents")
-    .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url")
+    .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url, healthsherpa_agent_id")
     .eq("auth_user_id", user.id)
     .single();
 
@@ -36,7 +36,7 @@ export default async function ProfilePage() {
       trial_end_date: trialEndDate,
     });
     const { data: newAgent } = await db.from("agents")
-      .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url")
+      .select("slug, name, email, phone, npn, agency_name, brand_color, logo_url, healthsherpa_agent_id")
       .eq("auth_user_id", user.id).single();
     agent = newAgent;
     if (!agent) redirect("/agentes/login");

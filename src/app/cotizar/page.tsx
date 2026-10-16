@@ -414,7 +414,7 @@ export default function QuoterPage({ storyFirst = false }: { storyFirst?: boolea
   }, [storyFirst]);
 
   // Pre-carta completion handler
-  const handlePreCarta = (data: { firstName: string; lastName: string; dob: string; signatureDataUrl: string; pdfStorageUrl?: string }) => {
+  const handlePreCarta = (data: { firstName: string; lastName: string; dob: string; signatureDataUrl: string }) => {
     setFirstName(data.firstName);
     setLastName(data.lastName);
     // Set DOB on first household member

@@ -14,6 +14,44 @@
 
 export const HEALTHSHERPA_SHOP_URL = "https://www.healthsherpa.com/public/shop";
 
+// ID de agente de HealthSherpa (_agent_id): es el nombre de usuario que va
+// después de "_agent_id=" en el enlace de marketing del agente (pestaña
+// Marketing de su cuenta de HealthSherpa). NO es el NPN: con el NPN como
+// _agent_id, HealthSherpa redirige a su portada y la cotización no se abre
+// (probado el 2026-10-16).
+const HEALTHSHERPA_AGENT_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{1,63}$/;
+
+// Acepta el enlace de marketing completo (https://www.healthsherpa.com/?_agent_id=juan-perez)
+// o el ID suelto. Devuelve null si no encuentra un ID válido.
+export function parseHealthSherpaAgentId(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  const raw = input.trim();
+  if (!raw) return null;
+
+  const pareceEnlace = /^https?:\/\//i.test(raw) || /healthsherpa\.com/i.test(raw) || raw.includes("?") || raw.includes("/");
+  if (!pareceEnlace) return HEALTHSHERPA_AGENT_ID_RE.test(raw) ? raw : null;
+
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+  } catch {
+    return null;
+  }
+  if (!/(^|\.)healthsherpa\.com$/i.test(url.hostname)) return null;
+  const id = (url.searchParams.get("_agent_id") || "").trim();
+  return HEALTHSHERPA_AGENT_ID_RE.test(id) ? id : null;
+}
+
+// Valor guardado en agents.healthsherpa_agent_id → ID usable en el enlace.
+// Un valor igual al NPN es el error conocido (se cargó el NPN donde va el
+// usuario de HealthSherpa) y cuenta como vacío: así no se arma un enlace roto.
+export function resolveHealthSherpaAgentId(stored: unknown, npn?: string | null): string | null {
+  const id = parseHealthSherpaAgentId(stored);
+  if (!id) return null;
+  if (npn && id === String(npn).trim()) return null;
+  return id;
+}
+
 export type HealthSherpaUserType = "agent" | "consumer";
 
 export type HealthSherpaQuoteInput = {
